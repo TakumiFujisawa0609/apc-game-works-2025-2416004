@@ -1,0 +1,668 @@
+﻿#include "Quaternion.h"
+
+#include<math.h>
+#include<DxLib.h>
+
+#include"../Utility/Utility.h"
+
+// デフォルトコンストラクタ - 単位クォータニオン(恒等回転)を生成
+Quaternion::Quaternion(void)
+{
+	w = 1;
+	x = y = z = 0;
+}
+
+// オイラー角(ラジアン)からクォータニオンを生成するコンストラクタ
+Quaternion::Quaternion(const VECTOR& rad)
+{
+	Quaternion q = Euler(rad.x, rad.y, rad.z);
+	w = q.w;
+	x = q.x;
+	y = q.y;
+	z = q.z;
+}
+
+// クォータニオンの各成分を直接指定するコンストラクタ
+Quaternion::Quaternion(double ww, double wx, double wy, double wz)
+{
+	w = ww;
+	x = wx;
+	y = wy;
+	z = wz;
+}
+
+// デストラクタ
+Quaternion::~Quaternion(void)
+{
+}
+
+// VECTOR型のオイラー角からクォータニオンを生成する静的メソッド
+Quaternion Quaternion::Euler(const VECTOR& rad)
+{
+	return Euler(rad.x, rad.y, rad.z);
+}
+
+// 3つの回転角度（X,Y,Z軸周り）からクォータニオンを生成する静的メソッド
+Quaternion Quaternion::Euler(double radX, double radY, double radZ)
+{
+	Quaternion ret = Quaternion();
+
+	// 角度を0〜2π範囲に正規化
+	radX = Utility::RadIn2PI(radX);
+	radY = Utility::RadIn2PI(radY);
+	radZ = Utility::RadIn2PI(radZ);
+
+	// オイラー角からクォータニオンへの変換式
+	double cosZ = cos(radZ / 2.0f);
+	double sinZ = sin(radZ / 2.0f);
+	double cosX = cos(radX / 2.0f);
+	double sinX = sin(radX / 2.0f);
+	double cosY = cos(radY / 2.0f);
+	double sinY = sin(radY / 2.0f);
+
+	// ZYXの順で適用するクォータニオン計算
+	ret.w = cosX * cosY * cosZ + sinX * sinY * sinZ;
+	ret.x = sinX * cosY * cosZ + cosX * sinY * sinZ;
+	ret.y = cosX * sinY * cosZ - sinX * cosY * sinZ;
+	ret.z = cosX * cosY * sinZ - sinX * sinY * cosZ;
+
+	return ret;
+}
+
+// 2つのクォータニオンの乗算（合成）を行う静的メソッド
+Quaternion Quaternion::Mult(const Quaternion& q1, const Quaternion& q2)
+{
+	Quaternion ret = Quaternion();
+	double d1, d2, d3, d4;
+
+	// wの計算 
+	d1 = q1.w * q2.w;
+	d2 = -q1.x * q2.x;
+	d3 = -q1.y * q2.y;
+	d4 = -q1.z * q2.z;
+	ret.w = d1 + d2 + d3 + d4;
+
+	// xの計算 
+	d1 = q1.w * q2.x;
+	d2 = q2.w * q1.x;
+	d3 = q1.y * q2.z;
+	d4 = -q1.z * q2.y;
+	ret.x = d1 + d2 + d3 + d4;
+
+	// yの計算
+	d1 = q1.w * q2.y;
+	d2 = q2.w * q1.y;
+	d3 = q1.z * q2.x;
+	d4 = -q1.x * q2.z;
+	ret.y = d1 + d2 + d3 + d4;
+
+	// zの計算
+	d1 = q1.w * q2.z;
+	d2 = q2.w * q1.z;
+	d3 = q1.x * q2.y;
+	d4 = -q1.y * q2.x;
+	ret.z = d1 + d2 + d3 + d4;
+
+	return ret;
+}
+
+// 自身(左辺)に引数のクォータニオン(右辺)を乗算するメソッド
+Quaternion Quaternion::Mult(const Quaternion& q) const
+{
+	return Mult(Quaternion(w, x, y, z), q);
+}
+
+// 指定された角度と軸からクォータニオンを生成する静的メソッド
+Quaternion Quaternion::AngleAxis(double rad, VECTOR axis)
+{
+	Quaternion ret = Quaternion();
+
+	double norm;
+	double c, s;
+
+	// 単位クォータニオンで初期化（Unityの仕様に合わせる）
+	ret.w = 1.0;
+	ret.x = ret.y = ret.z = 0.0;
+
+	// 軸ベクトルの正規化
+	norm = (double)axis.x * (double)axis.x + (double)axis.y * (double)axis.y + (double)axis.z * (double)axis.z;
+	if (norm <= 0.0f)
+	{
+		return ret; // 軸が無効な場合は単位クォータニオンを返す
+	}
+
+	norm = 1.0 / sqrt(norm);
+	axis.x = (float)(axis.x * norm);
+	axis.y = (float)(axis.y * norm);
+	axis.z = (float)(axis.z * norm);
+
+	// 角度の半分のcos, sinを計算
+	c = cos(0.5f * rad);
+	s = sin(0.5f * rad);
+
+	// クォータニオン生成
+	ret.w = c;
+	ret.x = s * axis.x;
+	ret.y = s * axis.y;
+	ret.z = s * axis.z;
+
+	return ret;
+}
+
+// クォータニオンを使って位置ベクトルを回転させる静的メソッド
+VECTOR Quaternion::PosAxis(const Quaternion& q, VECTOR pos)
+{
+	// 位置情報に回転情報を反映させる
+	// p' = q * p * q^-1 (pを純四元数として扱う)
+	Quaternion tmp = Quaternion();
+	tmp = tmp.Mult(q);
+	tmp = tmp.Mult(Quaternion(0.0f, pos.x, pos.y, pos.z));
+	tmp = tmp.Mult(q.Inverse());
+
+	return { (float)tmp.x, (float)tmp.y, (float)tmp.z };
+}
+
+// 自身のクォータニオンで位置ベクトルを回転させるメソッド
+VECTOR Quaternion::PosAxis(VECTOR pos) const
+{
+	return PosAxis(Quaternion(w, x, y, z), pos);
+}
+
+// クォータニオンからオイラー角への変換を行う静的メソッド
+VECTOR Quaternion::ToEuler(const Quaternion& q)
+{
+	VECTOR ret;
+
+	// クォータニオンから回転行列の要素を計算
+	double r11 = 2 * (q.x * q.z + q.w * q.y);
+	double r12 = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
+	double r21 = -2 * (q.y * q.z - q.w * q.x);
+	double r31 = 2 * (q.x * q.y + q.w * q.z);
+	double r32 = q.w * q.w - q.x * q.x + q.y * q.y - q.z * q.z;
+
+	// オイラー角（X, Y, Z）を計算
+	ret.x = static_cast<float>(asin(r21));          // X軸回転（ピッチ）
+	ret.y = static_cast<float>(atan2(r11, r12));    // Y軸回転（ヨー）
+	ret.z = static_cast<float>(atan2(r31, r32));    // Z軸回転（ロール）
+
+	return ret;
+}
+
+// 自身のクォータニオンをオイラー角に変換するメソッド
+VECTOR Quaternion::ToEuler(void) const
+{
+	return ToEuler(Quaternion(w, x, y, z));
+}
+
+// クォータニオンから回転行列への変換を行う静的メソッド
+MATRIX Quaternion::ToMatrix(const Quaternion& q)
+{
+	MATRIX mat;
+
+	FLOAT4 fq = { (float)q.x, (float)q.y, (float)q.z, (float)q.w };
+
+	// クォータニオンの成分から回転行列の要素を計算
+	float sx = fq.x * fq.x * 2.0f;
+	float sy = fq.y * fq.y * 2.0f;
+	float sz = fq.z * fq.z * 2.0f;
+	float cx = fq.y * fq.z * 2.0f;
+	float cy = fq.x * fq.z * 2.0f;
+	float cz = fq.x * fq.y * 2.0f;
+	float wx = fq.w * fq.x * 2.0f;
+	float wy = fq.w * fq.y * 2.0f;
+	float wz = fq.w * fq.z * 2.0f;
+
+	// 4x4回転行列を生成
+	mat.m[0][0] = 1.0f - (sy + sz);	mat.m[0][1] = cz + wz;			mat.m[0][2] = cy - wy;			mat.m[0][3] = 0.0f;
+	mat.m[1][0] = cz - wz;			mat.m[1][1] = 1.0f - (sx + sz);	mat.m[1][2] = cx + wx;			mat.m[1][3] = 0.0f;
+	mat.m[2][0] = cy + wy;			mat.m[2][1] = cx - wx;			mat.m[2][2] = 1.0f - (sx + sy);	mat.m[2][3] = 0.0f;
+	mat.m[3][0] = 0.0f;				mat.m[3][1] = 0.0f;				mat.m[3][2] = 0.0f;				mat.m[3][3] = 1.0f;
+
+	return mat;
+}
+
+// 自身のクォータニオンを回転行列に変換するメソッド
+MATRIX Quaternion::ToMatrix(void) const
+{
+	return ToMatrix(Quaternion(w, x, y, z));
+}
+
+// 指定された方向を向くクォータニオンを生成する静的メソッド（Y軸上向き固定）
+Quaternion Quaternion::LookRotation(VECTOR dir)
+{
+	VECTOR up = { 0.0f, 1.0f, 0.0f }; // デフォルトのアップベクトル（Y軸）
+	return LookRotation(dir, up);
+}
+
+// 指定された方向とアップベクトルからクォータニオンを生成する静的メソッド
+Quaternion Quaternion::LookRotation(VECTOR dir, VECTOR up)
+{
+	// 方向ベクトルを正規化
+	dir = Utility::VNormalize(dir);
+	// 右方向ベクトルを計算し正規化（アップベクトルと方向ベクトルの外積）
+	VECTOR right = Utility::VNormalize(VCross(up, dir));
+	// 正確なアップベクトルを再計算（直交性を保証）
+	up = VCross(dir, right);
+
+	// 回転行列の要素を計算
+	auto m00 = right.x;
+	auto m01 = right.y;
+	auto m02 = right.z;
+	auto m10 = up.x;
+	auto m11 = up.y;
+	auto m12 = up.z;
+	auto m20 = dir.x;
+	auto m21 = dir.y;
+	auto m22 = dir.z;
+
+	// 回転行列からクォータニオンへの変換（一般的なアルゴリズム）
+	float num8 = (m00 + m11) + m22;
+	auto quaternion = Quaternion();
+	if (num8 > 0.0f)
+	{
+		// 対角和が正の場合
+		double num = sqrt(num8 + 1.0);
+		quaternion.w = num * 0.5;
+		num = 0.5 / num;
+		quaternion.x = ((double)m12 - m21) * num;
+		quaternion.y = ((double)m20 - m02) * num;
+		quaternion.z = ((double)m01 - m10) * num;
+		return quaternion.Normalized();
+	}
+	if ((m00 >= m11) && (m00 >= m22))
+	{
+		// m00が最大の場合
+		auto num7 = sqrt(((1.0f + m00) - m11) - m22);
+		auto num4 = 0.5f / num7;
+		quaternion.x = 0.5 * num7;
+		quaternion.y = ((double)m01 + m10) * num4;
+		quaternion.z = ((double)m02 + m20) * num4;
+		quaternion.w = ((double)m12 - m21) * num4;
+		return quaternion.Normalized();
+	}
+	if (m11 > m22)
+	{
+		// m11が最大の場合
+		auto num6 = sqrt(((1.0f + m11) - m00) - m22);
+		auto num3 = 0.5f / num6;
+		quaternion.x = ((double)m10 + m01) * num3;
+		quaternion.y = 0.5 * num6;
+		quaternion.z = ((double)m21 + m12) * num3;
+		quaternion.w = ((double)m20 - m02) * num3;
+		return quaternion.Normalized();
+	}
+
+	// m22が最大の場合
+	auto num5 = sqrt(((1.0f + m22) - m00) - m11);
+	auto num2 = 0.5f / num5;
+	quaternion.x = ((double)m20 + m02) * num2;
+	quaternion.y = ((double)m21 + m12) * num2;
+	quaternion.z = 0.5 * num5;
+	quaternion.w = ((double)m01 - m10) * num2;
+	return quaternion.Normalized();
+}
+
+// 回転行列からクォータニオンを取得する静的メソッド
+Quaternion Quaternion::GetRotation(MATRIX mat)
+{
+	Quaternion ret;
+
+	float s;
+	// 行列の対角和+1を計算（クォータニオン変換の一般的なアルゴリズム）
+	float tr = mat.m[0][0] + mat.m[1][1] + mat.m[2][2] + 1.0f;
+	if (tr >= 1.0f)
+	{
+		// 対角和が大きい場合（一般的なケース）
+		s = 0.5f / sqrtf(tr);
+		ret.w = 0.25f / s;
+		ret.x = (mat.m[1][2] - mat.m[2][1]) * s;
+		ret.y = (mat.m[2][0] - mat.m[0][2]) * s;
+		ret.z = (mat.m[0][1] - mat.m[1][0]) * s;
+	}
+	else
+	{
+		// 対角和が小さい場合は最大対角要素を基準に計算
+		float max;
+		max = mat.m[1][1] > mat.m[2][2] ? mat.m[1][1] : mat.m[2][2];
+
+		if (max < mat.m[0][0])
+		{
+			// m00が最大の場合
+			s = sqrtf(mat.m[0][0] - (mat.m[1][1] + mat.m[2][2]) + 1.0f);
+
+			float x = s * 0.5f;
+			s = 0.5f / s;
+			ret.x = x;
+			ret.y = (mat.m[0][1] + mat.m[1][0]) * s;
+			ret.z = (mat.m[2][0] + mat.m[0][2]) * s;
+			ret.w = (mat.m[1][2] - mat.m[2][1]) * s;
+		}
+		else if (max == mat.m[1][1])
+		{
+			// m11が最大の場合
+			s = sqrtf(mat.m[1][1] - (mat.m[2][2] + mat.m[0][0]) + 1.0f);
+
+			float y = s * 0.5f;
+			s = 0.5f / s;
+			ret.x = (mat.m[0][1] + mat.m[1][0]) * s;
+			ret.y = y;
+			ret.z = (mat.m[1][2] + mat.m[2][1]) * s;
+			ret.w = (mat.m[2][0] - mat.m[0][2]) * s;
+		}
+		else
+		{
+			// m22が最大の場合
+			s = sqrtf(mat.m[2][2] - (mat.m[0][0] + mat.m[1][1]) + 1.0f);
+
+			float z = s * 0.5f;
+			s = 0.5f / s;
+			ret.x = (mat.m[2][0] + mat.m[0][2]) * s;
+			ret.y = (mat.m[1][2] + mat.m[2][1]) * s;
+			ret.z = z;
+			ret.w = (mat.m[0][1] - mat.m[1][0]) * s;
+		}
+	}
+
+	return ret;
+}
+
+// 指定された方向ベクトルを現在のクォータニオンで回転させるメソッド
+VECTOR Quaternion::GetDir(VECTOR dir) const
+{
+	return PosAxis(dir);
+}
+
+// 前方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetForward(void) const
+{
+	return GetDir(Utility::DIR_F);
+}
+
+// 後方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetBack(void) const
+{
+	return GetDir(Utility::DIR_B);
+}
+
+// 右方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetRight(void) const
+{
+	return GetDir(Utility::DIR_R);
+}
+
+// 左方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetLeft(void) const
+{
+	return GetDir(Utility::DIR_L);
+}
+
+// 上方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetUp(void) const
+{
+	return GetDir(Utility::DIR_U);
+}
+
+// 下方向ベクトルを取得するメソッド
+VECTOR Quaternion::GetDown(void) const
+{
+	return GetDir(Utility::DIR_D);
+}
+
+// 二つのクォータニオン間の内積を計算する静的メソッド
+double Quaternion::Dot(const Quaternion& q1, const Quaternion& q2)
+{
+	return (q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z);
+}
+
+// 自身と指定されたクォータニオンとの内積を計算するメソッド
+double Quaternion::Dot(const Quaternion& q) const
+{
+	return (w * q.w + x * q.x + y * q.y + z * q.z);
+}
+
+// クォータニオンを正規化する静的メソッド
+Quaternion Quaternion::Normalize(const Quaternion& q)
+{
+	float scale = 1.0f / static_cast<float>(q.Length());
+	VECTOR v = VScale(q.xyz(), scale);
+	Quaternion ret = Quaternion(q.w * scale, v.x, v.y, v.z);
+	return ret;
+}
+
+// 自身のコピーを正規化したクォータニオンを返すメソッド
+Quaternion Quaternion::Normalized(void) const
+{
+	double mag = sqrt(w * w + x * x + y * y + z * z);
+	return Quaternion(w / mag, x / mag, y / mag, z / mag);
+}
+
+// 自身を正規化するメソッド
+void Quaternion::Normalize(void)
+{
+	double mag = sqrt(w * w + x * x + y * y + z * z);
+
+	w /= mag;
+	x /= mag;
+	y /= mag;
+	z /= mag;
+}
+
+// クォータニオンの逆元を計算するメソッド
+Quaternion Quaternion::Inverse(void) const
+{
+	double n = 1.0f / (w * w + x * x + y * y + z * z);
+	Quaternion tmp = Quaternion(w, -x, -y, -z);  // 共役クォータニオン
+	return Quaternion(tmp.w * n, tmp.x * n, tmp.y * n, tmp.z * n);  // 共役/長さの二乗
+}
+
+// 二つのクォータニオン間を球面線形補間する静的メソッド（t値を0〜1に制限）
+Quaternion Quaternion::Slerp(Quaternion from, Quaternion to, double t)
+{
+	if (t > 1) t = 1;
+	if (t < 0) t = 0;
+	return SlerpUnclamped(from, to, (float)t);
+}
+
+// 符号関数（値の正負を返す補助関数）
+inline float SIGN(float x) {
+	return (x >= 0.0f) ? +1.0f : -1.0f;
+}
+
+// ノルム計算の補助関数
+inline float NORM(float a, float b, float c, float d) {
+	return sqrt(a * a + b * b + c * c + d * d);
+}
+
+// 始点から終点への回転を表すクォータニオンを生成する静的メソッド
+Quaternion Quaternion::FromToRotation(VECTOR fromDir, VECTOR toDir)
+{
+	// 回転軸を計算（fromDirとtoDirの外積）
+	VECTOR axis = VCross(fromDir, toDir);
+	double angle = Utility::AngleDeg(fromDir, toDir);
+
+	// 180度近くの回転の場合、別の方法で軸を決定
+	if (angle >= 179.9196)
+	{
+		auto r = VCross(fromDir, Utility::DIR_R);
+		axis = VCross(r, fromDir);
+		float len = axis.x * axis.x + axis.y * axis.y + axis.z * axis.z;
+		if (len < 0.000001f)
+		{
+			axis = Utility::DIR_U; // 軸が小さすぎる場合はY軸を使用
+		}
+	}
+
+	// 軸を正規化し、angle-axis表現からクォータニオンを生成
+	axis = Utility::VNormalize(axis);
+	return Quaternion::AngleAxis(Utility::Deg2RadD(angle), axis);
+}
+
+// 二つのクォータニオン間を指定された最大角度で回転補間する静的メソッド
+Quaternion Quaternion::RotateTowards(const Quaternion& from, const Quaternion& to, float maxDegreesDelta)
+{
+	double num = Quaternion::Angle(from, to);
+	if (num == 0.0)
+	{
+		return to; // 角度が0の場合はtoをそのまま返す
+	}
+
+	// 補間比率tを計算（最大角度で制限）
+	float t = min(1.0f, maxDegreesDelta / (float)num);
+	return Quaternion::SlerpUnclamped(from, to, t);
+}
+
+// 二つのクォータニオン間の角度（度）を計算する静的メソッド
+double Quaternion::Angle(const Quaternion& q1, const Quaternion& q2)
+{
+	double cos = Quaternion::Dot(q1, q2);
+	double ac = acos(cos);
+	return ac * (180.0 / DX_PI); // ラジアンから度に変換
+}
+
+// 二つのクォータニオン間を球面線形補間する静的メソッド（t値の制限なし）
+Quaternion Quaternion::SlerpUnclamped(Quaternion a, Quaternion b, float t)
+{
+	// いずれかの入力が0の場合はもう一方を返す
+	if (a.LengthSquared() == 0.0f)
+	{
+		if (b.LengthSquared() == 0.0f)
+		{
+			return Identity();
+		}
+		return b;
+	}
+	else if (b.LengthSquared() == 0.0f)
+	{
+		return a;
+	}
+
+	// 内積から回転の角度を判断
+	float cosHalfAngle = (float)(a.w * b.w) + VDot(a.xyz(), b.xyz());
+
+	if (cosHalfAngle >= 1.0f || cosHalfAngle <= -1.0f)
+	{
+		// 角度が0の場合は入力のひとつを返す
+		return a;
+	}
+	else if (cosHalfAngle < 0.0f)
+	{
+		// 内積が負の場合、-bを使用して最短経路で補間
+		b.x = b.x * -1.0f;
+		b.y = b.y * -1.0f;
+		b.z = b.z * -1.0f;
+		b.w = -b.w;
+		cosHalfAngle = -cosHalfAngle;
+	}
+
+	float blendA;
+	float blendB;
+	if (cosHalfAngle < 0.99f)
+	{
+		// 大きな角度の場合は真のSlerp
+		float halfAngle = acosf(cosHalfAngle);
+		float sinHalfAngle = sinf(halfAngle);
+		float oneOverSinHalfAngle = 1.0f / sinHalfAngle;
+		blendA = sinf(halfAngle * (1.0f - t)) * oneOverSinHalfAngle;
+		blendB = sinf(halfAngle * t) * oneOverSinHalfAngle;
+	}
+	else
+	{
+		// 角度が小さい場合は線形補間（Lerp）
+		blendA = 1.0f - t;
+		blendB = t;
+	}
+
+	// 重み付け合成
+	VECTOR v = VAdd(VScale(a.xyz(), blendA), VScale(b.xyz(), blendB));
+	Quaternion result = Quaternion(blendA * a.w + blendB * b.w, v.x, v.y, v.z);
+
+	// 正規化して返す
+	if (result.LengthSquared() > 0.0f)
+	{
+		return Normalize(result);
+	}
+	else
+	{
+		return Identity();
+	}
+}
+
+// 単位クォータニオン（恒等回転）を返す静的メソッド
+Quaternion Quaternion::Identity(void)
+{
+	return Quaternion(1.0f, 0.0f, 0.0f, 0.0f);
+}
+
+// クォータニオンの長さ（ノルム）を計算するメソッド
+double Quaternion::Length(void) const
+{
+	return sqrt(x * x + y * y + z * z + w * w);
+}
+
+// クォータニオンの長さの二乗を計算するメソッド（比較用に効率的）
+double Quaternion::LengthSquared(void) const
+{
+	return x * x + y * y + z * z + w * w;
+}
+
+// クォータニオンのベクトル部分（x,y,z）を取得するメソッド
+VECTOR Quaternion::xyz(void) const
+{
+	return { (float)x, (float)y, (float)z };
+}
+
+// クォータニオンを角度と軸の表現に変換するメソッド
+void Quaternion::ToAngleAxis(float* angle, VECTOR* axis)
+{
+	// クォータニオンの正規化
+	if (abs(this->w) > 1.0f)
+	{
+		this->Normalize();
+	}
+
+	// 回転角を計算
+	*angle = 2.0f * acosf((float)this->w); // angle
+
+	// 回転角が極めて小さい場合は0とする
+	if (x == 0 && y == 0 && z == 0)
+	{
+		*angle = 0.0f;
+	}
+
+	// 回転軸を計算
+	float den = sqrtf(1.0f - (float)(this->w * this->w));
+	if (den > 0.0001f)
+	{
+		// 軸を正規化
+		auto v = this->xyz();
+		axis->x = v.x / den;
+		axis->y = v.y / den;
+		axis->z = v.z / den;
+	}
+	else
+	{
+		// 角度が0の場合は任意の軸を設定
+		// （この場合、回転がないため軸は意味を持たない）
+		*axis = { 1.0f, 0.0f, 0.0f };
+	}
+}
+
+// スカラー倍のオーバーロード（非const版）
+Quaternion Quaternion::operator*(float& f) {
+	return Quaternion(w * f, x * f, y * f, z * f);
+}
+
+// スカラー倍のオーバーロード（const版）
+const Quaternion Quaternion::operator*(const float& f) {
+	return Quaternion(w * f, x * f, y * f, z * f);
+}
+
+// クォータニオン加算のオーバーロード（非const版）
+Quaternion Quaternion::operator+(Quaternion& rhs) {
+	return Quaternion(w + rhs.w, x + rhs.x, y + rhs.y, z + rhs.z);
+}
+
+// クォータニオン加算のオーバーロード（const版）
+const Quaternion Quaternion::operator+(const Quaternion& rhs) {
+	return Quaternion(w + rhs.w, x + rhs.x, y + rhs.y, z + rhs.z);
+}

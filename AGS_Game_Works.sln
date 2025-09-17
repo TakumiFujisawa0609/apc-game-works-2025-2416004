@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AGS_Game_Works", "AGS_Game_Works.vcxproj", "{81313D16-66BA-4A12-952E-BF9E23D62C09}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Debug|x64.ActiveCfg = Debug|x64
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Debug|x64.Build.0 = Debug|x64
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Debug|x86.ActiveCfg = Debug|Win32
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Debug|x86.Build.0 = Debug|Win32
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Release|x64.ActiveCfg = Release|x64
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Release|x64.Build.0 = Release|x64
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Release|x86.ActiveCfg = Release|Win32
+		{81313D16-66BA-4A12-952E-BF9E23D62C09}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {17A13E6B-23C1-4E0C-8F68-C51C118CCF8B}
+	EndGlobalSection
+EndGlobal
