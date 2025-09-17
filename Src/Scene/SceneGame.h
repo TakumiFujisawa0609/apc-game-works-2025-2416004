@@ -7,10 +7,7 @@
 
 class Grid;
 class Player;
-class InventoryUI;
-class StageManager;
 class DateTimeManager;
-class ItemPickupUI;
 
 
 class SceneGame : public SceneBase
@@ -43,19 +40,8 @@ private:
 	//プレイヤー
 	std::shared_ptr<Player> player_;
 
-	//アイテム入手UI
-	std::shared_ptr<ItemPickupUI> itemPickup_;
-
-
-
 	//グリッド線
 	Grid* grid_;
-
-	//インベントリUI
-	InventoryUI* inventoryUI_;
-
-	//ステージマネージャー
-	StageManager* stageManager_;
 
 	//日数
 	DateTimeManager* dateTimeManager_;

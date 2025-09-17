@@ -5,8 +5,6 @@
 
 #include "../../Manager/System/Collision.h"
 #include "../../Utility/Utility.h"
-#include "../../Object/GuildObject/BulletinBoard.h"
-#include "../PlayerStop.h"
 
 CollisionManager* CollisionManager::instance_ = nullptr;
 

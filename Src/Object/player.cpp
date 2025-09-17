@@ -2,8 +2,8 @@
 #include "../Utility/Utility.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/SceneManager.h"
+#include "../Manager/System/CollisionManager.h"]
 #include "../Object/Common/AnimationController.h"
-#include "../Object/Manager/CollisionManager.h"
 #include "../Manager/Generic/ResourceManager.h"
 #include"player.h"
 

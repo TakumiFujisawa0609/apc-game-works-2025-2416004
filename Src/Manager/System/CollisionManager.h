@@ -4,8 +4,8 @@
 #include <vector>
 #include <memory>
 
-#include "../Interact/HitObject.h"
-#include "../NullHitObject.h"
+#include "../../Object/Interact/HitObject.h"
+#include "../../Object/NullHitObject.h"
 
 class Player;
 

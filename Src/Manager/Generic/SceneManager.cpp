@@ -12,7 +12,7 @@
 #include "ResourceManager.h"
 #include "../System/Collision.h"
 #include "../Decoration/SoundManager.h"
-#include "../../Object/Manager/CollisionManager.h"
+#include "../System/CollisionManager.h"
 #include "../System/TimeManager.h"
 #include "Camera.h"
 

@@ -7,8 +7,6 @@
 #include "Manager/Generic/ResourceManager.h"
 #include "Manager/Generic/InputManager.h"
 #include "Manager/Generic/SceneManager.h"
-#include "Object/Manager/AlchemyManager.h"
-#include "DrawUI/SceneUI/QuestUI.h"
 #include "DrawUI/Font.h"
 #include "Fps/FpsControll.h"
 #include "DrawUI/SceneUI/PauseMenu.h"
@@ -80,12 +78,6 @@ void Application::Init(void)
 	// シーン管理初期化
 	SceneManager::CreateInstance();
 
-	//錬金システムの初期化
-	AlchemyManager::CreateInstance();
-
-	//QuestUI初期化を追加
-	QuestUI::CreateInstance();
-
 	//フォントの初期化
 	Font::CreateInstance();
 
@@ -124,6 +116,8 @@ void Application::Run(void)
 		Sleep(1);
 
 		fps_->FpsControll_Update();
+
+		isActiveUI_ = false;
 
 		// --- ESCキーでポーズ表示 ---
 		if (isActiveUI_ == false)
@@ -166,7 +160,6 @@ void Application::Run(void)
 		{
 			// 通常ゲーム処理
 			sceneManager.Update();
-			QuestUI::GetInstance().Update();
 
 			auto scene = dynamic_cast<SceneTitle*>(sceneManager.GetScene());
 			if (scene && scene->IsExitRequested())
@@ -197,10 +190,7 @@ void Application::Destroy(void)
 	InputManager::GetInstance().Destroy();
 	ResourceManager::GetInstance().Destroy();
 	SceneManager::GetInstance().Destroy();
-	AlchemyManager::GetInstance().Destroy();
 	Font::GetInstance().Destroy();
-	// QuestUI終了処理
-	QuestUI::Destroy();
 
 	EffectManager::GetInstance().Destroy();
 
