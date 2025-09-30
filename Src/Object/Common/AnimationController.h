@@ -1,44 +1,91 @@
 #pragma once
 
-#include <string>
 #include <map>
+#include <string>
 
 class AnimationController
 {
 public:
-    enum class Mode {
-        Internal,
-        External
-    };
 
-    struct Animation {
-        int model = -1;         // 外部モデル（内部アニメの場合は -1）
-        int attachNo = -1;      // アタッチ番号
-        int animIndex = 0;      // アニメインデックス（内部用）
-        float speed = 1.0f;
-        float totalTime = 0.0f;
-        float step = 0.0f;
-        Mode mode = Mode::Internal;
-    };
+	//アニメモード
+	enum class ANIM_MODE
+	{
+		INTERNAL,    //内部
 
-    AnimationController(int modelId);
-    ~AnimationController(void);
+		EXTERNAL,    //外部
+	};
 
-    void AddInternal(int type, int animIndex, float speed);
-    void AddExternal(int type, const std::string& path, float speed);
+	//アニメーションデータ
+	struct AnimData
+	{
+		int model = -1;									 //モデルID
 
-    void Play(int type, bool isLoop = true);
-    void Update(void);
-    bool IsEnd(void) const;
-    int GetPlayType(void) const;
-    void Release(void);
+		int attachNo = -1;								 //アタッチ番号
+
+		int animIndex = 0;								 //アニメーションインデックス
+
+		float speed = 1.0f;								 //再生速度
+
+		float totalTime = 0.0f;							 //アニメーションの総時間
+
+		float step = 0.0f;								 //アニメーションの進行時間
+
+		ANIM_MODE mode = ANIM_MODE::INTERNAL;			 //アニメーションモード
+	};
+
+	//コンストラクタ
+	AnimationController(int modelId);
+
+	//デストラクタ
+	~AnimationController(void);
+
+	//内部アニメーションの追加
+	void AddInternal(int type, int animIndex, float speed);
+
+	//外部アニメーションの追加
+	void AddExternal(int type, const std::string& filePath, float speed);
+
+	//アニメーションの再生
+	void Play(int type, bool isLoop, float blendTime);
+
+	//アニメーションの更新
+	void Update(void);
+
+	//アニメーションの終了判定
+	bool IsEnd(void) const;
+
+	//アニメーションの再生タイプを取得
+	int GetPlayType(void) const;
+
+	//アニメーションの解放
+	void Release(void);
 
 private:
-    void Add(int type, Animation anim);
 
-    int modelId_;
-    std::map<int, Animation> animations_;
-    Animation playAnim_;
-    int playType_;
-    bool isLoop_;
+	//アニメーションの追加
+	void Add(int type, AnimData anim);
+
+	//アニメーションID
+	int modeId_;
+
+	//アニメーションデータ
+	std::map<int, AnimData> animations_;
+
+	//再生中のアニメーションタイプ
+	int playType_;
+
+	//前回のアニメーションタイプ
+	int prevType_;
+
+	//ブレンド時間
+	float blendTIme_;
+
+	//ブレンドタイマー
+	float blendTimer_;
+
+	//ループするかどうか
+	bool isLoop_;
+
+
 };
+

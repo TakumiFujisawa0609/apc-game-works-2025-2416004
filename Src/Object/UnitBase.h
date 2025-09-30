@@ -9,78 +9,92 @@
 class UnitBase
 {
 public:
-	//列挙型
-	//アニメーション
+
+	//アニメーション別
 	enum class ANIM
 	{
 		NONE,
-		IDLE,	//待機
-		WALK,	//歩き
+		IDEL,
+		WALK,
 	};
 
 	//コンストラクタ
-	UnitBase();
+	UnitBase(void);
+
 	//デストラクタ
-	virtual ~UnitBase() = 0;
+	virtual ~UnitBase(void);
 
 	//初期化
 	virtual void Init(void) = 0;
 
-	//更新
-	virtual void Update(void) = 0;
+	//更新処理
+	virtual void Update(void);
 
-	//描画
-	virtual void Draw(void) = 0;
+	//描画処理
+	virtual void Draw(void) const;
 
-	//解放
+	//解放処理
 	virtual void Release(void) = 0;
 
 	//モデル情報
-	const Transform& GetTransform(void) { return trans_; }
+	const Transform& GetTransform(void) const;
 
-	//位置
-	const VECTOR& GetPos(void)const { return trans_.pos; }
-	//角度
-	const VECTOR& GetRot(void)const { return trans_.rot; }
-	//大きさ
-	const VECTOR& GetScl(void)const { return trans_.scl; }
+	//座標を取得
+	const VECTOR& GetPos(void) const;
+
+	//座標を設定
+	void SetPos(const VECTOR& pos);
+
+	//回転を取得
+	const VECTOR& GetRot(void) const;
+
+	//回転を設定
+	void SetRot(const VECTOR& rot);
+
+	//スケールを取得
+	const VECTOR& GetScl(void) const;
+
+	//スケールを設定
+	void SetScl(const VECTOR& scl);
+
 	//前座標
-	const VECTOR& GetPrePos(void)const { return prePos_; }
+	const VECTOR& GetPrePos(void) const;
 
-	//半径
-	const float GetRadius(void)const { return radius_; }
+	//半径の取得
+	float GetRadius(void) const;
 
-	//位置
-	void SetPos(const VECTOR& _pos) { trans_.pos = _pos; }
+	//半径の設定
+	void SetRadius(float r);
 
-	/// <summary>
-	/// 回転処理
-	/// </summary>
-	/// <param name="_deg">回転する角度(デグリー角)</param>
-	/// <param name="_axis">回転方向</param>
-	void Turn(const float _deg, const VECTOR& _axis);
+	//移動ベクトルの設定
+	void SetMovePow(const VECTOR& pow);
 
-protected:
+	//移動ベクトルの取得
+	const VECTOR& GetMovePow(void) const;
 
-	//モデルの情報
+	//回転(クォータニオン)
+	void Turn(float deg, const VECTOR& axis);
+
+	//アニメーション制御
+	void PlayAnim(ANIM aanimType, bool loop);
+
+	//アニメーションの初期化
+	void InitAnimaiton(void);
+
+private:
+
+	//モデル情報
 	Transform trans_;
 
-	//前座標
+	//座標
 	VECTOR prePos_;
 
 	//半径
 	float radius_;
 
-	//速度
+	//移動速度
 	float speed_;
 
-	//移動量
+	//移動力
 	VECTOR movePow_;
-
-	//アニメーション関係
-	std::unique_ptr<AnimationController> anim_;		//アニメーション制御
-
-	//アニメーションリセット
-	virtual void InitAnimation(void);
 };
-
