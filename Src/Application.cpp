@@ -44,12 +44,12 @@ Application& Application::GetInstance(void)
 void Application::Init(void)
 {
 	//アプリケーションの初期設定
-	SetWindowText("アルケミストライフ");
+	SetWindowText("Fly");
 	
 	//ウィンドウのサイズ
 	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SZIE_Y, 32);
 
-	ChangeWindowMode(false);
+	ChangeWindowMode(true);
 
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);
@@ -107,6 +107,8 @@ void Application::Run(void)
 
 	while (ProcessMessage() == 0)
 	{
+		if (sceneManager.GetGameEnd()) break;
+
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -152,6 +154,7 @@ void Application::Run(void)
 					break;
 
 				case 3: // ゲーム終了
+					sceneManager.GameEnd();
 					return;
 				}
 			}
@@ -161,11 +164,11 @@ void Application::Run(void)
 			// 通常ゲーム処理
 			sceneManager.Update();
 
-			auto scene = dynamic_cast<SceneTitle*>(sceneManager.GetScene());
-			if (scene && scene->IsExitRequested())
+			//auto scene = dynamic_cast<SceneTitle*>(sceneManager.GetScene());
+			/*if (scene && scene->IsExitRequested())
 			{
 				return;
-			}
+			}*/
 		}
 		// エフェクト更新
 		UpdateEffekseer3D();
@@ -189,7 +192,7 @@ void Application::Destroy(void)
 {
 	InputManager::GetInstance().Destroy();
 	ResourceManager::GetInstance().Destroy();
-	SceneManager::GetInstance().Destroy();
+	SceneManager::GetInstance().DestroyInstance();
 	Font::GetInstance().Destroy();
 
 	EffectManager::GetInstance().Destroy();

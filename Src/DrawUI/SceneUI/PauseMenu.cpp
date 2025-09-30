@@ -2,6 +2,7 @@
 #include <DxLib.h>
 #include "../../Manager/Generic/InputManager.h"
 #include "../../Manager/Decoration/SoundManager.h"
+#include "../../Manager/Generic/SceneManager.h"
 #include "../../DrawUI/Font.h"
 #include "../../Application.h"
 
@@ -101,7 +102,10 @@ void PauseMenu::Update(void)
                 mode_ = MODE_POUSE::CONTROL;
             }
             else if (currentIndex_ == 3) {      // ゲーム終了
-                decisionMade_ = true;
+                SceneManager::GetInstance().GameEnd();
+               
+                // ポーズメニューを非表示に
+                visible_ = false; 
             }
         }
     }

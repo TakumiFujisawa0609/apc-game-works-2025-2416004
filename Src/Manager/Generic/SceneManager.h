@@ -3,12 +3,11 @@
 #include<chrono>
 #include<vector>
 #include<memory>
+#include <list>
 
 #include"../../Application.h"
-#include"../../Common/Fader.h"
 
 class SceneBase;
-class Fader;
 class Camera;
 
 class SceneManager
@@ -39,6 +38,9 @@ public:
 	//インスタンスの取得
 	static SceneManager& GetInstance(void);
 
+	//インスタンスの破棄
+	static void DestroyInstance(void);
+
 	//初期化処理
 	void Init(void);
 
@@ -51,19 +53,32 @@ public:
 	//描画処理
 	void Draw(void);
 
-	//リソースの破棄
-	void Destroy(void);
+	//リソースの解放
+	void Release(void);
 
-	//状態遷移
-	void ChangeScene(SCENE_ID nextId);
+	//シーン操作
+	void ChangeScene(std::shared_ptr<SceneBase> scene);
+
+	//シーンの追加
+	void PushScene(std::shared_ptr<SceneBase> scene);
+
+	//シーンの削除
+	void PopScene(void);
+
+	//シーンの強制変更
+	void JumpScene(std::shared_ptr<SceneBase> scene);
 
 	// シーンIDの取得
-	SCENE_ID GetSceneID(void);
+	SCENE_ID GetSceneID(void) const;
+
+	//ゲームの終了
+	void GameEnd(void);
+
+	//ゲーム終了の取得
+	bool GetGameEnd(void) const;
 
 	//デルタタイムの取得
 	float GetDeltaTime(void) const;
-
-	SceneBase* GetScene(void) const;
 
 	//カメラの取得
 	std::shared_ptr<Camera> GetCamera(void) const;
@@ -73,14 +88,14 @@ private:
 	//静的インスタンス
 	static SceneManager* instance_;
 
-	SCENE_ID sceneId_;		//現在のシーン
-	SCENE_ID waitSceneId_;	//次のシーン
+	//シーンリスト
+	std::list<std::shared_ptr<SceneBase>> scenes_;
 
-	//フェード
-	std::unique_ptr<Fader> fader_;
+	//シーンID
+	SCENE_ID sceneId_;
 
-	//各種シーン
-	SceneBase* scene_;
+	//ゲーム終了
+	bool isGameEnd_;
 
 	//カメラ
 	std::shared_ptr<Camera> camera_;
@@ -95,22 +110,17 @@ private:
 	//デフォルトコンストラクタをpriateにして、
 	//外部から生成できないようにする
 	SceneManager(void);
+	~SceneManager(void);
 
 	//コピーコンストラクタ
-	SceneManager(const SceneManager&);
-
-	//デストラクタも同様
-	~SceneManager(void) = default;
-
-
+	SceneManager(const SceneManager&) = delete;
+	SceneManager& operator=(const SceneManager&) = delete;
+	SceneManager(SceneManager&&) = delete;
+	SceneManager& operator=(SceneManager&&) = delete;
 
 	//デルタタイムをリセットする
 	void ResetDeltaTime(void);
 
-	//シーン遷移
-	void DoChangeScene(SCENE_ID sceneId);
 
-	//フェード
-	void Fade(void);
 };
 

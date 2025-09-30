@@ -4,7 +4,6 @@
 
 #include"SceneBase.h"
 
-class SceneUi;
 
 class SceneGameClear : public SceneBase
 {
@@ -29,9 +28,6 @@ public:
 	void Release(void)override;
 
 private:
-
-	//UI
-	std::unique_ptr<SceneUi> ui_;
 
 	//描画処理(デバッグ)
 	void DrawDebug(void);

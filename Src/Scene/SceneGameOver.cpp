@@ -5,11 +5,8 @@
 #include"../Manager/Generic/Resource.h"
 #include"../Manager/Generic/ResourceManager.h"
 #include"../Manager/Generic/SceneManager.h"
-#include"../Manager/Generic/SceneManager.h"
 #include"../Manager/Generic/InputManager.h"
 #include"../Manager/Decoration/SoundManager.h"
-
-#include"../DrawUI/SceneUI/SceneUI.h"
 
 SceneGameOver::SceneGameOver(void)
 {
@@ -41,7 +38,7 @@ void SceneGameOver::Update(void)
 		sound.Stop(SoundManager::SOUND::BGM_TITLE);
 
 		//ƒV[ƒ“‘JˆÚ
-		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMECLEAR);
+		//SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAMECLEAR);
 
 		//ˆ—I—¹
 		return;

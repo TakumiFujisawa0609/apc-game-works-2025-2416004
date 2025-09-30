@@ -2,9 +2,9 @@
 
 #include <memory>
 #include "SceneBase.h"
+#include "../DrawUI/SceneUI/SceneUi.h"
 
 class Grid;
-class SceneUi;
 
 class SceneTitle : public SceneBase
 {
@@ -21,6 +21,10 @@ public:
     void Release(void) override;
 
     bool IsExitRequested(void) const;
+
+    void Load(void) override;
+    void EndLoad(void) override;
+
 
 private:
     Grid* grid_;

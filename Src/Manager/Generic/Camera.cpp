@@ -21,6 +21,8 @@ Camera::Camera(void)
 
 	//回転
 	rot_ = Quaternion::Identity();
+
+	followTransform_ = nullptr;
 }
 
 Camera::~Camera(void)
@@ -102,6 +104,8 @@ void Camera::SetBeforeDrawFree(void)
 //追従カメラ
 void Camera::SetBeforeDrawFollow(void)
 {
+	if (!followTransform_) return;
+
 	//追従対象の位置
 	VECTOR followPos = followTransform_->pos;
 
@@ -127,6 +131,7 @@ void Camera::SetBeforeDrawFollow(void)
 //ばね付き追従カメラ
 void Camera::SetBeforeDrawFollowSpring(void)
 {
+	if (!followTransform_) return;
 	auto& ins = InputManager::GetInstance();
 
 	//Cキー押下でカメラを揺らす

@@ -30,3 +30,4 @@ private:
     std::vector<FontData> fontList_;
     int currentIndex_;  // 現在選択中のインデックス
 };
+

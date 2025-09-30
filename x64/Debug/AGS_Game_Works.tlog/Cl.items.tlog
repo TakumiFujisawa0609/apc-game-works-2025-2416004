@@ -1,13 +1,12 @@
+D:\AGSdeta\AGS_Game_Works\Src\Manager\System\Loading.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Loading.obj
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\SceneUi.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\SceneUi.obj
 D:\AGSdeta\AGS_Game_Works\Src\Application.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Application.obj
 D:\AGSdeta\AGS_Game_Works\Src\Common\Easing.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Easing.obj
-D:\AGSdeta\AGS_Game_Works\Src\Common\Fader.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Fader.obj
-D:\AGSdeta\AGS_Game_Works\Src\Common\ImageFader.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\ImageFader.obj
 D:\AGSdeta\AGS_Game_Works\Src\Common\IntVector3.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\IntVector3.obj
 D:\AGSdeta\AGS_Game_Works\Src\Common\Quaternion.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Quaternion.obj
 D:\AGSdeta\AGS_Game_Works\Src\Common\Vector2.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Vector2.obj
 D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Font.obj
 D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\PauseMenu.obj
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\SceneUI.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\SceneUI.obj
 D:\AGSdeta\AGS_Game_Works\Src\Fps\FpsControll.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\FpsControll.obj
 D:\AGSdeta\AGS_Game_Works\Src\main.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\main.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Decoration\EffectManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\EffectManager.obj

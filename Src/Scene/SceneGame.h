@@ -6,8 +6,6 @@
 #include "../Application.h"
 
 class Grid;
-class Player;
-class DateTimeManager;
 
 
 class SceneGame : public SceneBase
@@ -32,19 +30,21 @@ public:
 	//解放処理
 	void Release(void)override;
 
+	//ロード
+	void Load(void) override;
+
+	//ロード完了
+	void EndLoad(void) override;
+
 private:
 
 	//ステージ
 
 	
 	//プレイヤー
-	std::shared_ptr<Player> player_;
 
 	//グリッド線
 	Grid* grid_;
-
-	//日数
-	DateTimeManager* dateTimeManager_;
 
 	bool isStartFont_;
 

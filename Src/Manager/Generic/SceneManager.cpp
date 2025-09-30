@@ -1,20 +1,17 @@
 #include "SceneManager.h"
 
-#include <chrono>
 #include <DxLib.h>
-#include<EffekseerForDXLib.h>
 #include<cassert>
 
+#include "../../Scene/SceneBase.h" 
 #include "../../Scene/SceneTitle.h"
-#include "../../Scene/SceneGame.h"
-#include "../../Scene/SceneGameOver.h"
-#include "../../Scene/SceneGameClear.h"
 #include "ResourceManager.h"
 #include "../System/Collision.h"
 #include "../Decoration/SoundManager.h"
 #include "../System/CollisionManager.h"
 #include "../System/TimeManager.h"
 #include "Camera.h"
+#include "../System/Loading.h"
 
 SceneManager* SceneManager::instance_ = nullptr;
 
@@ -32,6 +29,35 @@ SceneManager& SceneManager::GetInstance(void)
 	return *instance_;
 }
 
+void SceneManager::DestroyInstance(void)
+{
+	if (instance_)
+	{
+		delete instance_;
+		instance_ = nullptr;
+	}
+}
+
+SceneManager::SceneManager(void)
+{
+	sceneId_ = SCENE_ID::NONE;
+
+	isGameEnd_ = false;
+
+	isSceneChanging_ = false;
+
+	deltaTime_ = 1.0f / 60.0f;
+
+	preTime_ = std::chrono::system_clock::now();
+
+	camera_ = std::make_shared<Camera>();
+}
+
+SceneManager::~SceneManager(void)
+{
+	Release();
+}
+
 void SceneManager::Init(void)
 {
 	//各マネジャーの生成
@@ -40,32 +66,17 @@ void SceneManager::Init(void)
 	SoundManager::CreateInstance();
 	TimeManager::CreateInstance();
 	CollisionManager::CreateInstance();
+	Loading::CreateInstance();
 
-	sceneId_ = SCENE_ID::TITLE;
-	waitSceneId_ = SCENE_ID::NONE;
-
-	fader_ = std::make_unique<Fader>();
-	fader_->Init();
 
 	//カメラ
-	camera_ = std::make_unique<Camera>();
 	camera_->Init();
-
-	//シーン
-	scene_ = new SceneTitle();
-	scene_->Init();
-
-	isSceneChanging_ = false;
-
-	//デルタタイム
-
-	preTime_ = std::chrono::system_clock::now();
 
 	//3D用の初期化処理
 	Init3D();
 
 	//初期シーンの設定
-	DoChangeScene(SCENE_ID::TITLE);
+	ChangeScene(std::make_shared<SceneTitle>());
 }
 
 void SceneManager::Init3D(void)
@@ -99,85 +110,160 @@ void SceneManager::Init3D(void)
 	SetFogColor(5, 5, 5);
 	SetFogStartEnd(10000.0f, 20000.0f);
 }
+// ChangeScene は古いシーンを破棄して新しいシーンに切り替える
+void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
+{
+	// 古いシーンを解放
+	for (auto& s : scenes_)
+		s->Release();
+	scenes_.clear();
+
+	scenes_.push_back(scene);
+	isSceneChanging_ = true;
+
+	Loading::GetInstance()->StartAsyncLoad([scene]() {
+		scene->Load();
+		});
+}
+
+// PushScene は現在のシーンを保持したまま、新しいシーンを上に積む
+void SceneManager::PushScene(std::shared_ptr<SceneBase> scene)
+{
+	scenes_.push_back(scene);
+	isSceneChanging_ = true;
+
+	Loading::GetInstance()->StartAsyncLoad([scene]() {
+		scene->Load();
+		});
+}
+
+// PopScene は上に積んだシーンを取り除く
+void SceneManager::PopScene()
+{
+	if (scenes_.size() > 1)
+	{
+		scenes_.back()->Release();  // 解放する場合は必要
+		scenes_.pop_back();
+	}
+}
+
+void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
+{
+	scenes_.clear();
+
+	isSceneChanging_ = true;
+
+	scenes_.push_back(scene);
+
+	Loading::GetInstance()->StartAsyncLoad([scene]()
+		{
+			scene->Load();
+		});
+}
+
 
 void SceneManager::Update(void)
 {
+	if (scenes_.empty()) return;
+
 	TimeManager::GetInstance().Update();
 
-	if (scene_ == nullptr)
-	{
-		return;
-	}
-
-	//デルタタイム
+	// デルタタイム
 	auto nowTime = std::chrono::system_clock::now();
 	deltaTime_ = static_cast<float>(std::chrono::duration_cast<std::chrono::nanoseconds>(nowTime - preTime_).count() / 1000000000.0);
 	preTime_ = nowTime;
 
-	fader_ -> Update();
+	// scenes_.back() をコピーして安全に扱う
+	std::shared_ptr<SceneBase> current = scenes_.back();
+
+	// 非同期ロード
 	if (isSceneChanging_)
 	{
-		Fade();
+		Loading::GetInstance()->Update();
+
+		if (!Loading::GetInstance()->IsLoading())
+		{
+			current->EndLoad();
+			isSceneChanging_ = false;
+		}
 	}
 	else
 	{
-		scene_->Update();
+		if (current) current->Update();
 	}
 
-	camera_->Update();
+	if (camera_) camera_->Update();
+
+	// フラグチェック後に終了処理
+	if (isGameEnd_)
+	{
+		scenes_.clear();
+		Release();
+	}
 }
 
 void SceneManager::Draw(void)
 {
-	//描画先グラフィック領域の指定
-	//(3D描画でしようするカメラの設定などがリセットされる)
+	if (scenes_.empty()) return;
+
+	// 描画先グラフィック領域の指定
 	SetDrawScreen(DX_SCREEN_BACK);
-	
-	//フロントバッファの画像を消去
+
+	// バックバッファのクリア
 	ClearDrawScreen();
-	
-	//カメラの設定
-	camera_->SetBeforeDraw();
 
-	//ゲーム内容描画
-	//描画
-	scene_->Draw();
+	// カメラの設定
+	if (camera_) camera_->SetBeforeDraw();
 
-	//暗転・明転
-	fader_->Draw();
+	// シーン描画（コピーを使って安全）
+	std::vector<std::shared_ptr<SceneBase>> scenesCopy(scenes_.begin(), scenes_.end());
+	for (auto& scene : scenesCopy)
+	{
+		if (scene) scene->Draw();
+	}
 
-	//カメラ座標
-	camera_->Draw();
+	if (camera_) camera_->Draw();
 }
 
-void SceneManager::Destroy(void)
+void SceneManager::Release(void)
 {
-	scene_->Release();
-	delete scene_;
+	// 非同期ロード終了待ち
+	if (Loading::GetInstance()->IsLoading()) 
+	{
+		while (Loading::GetInstance()->IsLoading())
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	}
+
+	for (auto& scene : scenes_)
+	{
+		scene->Release();
+	}
+
+	scenes_.clear();
+
+	camera_.reset();
 
 	SoundManager::GetInstance().Destroy();
-
 	CollisionManager::GetInstance().Destroy();
-
 	TimeManager::GetInstance().Destroy();
-
-	delete instance_;
+	Loading::GetInstance()->DestroyInstance();
 }
 
-void SceneManager::ChangeScene(SCENE_ID nextId)
-{
-	// フェード処理が終わってからシーンを変える場合もあるため、
-	// 遷移先シーンをメンバ変数に保持
-	waitSceneId_ = nextId;
-
-	//フェードアウト(暗転)を開始する
-	fader_->SetFade(Fader::STATE::FADE_OUT);
-	isSceneChanging_ = true;
-}
-
-SceneManager::SCENE_ID SceneManager::GetSceneID(void)
+SceneManager::SCENE_ID SceneManager::GetSceneID(void) const
 {
 	return sceneId_;
+}
+
+void SceneManager::GameEnd(void)
+{
+	isGameEnd_ = true;
+}
+
+bool SceneManager::GetGameEnd(void) const
+{
+	return isGameEnd_;
 }
 
 float SceneManager::GetDeltaTime(void)const
@@ -185,29 +271,9 @@ float SceneManager::GetDeltaTime(void)const
 	return deltaTime_;
 }
 
-SceneBase* SceneManager::GetScene(void) const
-{
-	return scene_;
-}
-
 std::shared_ptr<Camera> SceneManager::GetCamera(void) const
 {
 	return camera_;
-}
-
-SceneManager::SceneManager(void)
-{
-
-	sceneId_ = SCENE_ID::NONE;
-	waitSceneId_ = SCENE_ID::NONE;
-
-	scene_ = nullptr;
-	fader_ = nullptr;
-
-	isSceneChanging_ = false;
-
-	//デルタタイム
-	deltaTime_ = 1.0f / 60.0f;
 }
 
 void SceneManager::ResetDeltaTime(void)
@@ -215,80 +281,3 @@ void SceneManager::ResetDeltaTime(void)
 	deltaTime_ = 1.0f / 60.0f;
 	preTime_ = std::chrono::system_clock::now();
 }
-
-void SceneManager::DoChangeScene(SCENE_ID sceneId)
-{
-	auto& resM = ResourceManager::GetInstance();
-
-	//リソースの解放
-	resM.Release();
-	SoundManager::GetInstance().Release();
-
-	//シーンを変更する
-	sceneId_ = sceneId;
-
-	//現在のシーンを解放
-	if (scene_ != nullptr)
-	{
-		scene_->Release();
-		delete scene_;
-	}
-
-	switch (sceneId_)
-	{
-	case SceneManager::SCENE_ID::TITLE:
-		scene_ = new SceneTitle();
-		resM.InitTitle();
-		break;
-
-	case SceneManager::SCENE_ID::GAME:
-		scene_ = new SceneGame();
-		resM.InitGame();
-		break;
-
-	case SceneManager::SCENE_ID::GAMECLEAR:
-		scene_ = new SceneGameClear();
-		resM.InitGameClear();
-		break;
-
-	case SceneManager::SCENE_ID::GAMEOVER:
-		scene_ = new SceneGameOver();
-		resM.InitGameOver();
-		break;
-	}
-
-	scene_->Init();
-	
-
-	ResetDeltaTime();
-
-	waitSceneId_ = SCENE_ID::NONE;
-}
-
-void SceneManager::Fade(void)
-{
-	Fader::STATE fState = fader_->GetState();
-	switch (fState)
-	{
-	case Fader::STATE::FADE_IN:
-		// 明転中
-		if (fader_->IsEnd())
-		{
-			// 明転が終了したら、フェード処理終了
-			fader_->SetFade(Fader::STATE::NONE);
-			isSceneChanging_ = false;
-		}
-		break;
-	case Fader::STATE::FADE_OUT:
-		// 暗転中
-		if (fader_->IsEnd())
-		{
-			// 完全に暗転してからシーン遷移
-			DoChangeScene(waitSceneId_);
-			// 暗転から明転へ
-			fader_->SetFade(Fader::STATE::FADE_IN);
-		}
-		break;
-	}
-}
-

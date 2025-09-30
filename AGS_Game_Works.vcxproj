@@ -143,16 +143,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Manager\System\Loading.h" />
+    <ClInclude Include="Src\DrawUI\SceneUI\SceneUi.h" />
     <ClInclude Include="Src\Application.h" />
     <ClInclude Include="Src\Common\Easing.h" />
-    <ClInclude Include="Src\Common\Fader.h" />
-    <ClInclude Include="Src\Common\ImageFader.h" />
     <ClInclude Include="Src\Common\IntVector3.h" />
     <ClInclude Include="Src\Common\Quaternion.h" />
     <ClInclude Include="Src\Common\Vector2.h" />
     <ClInclude Include="Src\DrawUI\Font.h" />
     <ClInclude Include="Src\DrawUI\SceneUI\PauseMenu.h" />
-    <ClInclude Include="Src\DrawUI\SceneUI\SceneUI.h" />
     <ClInclude Include="Src\Fps\FpsControll.h" />
     <ClInclude Include="Src\main.h" />
     <ClInclude Include="Src\Manager\Decoration\EffectManager.h" />
@@ -181,16 +180,15 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Manager\System\Loading.cpp" />
+    <ClCompile Include="Src\DrawUI\SceneUI\SceneUi.cpp" />
     <ClCompile Include="Src\Application.cpp" />
     <ClCompile Include="Src\Common\Easing.cpp" />
-    <ClCompile Include="Src\Common\Fader.cpp" />
-    <ClCompile Include="Src\Common\ImageFader.cpp" />
     <ClCompile Include="Src\Common\IntVector3.cpp" />
     <ClCompile Include="Src\Common\Quaternion.cpp" />
     <ClCompile Include="Src\Common\Vector2.cpp" />
     <ClCompile Include="Src\DrawUI\Font.cpp" />
     <ClCompile Include="Src\DrawUI\SceneUI\PauseMenu.cpp" />
-    <ClCompile Include="Src\DrawUI\SceneUI\SceneUI.cpp" />
     <ClCompile Include="Src\Fps\FpsControll.cpp" />
     <ClCompile Include="Src\main.cpp" />
     <ClCompile Include="Src\Manager\Decoration\EffectManager.cpp" />

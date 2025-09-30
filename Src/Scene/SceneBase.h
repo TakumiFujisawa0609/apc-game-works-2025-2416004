@@ -21,4 +21,16 @@ public:
 
 	//解放処理
 	virtual void Release(void) = 0;
+
+	//リソースロード開始
+	virtual void Load(void) = 0;
+
+	//ロード完了
+	virtual void EndLoad(void) = 0;
+
+	//ロード中か
+	bool IsLoading(void) const;
+
+private:
+	bool isLoading_;
 };

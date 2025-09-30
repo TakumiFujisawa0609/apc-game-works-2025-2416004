@@ -7,7 +7,6 @@
 #include"../Manager/Generic/SceneManager.h"
 #include"../Manager/Generic/InputManager.h"
 #include"../Manager/Decoration/SoundManager.h"
-#include"../DrawUI/SceneUI/SceneUI.h"
 
 SceneGameClear::SceneGameClear(void)
 {
@@ -15,9 +14,6 @@ SceneGameClear::SceneGameClear(void)
 
 void SceneGameClear::Init(void)
 {
-	//UI
-	ui_ = std::make_unique<SceneUi>();
-	ui_->AddCharctor("Spaceを押して開始");
 
 	//サウンド
 	auto& sound = SoundManager::GetInstance();
@@ -46,7 +42,7 @@ void SceneGameClear::Update(void)
 		sound.Stop(SoundManager::SOUND::BGM_TITLE);
 
 		//シーン遷移
-		SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::TITLE);
+		//SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::TITLE);
 
 		//処理終了
 		return;

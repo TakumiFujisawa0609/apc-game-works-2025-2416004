@@ -7,88 +7,94 @@
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/Generic/Camera.h"
-#include "../DrawUI/SceneUI/SceneUI.h"
+#include "../Scene/SceneGame.h"
 #include "../Object/Grid.h"
 #include "../Application.h"
 #include "../DrawUI/Font.h"
 
 SceneTitle::SceneTitle(void)
 {
-    logo_ = -1;
-    grid_ = nullptr;
-    isDecided_ = false;
-    blackAlpha_ = 0;
-    operationHandle_ = -1;
-    movieHandle_ = -1;
-	showBlackBackground_ = false;
-	playHandle_ = -1;
-	playHandle2_ = -1;
-	isPlay_ = false;
-    exitRequested_ = false;
-    howToPlayPage_ = 0;
+   logo_ = -1;
+   grid_ = nullptr;
+   isDecided_ = false;
+   blackAlpha_ = 0;
+   operationHandle_ = -1;
+   movieHandle_ = -1;
+   showBlackBackground_ = false;
+   playHandle_ = -1;
+   playHandle2_ = -1;
+   isPlay_ = false;
+   exitRequested_ = false;
+   howToPlayPage_ = 0;
+   atelierHandle_ = -1;
+   gardenHandle_ = -1;
+   guildHandle_ = -1;
+   inHowToPlayMenu_ = false;
+   pauseUiCount_ = 0;
 }
 
-void SceneTitle::Init(void)
+void SceneTitle::Load(void)
 {
+    // isLoading_ を true に
+    SceneBase::Load(); 
+
+    // BGM・SEロード
     
-    auto camera = SceneManager::GetInstance().GetCamera();
-    camera->ChangeMode(Camera::MODE::FREE);
 
+    // 音量調整
 
-    grid_ = new Grid();
-    grid_->Init();
+    // ロゴ・操作説明・再生用画像ロード
 
+    // その他画像
+
+    // 動画ロード
+   
+    // UI 初期化
     uiMain_ = std::make_unique<SceneUi>();
     uiMain_->AddCharctor("開始");
     uiMain_->AddCharctor("遊び方");
     uiMain_->AddCharctor("操作説明");
     uiMain_->AddCharctor("クレジット");
     uiMain_->AddCharctor("ゲーム終了");
+    uiMain_->SetCurrentIndex(0);
 
     uiHowToPlay_ = std::make_unique<SceneUi>();
     uiHowToPlay_->AddCharctor("目標について");
     uiHowToPlay_->AddCharctor("錬金について");
-    uiHowToPlay_->AddCharctor("アトリエについて");  // ★追加
-    uiHowToPlay_->AddCharctor("ギルドについて");    // ★追加
-    uiHowToPlay_->AddCharctor("ガーデンについて");  // ★追加
+    uiHowToPlay_->AddCharctor("アトリエについて");
+    uiHowToPlay_->AddCharctor("ギルドについて");
+    uiHowToPlay_->AddCharctor("ガーデンについて");
     uiHowToPlay_->AddCharctor("戻る");
+    uiHowToPlay_->SetCurrentIndex(0);
+}
 
+void SceneTitle::EndLoad(void)
+{
+    SceneBase::EndLoad();
+}
+
+void SceneTitle::Init(void)
+{
+    // --- カメラ設定 ---
+    auto camera = SceneManager::GetInstance().GetCamera();
+    camera->ChangeMode(Camera::MODE::FIXED_POINT);
+
+    // --- グリッド生成 ---
+    grid_ = new Grid();
+    grid_->Init();
+
+    // --- UI初期化 ---
     inHowToPlayMenu_ = false;
     howToPlayPage_ = 0;
-
-    auto& sound = SoundManager::GetInstance();
-    auto& res = ResourceManager::GetInstance();
-
-    sound.Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, res.Load(ResourceManager::SRC::BGM_TITLE).handleId_);
-    sound.Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_PUSH, res.Load(ResourceManager::SRC::SE_PUSH).handleId_);
-    sound.Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SELECT, res.Load(ResourceManager::SRC::SE_SELECT).handleId_);
-    sound.AdjustVolume(SoundManager::SOUND::BGM_TITLE, 40);
-    sound.AdjustVolume(SoundManager::SOUND::SE_PUSH, 20);
-    sound.AdjustVolume(SoundManager::SOUND::SE_SELECT, 30);
-
-    sound.Play(SoundManager::SOUND::BGM_TITLE);
-
-    movieHandle_ = LoadGraph((Application::PATH_MOVIE + "TitleMovie.mp4").c_str());
-    PlayMovieToGraph(movieHandle_, TRUE);
-    SetMovieVolumeToGraph(movieHandle_, 255);
-
-
-    logo_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::TYTLE_LOGO).handleId_;
-    operationHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::OPERATION).handleId_;
-	playHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::PLAY_GUIDE).handleId_;
-	playHandle2_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::PLAY_GUIDE2).handleId_;
-
-    atelierHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::ATREA).handleId_;
-    guildHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::GUILD).handleId_;
-    gardenHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::GARDEN).handleId_;
-
-	// 初期カーソル位置
-	uiMain_->SetCurrentIndex(0);
-	// 黒背景表示フラグ初期化
-	showBlackBackground_ = false;
+    showBlackBackground_ = false;
+    isDecided_ = false;
+    exitRequested_ = false;
     isPlay_ = true;
-
     pauseUiCount_ = PAUSE_UI_COUNT;
+
+    // UIはLoadで生成済みなので、ここで初期位置設定
+    if (uiMain_) uiMain_->SetCurrentIndex(0);
+    if (uiHowToPlay_) uiHowToPlay_->SetCurrentIndex(0);
 }
 
 void SceneTitle::Update(void)
@@ -138,14 +144,16 @@ void SceneTitle::Update(void)
             ui->SetCurrentIndex(currentIndex);
         }
 
-        if (input.IsTrgDown(KEY_INPUT_RETURN)) {
+        if (input.IsTrgDown(KEY_INPUT_RETURN)) 
+        {
             Application::GetInstance().SetActiveUI(true);
             int selected = ui->GetCurrentIndex();
-            if (selected == 0) {
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-                sound.Stop(SoundManager::SOUND::BGM_TITLE);
-                SceneManager::GetInstance().ChangeScene(SceneManager::SCENE_ID::GAME);
-                return;
+
+            if (selected == 0) 
+            {
+                // 非同期ロードの後にシーン切替
+                SceneManager::GetInstance().ChangeScene(std::make_shared<SceneGame>());
+                isDecided_ = true;
             }
             else if (selected == 1) { // 遊び方
                 sound.Play(SoundManager::SOUND::SE_PUSH);
@@ -270,14 +278,7 @@ void SceneTitle::Draw(void)
             {
                 auto& font = Font::GetInstance();
                 std::vector<std::string> lines = {
-                    "クレジット",
-                    "効果音ラボ: カーソル移動音2, キラッ2",
-                    "ニコニコ・コモンズ: キャンセル音 k45mm, 午後の庭園 kenapo",
-                    "BGM: Stream D (ju-nya)",
-                    "効果音工房: 決定音01, 決定音19",
-                    "ポケットサウンド: ファンファーレ",
-                    "魔王魂: 民族10",
-                    "H/MIX GALLERY: ホシノキセキ"
+                   
                 };
 
                 int color = GetColor(255, 255, 255);
