@@ -336,5 +336,5 @@ bool SceneTitle::IsExitRequested(void) const
 
 void SceneTitle::DrawDebug(void)
 {
-    // 必要に応じて
+
 }
