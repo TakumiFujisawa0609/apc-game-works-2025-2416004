@@ -53,7 +53,7 @@ void SceneGame::Init()
 {
 	// カメラ設定
 	auto camera = SceneManager::GetInstance().GetCamera();
-	camera->ChangeMode(Camera::MODE::FOLLOW);
+	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
 
 	// グリッド初期化
 	grid_ = new Grid();
@@ -65,7 +65,7 @@ void SceneGame::Init()
 
 	//プレイヤーの初期化
 	player_->Init();
-    camera->SetPos(camera->GetPos(), player_->GetPos());
+	camera->SetFollow(&player_->GetTransform());
 }
 
 void SceneGame::Update(void)

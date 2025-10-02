@@ -8,21 +8,77 @@
 #include "InputManager.h"
 #include "../../Object/Common/Transform.h"
 
-Camera::Camera(void)
-{
-	//モードの初期化
-	mode_ = MODE::NONE;
+Camera::Camera(void)  
+{  
+   // モードの初期化  
+   mode_ = MODE::NONE;  
 
-	//座標の初期化
-	pos_ = Utility::VECTOR_ZERO;
+   //currentMode_ の初期化
+   currentMode_ = MODE::NONE;   
 
-	//追従対象の座標
-	targetPos_ = Utility::VECTOR_ZERO;
+   // 座標の初期化  
+   pos_ = Utility::VECTOR_ZERO;
 
-	//回転
-	rot_ = Quaternion::Identity();
+   //defaultPos_ の初期化
+   defaultPos_ = Utility::VECTOR_ZERO;   
 
-	followTransform_ = nullptr;
+   // 追従対象の座標  
+   targetPos_ = Utility::VECTOR_ZERO;  
+
+   //ロックオン対象
+   lockonTarget_ = nullptr;
+
+   // 回転  
+   rot_ = Quaternion::Identity();  
+
+   followTransform_ = nullptr;  
+
+   // 左右回転  
+   yaw_ = CAMERA_YAW;  
+
+   // 上下回転  
+   pitch_ = CAMERA_PITCH;  
+
+   // 対象との距離  
+   distance_ = CAMERA_DISTANCE;  
+
+   // カメラの上方向  
+   cameraUp_ = { 0.0f, 1.0f, 0.0f };
+
+   // 移動関連の初期化  
+   moveDIr_ = Utility::VECTOR_ZERO;
+
+   //moveSpeed_ の初期化 
+   moveSpeed_ = 0.0f;  
+
+   // カメラ揺らし関連の初期化  
+   shakeDir_ = Utility::VECTOR_ZERO;
+   
+   // stepShake_ の初期化 
+   stepShake_ = 0.0f;  
+
+   // ライト関連の初期化  
+   spotLight_ = -1;
+
+   // 速度の初期化  
+   velocity_ = Utility::VECTOR_ZERO;
+
+   //マウス感度
+   sensitivity_ = DEFAULT_SENSITIVITY;
+
+   //x中央
+   centerX_ = Application::DEFA_SCREEN_SIZE_X / 2;
+
+   //y中央
+   centerY_ = Application::DEFA_SCREEN_SIZE_Y / 2;
+
+   //xの移動量
+   deltaX_ = 0;
+
+   //yの移動量
+   deltaY_ = 0;
+
+   offset_ = Utility::VECTOR_ZERO;
 }
 
 Camera::~Camera(void)
@@ -34,14 +90,36 @@ Camera::~Camera(void)
 void Camera::Init(void)
 {
 	//関数ポインタの設定
+
+	//何もない
 	setBeforeDrawMode_.emplace(MODE::NONE, std::bind(&Camera::SetBeforeDrawFollow, this));
+
+	//定点カメラ
 	setBeforeDrawMode_.emplace(MODE::FIXED_POINT, std::bind(&Camera::SetBeforeDrawFixedPoint, this));
+
+	//フリーカメラ
 	setBeforeDrawMode_.emplace(MODE::FREE, std::bind(&Camera::SetBeforeDrawFree, this));
+
+	//追従カメラ
 	setBeforeDrawMode_.emplace(MODE::FOLLOW, std::bind(&Camera::SetBeforeDrawFollow, this));
+
+	//ばね付きカメラ
 	setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
+
+	//追従対象カメラ
 	setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
+
+	//カメラ揺らし
 	setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
+
+	//マウス操作自由カメラ
 	setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
+
+	//TPS用マウスカメラ
+	setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
+
+	//ロックオンカメラ
+	setBeforeDrawMode_.emplace(MODE::LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
 
 	//カメラの初期設定
 	SetDefault();
@@ -258,22 +336,15 @@ void Camera::SetBeforeDrawFreeMouse(void)
 	//マウス座標を取得
 	Vector2 mousePos = ins.GetMousePos();
 
-	//画面中央
-	int centerX = Application::DEFA_SCREEN_SIZE_X / 2;
-	int centerY = Application::DEFA_SCREEN_SIZE_Y / 2;
-
 	//移動量
-	int deltaX = static_cast<int>(mousePos.x) - centerX;
-	int deltaY = static_cast<int>(mousePos.y) - centerY;
-
-	//マウス感度
-	const float sensitivity = 0.2f;
+	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
 	//水平回転を適用
-	Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX * sensitivity), Utility::AXIS_Y);
+	Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX_ * sensitivity_), Utility::AXIS_Y);
 
 	//垂直回転を適用
-	Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY * sensitivity), Utility::AXIS_X);
+	Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY_ * sensitivity_), Utility::AXIS_X);
 
 	//回転を適用
 	rot_ = yaw.Mult(rot_);
@@ -288,7 +359,76 @@ void Camera::SetBeforeDrawFreeMouse(void)
 	cameraUp_ = rot_.GetUp();
 
 	//マウスを中央に戻す
-	SetMousePoint(centerX, centerY);
+	SetMousePoint(centerX_, centerY_);
+}
+
+void Camera::SetBeforeDrawTPSMouse(void)
+{
+	if (!followTransform_) return;
+
+	auto& ins = InputManager::GetInstance();
+
+	//マウス座標を取得
+	Vector2 mousePos = ins.GetMousePos();
+
+	//移動量
+	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+
+	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
+
+	//回転角度更新
+	yaw_ += deltaX_ * sensitivity_;
+	pitch_ -= deltaY_ * sensitivity_;
+
+	//ピッチ制限
+	if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
+	if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
+
+	//対象位置
+	VECTOR followPos = followTransform_->pos;
+	
+	//球面座標でカメラ位置を計算
+	offset_;
+	offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+	offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+	offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+	//カメラ位置
+	pos_ = VAdd(followPos, offset_);
+
+	//注視点
+	targetPos_ = followPos;
+
+	//上方向は固定
+	cameraUp_ = VGet(0, 1, 0);
+
+	//マウスを中央に戻す
+	SetMousePoint(centerX_, centerY_);
+}
+
+void Camera::SetBeforeDrawLockon(void)
+{
+	if (!followTransform_ || !lockonTarget_) return;
+
+	//プレイヤー位置
+	VECTOR followPos = followTransform_->pos;
+
+	//球面座標でカメラを配置
+	offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+	offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+	offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+	//カメラ位置は対象基準
+	pos_ = VAdd(followPos, offset_);
+	
+	//注視点はターゲット
+	targetPos_ = lockonTarget_->pos;
+
+	//上方向は固定
+	cameraUp_ = VGet(0, 1, 0);
+
+	//マウスを中央座標に戻す
+	SetMousePoint(centerX_, centerY_);
 }
 
 void Camera::Draw(void)
@@ -366,6 +506,11 @@ VECTOR Camera::GetFrontVec(void) const
 		front.z /= length;
 	}
 	return front;
+}
+
+void Camera::SetLockonTarget(const Transform* target)
+{
+	lockonTarget_ = target;
 }
 
 //カメラの初期設定

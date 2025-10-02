@@ -31,7 +31,7 @@ public:
 
 	static constexpr VECTOR RELATIVE_F2C_POS_FOLLOW = { 0.0f, 300.0f, -300.0f };				//追従対象からカメラの位置までの相対座標(完全追従)
 
-	//static constexpr VECTOR RELATIVE_F2C_POS_SPRING = { 0.0f, 40.0f, 150.0f };					//追従対象からカメラ位置までの相対座標(ばね付き)
+	//static constexpr VECTOR RELATIVE_F2C_POS_SPRING = { 0.0f, 40.0f, 150.0f };				//追従対象からカメラ位置までの相対座標(ばね付き)
 
 	//カメラの移動関連の定数
 
@@ -49,6 +49,23 @@ public:
 
 	static constexpr float SPEED_SHAKE = 40.0f;		//スピード
 
+	//マウスTPSカメラ関連定数
+
+	static constexpr float CAMERA_YAW = 0.0f;					//左右回転
+
+	static constexpr float CAMERA_PITCH = 15.0f;				//上下回転
+
+	static constexpr float CAMERA_DISTANCE = 500.0f;			//ターゲットからの距離
+
+	//マウス感度
+	static constexpr float DEFAULT_SENSITIVITY = 0.2f;
+
+	//ピッチ制限
+
+	static constexpr float PITCH_UP = 80.0f;	//ピッチ最大上限
+
+	static constexpr float PITCH_DWON = -30.0f;	//ピッチ最低上限
+
 	//カメラモード
 	enum class MODE
 	{
@@ -59,7 +76,9 @@ public:
 		FOLLOW_SPRING,		//ばね付き追従モード
 		FOLLOW_PERSPECTIVE,	//追従対象視点モード
 		SHAKE,				//カメラ揺らし
-		FREE_MOUSE,
+		FREE_MOUSE,			//マウス自由カメラ
+		TPS_MOUSE,          //TPS用マウスカメラ
+		LOCKON              //ロックオンカメラ
 	};
 
 	//コンストラクタ
@@ -97,10 +116,16 @@ public:
 
 	VECTOR GetFrontVec(void) const;
 
+	//ロックオン対象の設定
+	void SetLockonTarget(const Transform* target);
+
 private:
 
 	//追従対象
 	const Transform* followTransform_;
+
+	//対象カメラ
+	const Transform* lockonTarget_;
 
 	//カメラモード
 	MODE mode_;
@@ -139,8 +164,34 @@ private:
 
 	VECTOR shakeDir_;
 
+	VECTOR offset_;
+
 	//ライト
 	int spotLight_;
+
+	//左右回転
+	float yaw_;
+
+	//上下回転
+	float pitch_;
+
+	//ターゲットからの距離
+	float distance_;
+
+	//マウス感度
+	float sensitivity_;
+
+	//中央サイズX
+	int centerX_;
+
+	//中央サイズY
+	int centerY_;
+
+	//Xの移動量
+	int deltaX_;
+
+	//Yの移動量
+	int deltaY_;
 
 	//カメラを初期位置に戻す
 	void SetDefault(void);
@@ -171,7 +222,11 @@ private:
 	//マウス自由に操作カメラ
 	void SetBeforeDrawFreeMouse(void);
 
-	
+	//TPS用マウス操作カメラ
+	void SetBeforeDrawTPSMouse(void);
+
+	//ロックオンカメラ
+	void SetBeforeDrawLockon(void);
 
 	//カメラ揺らし
 	void Shake(void);
