@@ -47,9 +47,9 @@ void Application::Init(void)
 	SetWindowText("Fly");
 	
 	//ウィンドウのサイズ
-	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SZIE_Y, 32);
+	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
 
-	ChangeWindowMode(true);
+	ChangeWindowMode(false);
 
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);

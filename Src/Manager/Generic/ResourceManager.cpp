@@ -33,130 +33,18 @@ void ResourceManager::Init(void)
 void ResourceManager::InitTitle(void)
 {
 	Resource res;
-	// ‘€ìà–¾‰æ‘œ‚ð“o˜^
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/sousa.png");
-	resourcesMap_.emplace(SRC::OPERATION, res);
-
-	//—V‚Ñ•û‰æ‘œ1
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/mokuhyou.png");
-	resourcesMap_.emplace(SRC::PLAY_GUIDE, res);
-
-	//—V‚Ñ•û‰æ‘œ2
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/renkint.png");
-	resourcesMap_.emplace(SRC::PLAY_GUIDE2, res);
-
-	// ƒ^ƒCƒgƒ‹ƒƒS‰æ‘œ‚ð“o˜^
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/titleRog.png");
-	resourcesMap_.emplace(SRC::TYTLE_LOGO, res);
-
-	//—V‚Ñ•û‰æ‘œ(ƒAƒgƒŠƒG)
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/atrieT.png");
-	resourcesMap_.emplace(SRC::ATREA, res);
-
-	//—V‚Ñ•û‰æ‘œ(ƒMƒ‹ƒh)
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/girudo.png");
-	resourcesMap_.emplace(SRC::GUILD, res);
-
-	//—V‚Ñ•û‰æ‘œ(ƒK[ƒfƒ“)
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/gadenT.png");
-	resourcesMap_.emplace(SRC::GARDEN, res);
-
-	// ƒ^ƒCƒgƒ‹BGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "nc49298.mp3");
-	resourcesMap_.emplace(SRC::BGM_TITLE, res);
-
-	// Œˆ’è‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "se_pikon19.mp3");
-	resourcesMap_.emplace(SRC::SE_PUSH, res);
-
-	// ƒLƒƒƒ“ƒZƒ‹‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "nc298207.mp3");
-	resourcesMap_.emplace(SRC::SE_CANCEL, res);
-
-	// ƒJ[ƒ\ƒ‹ˆÚ“®‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "Cursormovementsound.mp3");
-	resourcesMap_.emplace(SRC::SE_SELECT, res);
 }
 
 // ƒQ[ƒ€ƒV[ƒ“—pƒŠƒ\[ƒX‚Ì‰Šú‰»
 void ResourceManager::InitGame(void)
 {
 	Resource res;
-	
-	// ƒQ[ƒ€BGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "");
-	resourcesMap_.emplace(SRC::BGM_GAME, res);
-
-	// ƒJ[ƒ\ƒ‹ˆÚ“®‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "Cursormovementsound.mp3");
-	resourcesMap_.emplace(SRC::SE_SELECT, res);
-
-	// Œˆ’è‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "se_pikon1.mp3");
-	resourcesMap_.emplace(SRC::SE_PUSH, res);
-
-	// ƒLƒƒƒ“ƒZƒ‹‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "nc298207.mp3");
-	resourcesMap_.emplace(SRC::SE_CANCEL, res);
-
-	// ƒ_ƒ[ƒW‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "");
-	resourcesMap_.emplace(SRC::SE_DAMAGE, res);
-
-	// ƒAƒCƒeƒ€Žæ“¾‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "");
-	resourcesMap_.emplace(SRC::SE_GET, res);
-
-	//ƒtƒŒ[ƒ€
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/DHUI.png");
-	resourcesMap_.emplace(SRC::UI_FRAME, res);
-
-	//’©ƒAƒCƒRƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/moningUI.png");
-	resourcesMap_.emplace(SRC::MORNING, res);
-
-	//’‹ƒAƒCƒRƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/HirumaUI.png");
-	resourcesMap_.emplace(SRC::DAY, res);
-
-	//—[•ûƒAƒCƒRƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/HiruUI.png");
-	resourcesMap_.emplace(SRC::EVENING, res);
-
-	//–éƒAƒCƒRƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/nightUI.png");
-	resourcesMap_.emplace(SRC::NIGHT, res);
-
-	//–éƒAƒCƒRƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/Maney.png");
-	resourcesMap_.emplace(SRC::MANEY, res);
-
-	//ŒŒ‘Ü
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/Bloodinaleatherbag.png");
-	resourcesMap_.emplace(SRC::BLOOD_BAG, res);
-
-	//’C»
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/cinnabar.png");
-	resourcesMap_.emplace(SRC::CINNABAR, res);
-
-	//Œ«ŽÒ‚ÌÎ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "UI/PhilosophersStone.png");
-	resourcesMap_.emplace(SRC::CINNABAR, res);
 
 	// ƒvƒŒƒCƒ„[ŠÖ˜AƒŠƒ\[ƒX‚Ì‰Šú‰»
 	ResourcePlayer();
 
 	// “GŠÖ˜AƒŠƒ\[ƒX‚Ì‰Šú‰»
 	ResourceEnemy();
-
-	//ƒAƒgƒŠƒGŠÖ˜AƒŠƒ\[ƒX‚Ì‰Šú‰»
-	ResourceAtelier();
-
-	//ƒMƒ‹ƒhƒŠƒ\[ƒX‚Ì‰Šú‰»
-	ResourceGuild();
-
-	//’ë‚ÌƒŠƒ\[ƒX‚ð‰Šú‰»
-	ResourceGarden();
 }
 
 // ƒQ[ƒ€ƒI[ƒo[ƒV[ƒ“—pƒŠƒ\[ƒX‚Ì‰Šú‰»
@@ -167,14 +55,6 @@ void ResourceManager::InitGameOver(void)
 	// ƒQ[ƒ€ƒI[ƒo[ƒƒS‰æ‘œ‚ð“o˜^
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
 	resourcesMap_.emplace(SRC::GAMEOVER_LOGO, res);
-
-	// ƒQ[ƒ€ƒI[ƒo[BGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "");
-	resourcesMap_.emplace(SRC::BGM_GAMEOVER, res);
-
-	// Œˆ’è‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "");
-	resourcesMap_.emplace(SRC::SE_PUSH, res);
 }
 
 // ƒQ[ƒ€ƒNƒŠƒAƒV[ƒ“—pƒŠƒ\[ƒX‚Ì‰Šú‰»
@@ -185,309 +65,15 @@ void ResourceManager::InitGameClear(void)
 	// ƒQ[ƒ€ƒNƒŠƒAƒƒS‰æ‘œ‚ð“o˜^
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
 	resourcesMap_.emplace(SRC::GAMECLERA_LOGO, res);
-
-	// ƒQ[ƒ€ƒNƒŠƒABGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "");
-	resourcesMap_.emplace(SRC::BGM_GAMECLEAR, res);
-
-	// Œˆ’è‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "");
-	resourcesMap_.emplace(SRC::SE_PUSH, res);
 }
 
-void ResourceManager::ResourceAtelier(void)
-{
-	Resource res;
-	//ŒfŽ¦”ÂƒIƒuƒWƒFƒNƒg‚Ì“o˜^
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/Atelier/hondana.mv1");
-	resourcesMap_.emplace(SRC::BOOKS_HELF, res);
 
-	//˜B‹àŠ˜
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/Atelier/renkingama.mv1");
-	resourcesMap_.emplace(SRC::ALCHEMYPOT, res);
-
-	//•Ç
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/Atelier/AtelierStage.mv1");
-	resourcesMap_.emplace(SRC::STAGE_ATELIER, res);
-
-	//ƒAƒCƒeƒ€ƒCƒ“ƒxƒ“ƒgƒŠ
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/Atelier/Box.mv1");
-	resourcesMap_.emplace(SRC::BOX, res);
-
-	//–ò‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Greenherb.png");
-	resourcesMap_.emplace(SRC::HERB, res);
-	
-	//‰ð“Å‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Purpleherb.png");
-	resourcesMap_.emplace(SRC::ANTIDOTE_HERB, res);
-
-	//–‚—Í‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/BlueHerb.png");
-	resourcesMap_.emplace(SRC::MAGIC_FLOWER, res);
-
-	//–ƒáƒ‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Yellowherb.png");
-	resourcesMap_.emplace(SRC::PARALYSIS_HERB, res);
-
-	//•—‘–‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Lightblueherb.png");
-	resourcesMap_.emplace(SRC::GALE_HERB, res);
-
-	//‹S—Í‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Redherb.png");
-	resourcesMap_.emplace(SRC::DEMON_POWER_HERB, res);
-
-	//d‘Ì‘
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Orangeherb.png");
-	resourcesMap_.emplace(SRC::HARD_BODY_HERB, res);
-
-	//‰ñ•œƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/GreenTriangularPotion.png");
-	resourcesMap_.emplace(SRC::RECOVERY_POTION, res);
-
-	//‰ð“Åƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/PurpleTriangularPotion.png");
-	resourcesMap_.emplace(SRC::ANTIDOTE_POTION, res);
-
-	//‰ð–ƒáƒƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/YellowPotion.png");
-	resourcesMap_.emplace(SRC::ANTIPARALYSIS_POTION, res);
-
-	//–‚—Íƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/BlueTriangularPotion.png");
-	resourcesMap_.emplace(SRC::MAGIC_POTION, res);
-
-	//r•qƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/LightbluePotion.png");
-	resourcesMap_.emplace(SRC::SPEED_POTION, res);
-
-	//—Í‚Ìƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/RedTriangularPotion.png");
-	resourcesMap_.emplace(SRC::POWER_POTION, res);
-
-	//–hŒäƒ|[ƒVƒ‡ƒ“
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/OrangePotion.png");
-	resourcesMap_.emplace(SRC::DEFENSE_POTION, res);
-	
-
-	//…
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Water.png");
-	resourcesMap_.emplace(SRC::WATER, res);
-
-	//“SzÎ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Iron.png");
-	resourcesMap_.emplace(SRC::IRON_ORE, res);
-
-	//‰Î‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/RedOre.png");
-	resourcesMap_.emplace(SRC::FIRE_MAGIC_STONE, res);
-
-	//…‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/BlueOre.png");
-	resourcesMap_.emplace(SRC::WATER_MAGIC_STONE, res);
-
-	//•—‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/GreenOre.png");
-	resourcesMap_.emplace(SRC::WIND_MAGIC_STONE, res);
-
-	//“y‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/OrangeOre.png");
-	resourcesMap_.emplace(SRC::EARTH_MAGIC_STONE, res);
-
-	//•X‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/WaterOre.png");
-	resourcesMap_.emplace(SRC::ICE_MAGIC_STONE, res);
-
-	//Œõ‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/YellowOre.png");
-	resourcesMap_.emplace(SRC::LIGHT_MAGIC_STONE, res);
-
-	//ˆÅ‚Ì–‚Î
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/PurpleOre.png");
-	resourcesMap_.emplace(SRC::DARK_MAGIC_STONE, res);
-
-	//Œ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Sword.png");
-	resourcesMap_.emplace(SRC::SWORD, res);
-
-	//‰Î‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/RedSword.png");
-	resourcesMap_.emplace(SRC::FIRE_SORD, res);
-
-	//…‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/BlueSword.png");
-	resourcesMap_.emplace(SRC::WATER_SWORD, res);
-
-	//•—‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/GreenSword.png");
-	resourcesMap_.emplace(SRC::WIND_SWORD, res);
-
-	//“y‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/OrangeSword.png");
-	resourcesMap_.emplace(SRC::EARTH_SWORD, res);
-
-	//•X‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/WaterSword.png");
-	resourcesMap_.emplace(SRC::ICE_SWORD, res);
-
-	//Œõ‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/YellowSword.png");
-	resourcesMap_.emplace(SRC::LIGHT_SWORD, res);
-
-	//ˆÅ‚ÌŒ•
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/PurpleSword.png");
-	resourcesMap_.emplace(SRC::DARK_SWORD, res);
-
-	//ñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Cane.png");
-	resourcesMap_.emplace(SRC::WAND, res);
-
-	//‰Î‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/RedWand.png");
-	resourcesMap_.emplace(SRC::FIRE_WAND, res);
-
-	//…‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/BlueWand.png");
-	resourcesMap_.emplace(SRC::WATER_WAND, res);
-
-	//•—‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/GreenWand.png");
-	resourcesMap_.emplace(SRC::WIND_WAND, res);
-
-	//“y‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/OrangeWand.png");
-	resourcesMap_.emplace(SRC::EARTH_WAND, res);
-
-	//•X‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/WaterWand.png");
-	resourcesMap_.emplace(SRC::ICE_WAND, res);
-
-	//Œõ‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/YellowWand.png");
-	resourcesMap_.emplace(SRC::LIGHT_WAND, res);
-
-	//ˆÅ‚Ìñ
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/PurpleWand.png");
-	resourcesMap_.emplace(SRC::DARK_WAND, res);
-
-	//Œø‰Ê‰¹
-	// ˜B‹à‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "renkin.mp3");
-	resourcesMap_.emplace(SRC::SE_ALCHEMY, res);
-
-	// ˜B‹àŽ¸”s‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "nc46976.mp3");
-	resourcesMap_.emplace(SRC::SE_ALCHEMY_FAIL, res);
-
-	// ˜B‹à¬Œ÷‰¹‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "fanfare3.mp3");
-	resourcesMap_.emplace(SRC::SE_ALCHEMY_SUCCESS, res);
-
-	//BGM
-	// ƒAƒgƒŠƒG‚ÌBGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "m2.mp3");
-	resourcesMap_.emplace(SRC::BGM_ATELIER, res);
-
-	//ƒGƒtƒFƒNƒg
-	//˜B‹à¬Œ÷ƒGƒtƒFƒNƒg‚ð“o˜^
-	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "Simple_Sprite_FixedYAxis.efkefc");
-	resourcesMap_.emplace(SRC::EFFECT_ALCHEMY, res);
-
-	//˜B‹àŽ¸”sƒGƒtƒFƒNƒg‚ð“o˜^
-	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "BlastHit.efkefc");
-	resourcesMap_.emplace(SRC::EFFECT_BLAST, res);
-	
-}
-
-//ƒMƒ‹ƒh‚ÅŽg‚¤ƒŠƒ\[ƒX
-void ResourceManager::ResourceGuild(void)
-{
-	Resource res;
-
-	
-
-	//ŒfŽ¦”ÂƒIƒuƒWƒFƒNƒg‚Ì“o˜^
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/GuildObject/BulletinBoard.mv1");
-	resourcesMap_.emplace(SRC::BULLETIN_BOARD, res);
-
-	//ŒfŽ¦”Â‚Ì‰æ‘œ‚Ì“o˜^
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "/GuildStage/BulletinBoard.png");
-	resourcesMap_.emplace(SRC::IMAGE_BOARD, res);
-
-	//ƒJƒEƒ“ƒ^-ƒIƒuƒWƒFƒNƒg‚Ì“o˜^
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/GuildObject/counter.mv1");
-	resourcesMap_.emplace(SRC::COUNTER, res);
-
-	//ƒJƒEƒ“ƒ^-ƒIƒuƒWƒFƒNƒg‚Ì“o˜^
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "/GuildObject/TableSet.mv1");
-	resourcesMap_.emplace(SRC::TABLE_SET, res);
-
-	//ˆË—Š‘‚Ì‰æ‘œ‚Ì“o˜^
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "/GuildStage/Request.png");
-	resourcesMap_.emplace(SRC::IMAGE_REQUEST, res);
-	
-	//Žó•tì‚Ìƒ‚ƒfƒ‹
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GuildObject/uketuke.mv1");
-	resourcesMap_.emplace(SRC::RECEPTIONIST, res);
-
-	//Ží
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "item/Seed.png");
-	resourcesMap_.emplace(SRC::SEED, res);
-	
-	//BGM
-	// ƒQ[ƒ€BGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "maou_bgm_ethnic10.mp3");
-	resourcesMap_.emplace(SRC::BGM_GUILD, res);
-}
-
-void ResourceManager::ResourceGarden(void)
-{
-	Resource res;
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Block_Dirt.mv1");
-	resourcesMap_.emplace(SRC::BLOCK_DIRT, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Block_Grass.mv1");
-	resourcesMap_.emplace(SRC::BLOCK_GFRASS, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Block_Lood.mv1");
-	resourcesMap_.emplace(SRC::BLOCK_LOOD, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Growing.mv1");
-	resourcesMap_.emplace(SRC::GROWING_MODEL, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Seed.mv1");
-	resourcesMap_.emplace(SRC::SEED_MODEL , res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/mature.mv1");
-	resourcesMap_.emplace(SRC::MATURE_MODEL, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/ore.mv1");
-	resourcesMap_.emplace(SRC::ORE_MODEL, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/fence.mv1");
-	resourcesMap_.emplace(SRC::FENCE_MODEL, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/well.mv1");
-	resourcesMap_.emplace(SRC::WELL_MODEL, res);
-
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "GardenObject/Dowa.mv1");
-	resourcesMap_.emplace(SRC::DOWA_MODEL, res);
-
-	//BGM
-	// ’ë‚Ì’©’‹‚ÌBGM‚ð“o˜^
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "nc86886.mp3");
-	resourcesMap_.emplace(SRC::BGM_GARDEN_DAY, res);
-
-	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "nc141198_plant_girl.wav");
-	resourcesMap_.emplace(SRC::BGM_GARDEN_NIGHT, res);
-}
-
-// ƒvƒŒƒCƒ„[—pƒŠƒ\[ƒX‰Šú‰»i–¢ŽÀ‘•j
+// ƒvƒŒƒCƒ„[—pƒŠƒ\[ƒX‰Šú‰»
 void ResourceManager::ResourcePlayer(void)
 {
 	Resource res;
-	res = res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "player/player.mv1");
+
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/playerkari.mv1");
 	resourcesMap_.emplace(SRC::MODEL_PLAYER, res);
 }
 
@@ -532,12 +118,9 @@ Resource ResourceManager::Load(SRC src)
 int ResourceManager::LoadModelDuplicate(SRC src)
 {
 	Resource* res = _Load(src);
-	if (res == nullptr)
-	{
-		return -1; // “Ç‚Ýž‚ÝŽ¸”s
-	}
+	if (!res || res->handleId_ == -1)
+		return -1;
 
-	// ƒ‚ƒfƒ‹•¡»
 	int duId = MV1DuplicateModel(res->handleId_);
 	res->duplicateModelIds_.push_back(duId);
 
@@ -553,26 +136,23 @@ ResourceManager::ResourceManager(void)
 Resource* ResourceManager::_Load(SRC src)
 {
 	// ‚·‚Å‚É“Ç‚Ýž‚ÝÏ‚Ý‚©Šm”F
-	const auto& lPair = loadedMap_.find(src);
-	if (lPair != loadedMap_.end())
-	{
-		return lPair->second;
-	}
+	auto itLoaded = loadedMap_.find(src);
+	if (itLoaded != loadedMap_.end())
+		return itLoaded->second;
 
 	// “o˜^Ï‚ÝƒŠƒ\[ƒX‚©Šm”F
-	const auto& rPair = resourcesMap_.find(src);
-	if (rPair == resourcesMap_.end())
-	{
-		// “o˜^‚³‚ê‚Ä‚¢‚È‚¢
+	auto itRes = resourcesMap_.find(src);
+	if (itRes == resourcesMap_.end())
 		return nullptr;
-	}
 
-	// ƒŠƒ\[ƒX“Ç‚Ýž‚ÝŽÀs
-	rPair->second.Load();
+	// ƒŠƒ\[ƒX“Ç‚Ýž‚ÝihandleId_ ‚ªƒZƒbƒg‚³‚ê‚éj
+	itRes->second.Load();
 
-	// ƒRƒs[‚ð•ÛŽi“Ç‚Ýž‚ÝÏ‚Ýƒ}ƒbƒv‚É’Ç‰Áj
-	Resource* ret = new Resource(rPair->second);
-	loadedMap_.emplace(src, ret);
+	// loadedMap_ ‚ÉƒRƒs[‚µ‚Ä•ÛŽ
+	Resource* newRes = new Resource(itRes->second);
 
-	return ret;
+	// ‚±‚±‚Å loadedMap ‚É’Ç‰Á
+	loadedMap_.emplace(src, newRes);
+
+	return newRes;
 }

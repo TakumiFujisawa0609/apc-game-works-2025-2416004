@@ -8,7 +8,6 @@
 #include "ResourceManager.h"
 #include "../System/Collision.h"
 #include "../Decoration/SoundManager.h"
-#include "../System/CollisionManager.h"
 #include "../System/TimeManager.h"
 #include "Camera.h"
 #include "../System/Loading.h"
@@ -65,7 +64,6 @@ void SceneManager::Init(void)
 	Collision::CreateInstance();
 	SoundManager::CreateInstance();
 	TimeManager::CreateInstance();
-	CollisionManager::CreateInstance();
 	Loading::CreateInstance();
 
 
@@ -121,9 +119,10 @@ void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
 	scenes_.push_back(scene);
 	isSceneChanging_ = true;
 
-	Loading::GetInstance()->StartAsyncLoad([scene]() {
-		scene->Load();
-		});
+	// 非同期ロードは重い計算用。DXLibのモデル・画像はメインスレッドで
+	scene->Load();
+	scene->EndLoad();
+	isSceneChanging_ = false;
 }
 
 // PushScene は現在のシーンを保持したまま、新しいシーンを上に積む
@@ -212,6 +211,14 @@ void SceneManager::Draw(void)
 	// バックバッファのクリア
 	ClearDrawScreen();
 
+	// 非同期ロード中は進捗バーを表示
+	if (Loading::GetInstance()->IsLoading())
+	{
+		Loading::GetInstance()->Draw();
+		ScreenFlip();
+		return; // ロード中はシーン描画をスキップ
+	}
+
 	// カメラの設定
 	if (camera_) camera_->SetBeforeDraw();
 
@@ -246,7 +253,6 @@ void SceneManager::Release(void)
 	camera_.reset();
 
 	SoundManager::GetInstance().Destroy();
-	CollisionManager::GetInstance().Destroy();
 	TimeManager::GetInstance().Destroy();
 	Loading::GetInstance()->DestroyInstance();
 }

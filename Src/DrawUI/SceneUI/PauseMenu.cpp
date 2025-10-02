@@ -88,7 +88,7 @@ void PauseMenu::Update(void)
             currentIndex_ = (currentIndex_ + 1) % menuItems_.size();
         }
 
-        if (input.IsTrgDown(KEY_INPUT_RETURN))
+        if (input.IsTrgDown(KEY_INPUT_SPACE ))
         {
             sound.Play(SoundManager::SOUND::SE_PUSH);
             if (currentIndex_ == 0) {           // 続ける
@@ -119,7 +119,7 @@ void PauseMenu::Update(void)
             sound.Play(SoundManager::SOUND::SE_SELECT);
             howToPlayIndex_ = (howToPlayIndex_ + 1) % howToPlayItems_.size();
         }
-        if (input.IsTrgDown(KEY_INPUT_RETURN)) {
+        if (input.IsTrgDown(KEY_INPUT_SPACE)) {
             if (howToPlayIndex_ == howToPlayItems_.size() - 1) {
                 mode_ = MODE_POUSE::SELECT; // 戻る
             } else {
@@ -153,7 +153,7 @@ void PauseMenu::Draw(void)
     if (!visible_) return;
 
     const int screenW = Application::DEFA_SCREEN_SIZE_X;
-    const int screenH = Application::DEFA_SCREEN_SZIE_Y;
+    const int screenH = Application::DEFA_SCREEN_SIZE_Y;
 
     // --- 「遊び方」サブメニュー ---
     if (mode_ == MODE_POUSE::HOW_TO_PLAY_MENU)

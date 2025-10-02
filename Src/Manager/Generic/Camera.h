@@ -58,7 +58,8 @@ public:
 		FOLLOW,				//追従モード
 		FOLLOW_SPRING,		//ばね付き追従モード
 		FOLLOW_PERSPECTIVE,	//追従対象視点モード
-		SHAKE				//カメラ揺らし
+		SHAKE,				//カメラ揺らし
+		FREE_MOUSE,
 	};
 
 	//コンストラクタ
@@ -149,17 +150,28 @@ private:
 
 	//カメラの描画モード関連
 
-	void SetBeforeDrawFixedPoint(void);				//定点カメラ
+	//定点カメラ
+	void SetBeforeDrawFixedPoint(void);				
 	
-	void SetBeforeDrawFree(void);					//フリーカメラ
+	//フリーカメラ
+	void SetBeforeDrawFree(void);					
 	
-	void SetBeforeDrawFollow(void);					//追従カメラ
+	//追従カメラ
+	void SetBeforeDrawFollow(void);					
 	
-	void SetBeforeDrawFollowSpring(void);			//ばね追従カメラ
+	//ばね追従カメラ
+	void SetBeforeDrawFollowSpring(void);			
 
-	void SetBeforeDrawFollowPerspective(void);		//追従対象視点カメラ
+	//追従対象視点カメラ
+	void SetBeforeDrawFollowPerspective(void);		
 
-	void SetBeforeDrawShake(void);					//カメラ揺らし
+	//カメラ揺らし
+	void SetBeforeDrawShake(void);					
+
+	//マウス自由に操作カメラ
+	void SetBeforeDrawFreeMouse(void);
+
+	
 
 	//カメラ揺らし
 	void Shake(void);

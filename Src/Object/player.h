@@ -1,119 +1,70 @@
 #pragma once
-#include<DxLib.h>
-#include "UnitBase.h"
 
-class AnimationController;
+#include "UnitBase.h"
 
 class Player : public UnitBase
 {
-
 public:
 
-	// コンストラクタ
+	//ジャンプ力
+	static constexpr float JUMP_POWER = 20.0f;
+
+	//重力加速度
+	static constexpr float GRAVITY = -1.0f;
+
+	//コンストラクタ
 	Player(void);
 
-	// デストラクタ
-	~Player(void) override;
+	//デストラクタ
+	~Player(void);
+
+	//リソースの読み込み
+	void Load(void) override;
 
 	//初期化
 	void Init(void) override;
 
-	//更新
+	//更新処理
 	void Update(void) override;
 
-	//描画
-	void Draw(void) override;
+	//描画処理
+	void Draw(void) const override;
 
-	//解放
+	//解放処理
 	void Release(void) override;
 
-	//座標取得
-	VECTOR GetPos(void) const;
+	//移動可能かの設定
+	void SetMovementEndbled(bool enabled);
 
-	//座標設定
-	void SetPos(VECTOR pos);
-
-	// プレイヤーのAABB最小点を取得
-	VECTOR GetHitMin(void) const;
-
-	// プレイヤーのAABB最大点を取得
-	VECTOR GetHitMax(void) const;
-
-	//当たり判定の半径
-	float GetRadius(void) const;
-
-	//プレイヤーの所持金を取得
-	int GetMoney(void) const;
-
-	//プレイヤーの所持金を設定
-	void AddMoney(int money);
-
-	void SetBlockedDirX(int dir);
-
-	void SetBlockedDirZ(int dir);
-
-	void ResetBlockDirs(void);
-
-	void SetMovementEnabled(bool enabled);
-	
-	bool IsMovementEnabled(void) const;
-
-
-
-	// アニメーション種別
-	enum class ANIM_TYPE
-	{
-		NOME,
-		WALK,
-		IDLE,
-		MAX
-	};
-
-	// モデルの大きさ
-	static constexpr VECTOR SCALES = { 1.0f, 1.0f, 1.0f };
-
-	// 初期位置
-	static constexpr VECTOR DEFAULT_POS = { 0.0f, 20.0f, -200.0f };
-
-	// 標準の自己発光色
-	static constexpr COLOR_F COLOR_EMI_DEFAULT = { 0.5f, 0.5f, 0.5f, 0.5f };
-
-	// 移動スピード
-	static constexpr float SPEED_MOVE = 5.0f;
-
-	//当たり判定の半径
-	static constexpr float RADIUS = 30.0f;
-
-	void PlayAnim(ANIM_TYPE type, bool loop = true);
-
-
+	//移動可能かを取得
+	bool IsMovementEndbled(void) const;
 private:
-	// モデルID
+
+	//モデルハンドル
 	int modelId_;
-	VECTOR scales_;
-	//カメラ
-	VECTOR axis_;
-	VECTOR angles_;
 
-	// 地面にいるかどうか
-	bool isOnGround_;
-
-	//所持金
-	int money_;
-
+	//移動制限x
 	int blockedDirX_;
 
+	//移動制限z
 	int blockedDirZ_;
 
+	//移動可能か
 	bool movementEnabled_;
 
-	int currentAnimType_; 
+	//ジャンプ力
+	float jumpPower_;
 
+	//重力加速
+	float gravity_;
 
-	// アニメーション
-	AnimationController* animationController_;
+	//現在のY方向速度
+	float velocityY_;
 
-	// 行動制御
+	//地面にいるかどうか
+	bool isGround_;
+
+	//移動入力
 	void ProcessMove(void);
 
 };

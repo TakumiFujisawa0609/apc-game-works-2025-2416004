@@ -56,8 +56,17 @@ void Transform::Update(void)
 
 	//行列の合成
 	MATRIX mat = MGetIdent();
+
+	//ローカル回転合成
 	Quaternion  q = quaRot.Mult(quaRotLocal);
+
+	//スケール適用
+	mat = MMult(mat, matScl);
+
+	//回転適用
 	mat = MMult(mat, q.ToMatrix());
+
+	//位置適用
 	mat = MMult(mat, matPos);
 
 	//行列をモデルに判定

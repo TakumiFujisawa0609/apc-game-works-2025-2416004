@@ -24,6 +24,9 @@ public:
 	//デストラクタ
 	virtual ~UnitBase(void);
 
+	//リソースの読み込み
+	virtual void Load(void) = 0;
+
 	//初期化
 	virtual void Init(void) = 0;
 
@@ -76,12 +79,12 @@ public:
 	void Turn(float deg, const VECTOR& axis);
 
 	//アニメーション制御
-	void PlayAnim(ANIM aanimType, bool loop);
+	void PlayAnim(ANIM aanimType, bool loop, float blendTime);
 
 	//アニメーションの初期化
 	void InitAnimaiton(void);
 
-private:
+protected:
 
 	//モデル情報
 	Transform trans_;
@@ -97,4 +100,10 @@ private:
 
 	//移動力
 	VECTOR movePow_;
+
+	//アニメーション
+	std::unique_ptr<AnimationController> anim_;
+
+	//アニメーション別
+	ANIM currentAnim_;
 };

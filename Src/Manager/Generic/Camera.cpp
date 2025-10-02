@@ -41,6 +41,7 @@ void Camera::Init(void)
 	setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
 	setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
 	setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
+	setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
 
 	//カメラの初期設定
 	SetDefault();
@@ -248,6 +249,46 @@ void Camera::SetBeforeDrawShake(void)
 
 	//移動先座標
 	pos_ = VAdd(defaultPos_, velocity);
+}
+
+//マウス自由操作カメラ
+void Camera::SetBeforeDrawFreeMouse(void)
+{
+	auto& ins = InputManager::GetInstance();
+	//マウス座標を取得
+	Vector2 mousePos = ins.GetMousePos();
+
+	//画面中央
+	int centerX = Application::DEFA_SCREEN_SIZE_X / 2;
+	int centerY = Application::DEFA_SCREEN_SIZE_Y / 2;
+
+	//移動量
+	int deltaX = static_cast<int>(mousePos.x) - centerX;
+	int deltaY = static_cast<int>(mousePos.y) - centerY;
+
+	//マウス感度
+	const float sensitivity = 0.2f;
+
+	//水平回転を適用
+	Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX * sensitivity), Utility::AXIS_Y);
+
+	//垂直回転を適用
+	Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY * sensitivity), Utility::AXIS_X);
+
+	//回転を適用
+	rot_ = yaw.Mult(rot_);
+
+	rot_ = pitch.Mult(rot_);
+
+	//注視点更新
+	VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
+	targetPos_ = VAdd(pos_, rotLocalPos);
+
+	//上ベクトル更新
+	cameraUp_ = rot_.GetUp();
+
+	//マウスを中央に戻す
+	SetMousePoint(centerX, centerY);
 }
 
 void Camera::Draw(void)
