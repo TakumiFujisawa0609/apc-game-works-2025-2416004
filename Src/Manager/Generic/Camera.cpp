@@ -78,7 +78,29 @@ Camera::Camera(void)
    //yの移動量
    deltaY_ = 0;
 
+   //位置
    offset_ = Utility::VECTOR_ZERO;
+
+   //ロックオン
+   lockonFlag_ = false;
+
+   //追従停止しているか
+   freezeFollow_ = false;
+
+   //固定された注視点
+   frozenTargetPos_ = Utility::VECTOR_ZERO;
+
+   //固定されたカメラ位置
+   frozenCameraPos_ = Utility::VECTOR_ZERO;
+
+   // 凍結開始時のyaw角度
+   initialYaw_ = 0.0f;
+
+   // 凍結開始時のカメラとプレイヤーの距離
+   initialDistance_ = 0.0f;
+
+   // キー入力による回転速度
+   keyRotateSpeed_ = 0.0f;
 }
 
 Camera::~Camera(void)
@@ -118,8 +140,8 @@ void Camera::Init(void)
 	//TPS用マウスカメラ
 	setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
 
-	//ロックオンカメラ
-	setBeforeDrawMode_.emplace(MODE::LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
+	//汎用ロックオンカメラ
+	setBeforeDrawMode_.emplace(MODE::VERSATILITY_LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
 
 	//カメラの初期設定
 	SetDefault();
@@ -373,61 +395,144 @@ void Camera::SetBeforeDrawTPSMouse(void)
 
 	//移動量
 	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
-
 	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	//回転角度更新
+	//回転角度更新（マウス入力）
 	yaw_ += deltaX_ * sensitivity_;
 	pitch_ -= deltaY_ * sensitivity_;
+
+	// キー入力による回転を適用（凍結中のみ）
+	if (freezeFollow_)
+	{
+		yaw_ += keyRotateSpeed_;
+	}
 
 	//ピッチ制限
 	if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
 	if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
 
-	//対象位置
-	VECTOR followPos = followTransform_->pos;
-	
-	//球面座標でカメラ位置を計算
-	offset_;
-	offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-	offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
-	offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+	// 追従が凍結されていない場合の通常処理
+	if (!freezeFollow_)
+	{
+		VECTOR followPos = followTransform_->pos;
 
-	//カメラ位置
-	pos_ = VAdd(followPos, offset_);
+		//球面座標でカメラのオフセットを計算
+		offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+		offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+		offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
-	//注視点
-	targetPos_ = followPos;
+		//カメラ位置
+		pos_ = VAdd(followPos, offset_);
+
+		//注視点
+		targetPos_ = followPos;
+	}
+	else
+	{
+		// 凍結中：カメラ位置は固定、注視点だけ回転
+		pos_ = frozenCameraPos_;
+
+		// プレイヤーの現在位置
+		VECTOR playerPos = followTransform_->pos;
+
+		// カメラからプレイヤーへのベクトル
+		VECTOR toPlayer = VSub(playerPos, frozenCameraPos_);
+		float distToPlayer = VSize(toPlayer);
+
+		// マウス操作による注視点オフセット（カメラの向きを変える）
+		VECTOR lookOffset;
+		lookOffset.x = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+		lookOffset.y = distToPlayer * sinf(Utility::Deg2RadF(pitch_));
+		lookOffset.z = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+		// 注視点 = カメラ位置 + 向きオフセット
+		VECTOR calculatedTarget = VAdd(frozenCameraPos_, lookOffset);
+
+		// プレイヤーとの距離が近い場合はプレイヤーを見る（スムーズに補間）
+		float blendFactor = 0.7f; // プレイヤー追従の強さ（0.0～1.0）
+		targetPos_.x = calculatedTarget.x * (1.0f - blendFactor) + playerPos.x * blendFactor;
+		targetPos_.y = calculatedTarget.y * (1.0f - blendFactor) + playerPos.y * blendFactor;
+		targetPos_.z = calculatedTarget.z * (1.0f - blendFactor) + playerPos.z * blendFactor;
+	}
 
 	//上方向は固定
 	cameraUp_ = VGet(0, 1, 0);
 
 	//マウスを中央に戻す
 	SetMousePoint(centerX_, centerY_);
+
 }
 
 void Camera::SetBeforeDrawLockon(void)
 {
-	if (!followTransform_ || !lockonTarget_) return;
+	if (!followTransform_) return;
+	VECTOR playerPos = followTransform_->pos;
 
-	//プレイヤー位置
-	VECTOR followPos = followTransform_->pos;
+	auto& ins = InputManager::GetInstance();
+	bool mouseMoved = ins.GetMousePos().x != centerX_ || ins.GetMousePos().y != centerY_;
 
-	//球面座標でカメラを配置
-	offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-	offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
-	offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+	if (lockonFlag_ && lockonTarget_)
+	{
+		// --- ロックオン時 ---
+		VECTOR enemyPos = lockonTarget_->pos;
 
-	//カメラ位置は対象基準
-	pos_ = VAdd(followPos, offset_);
-	
-	//注視点はターゲット
-	targetPos_ = lockonTarget_->pos;
+		// プレイヤー後ろ基本オフセット
+		VECTOR localBackOffset = { 0.0f, 200.0f, -400.0f };
 
-	//上方向は固定
-	cameraUp_ = VGet(0, 1, 0);
+		// プレイヤーのローカル回転を取得
+		Quaternion playerRot = followTransform_->quaRot.Mult(followTransform_->quaRotLocal);
 
-	//マウスを中央座標に戻す
+		// ローカルオフセットを回転
+		VECTOR rotatedOffset = playerRot.PosAxis(localBackOffset);
+
+		VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
+
+		// 横座標補正（ロックオン補正）
+		float deltaX = pos_.x - playerPos.x;
+		if (deltaX > 50.0f)
+		{
+			desiredPos.x = playerPos.x + 150.0f;
+			desiredPos.y = playerPos.y + 250.0f;
+			desiredPos.z = playerPos.z - 300.0f;
+		}
+		else if (deltaX < -50.0f)
+		{
+			desiredPos.x = playerPos.x - 150.0f;
+			desiredPos.y = playerPos.y + 250.0f;
+			desiredPos.z = playerPos.z - 300.0f;
+		}
+		else
+		{
+			desiredPos.x = playerPos.x;
+			desiredPos.y = playerPos.y + 300.0f;
+			desiredPos.z = playerPos.z - 400.0f;
+		}
+
+		pos_ = desiredPos;
+		targetPos_ = VScale(VAdd(playerPos, enemyPos), 0.5f);
+		cameraUp_ = VGet(0, 1, 0);
+	}
+	else if (mouseMoved)
+	{
+		// --- マウス操作優先 ---
+		SetBeforeDrawTPSMouse();
+	}
+	else
+	{
+		// --- ワールド座標でスムーズ追従 ---
+		VECTOR worldBackOffset = { 0.0f, 200.0f, -400.0f };
+		VECTOR targetCamPos = VAdd(playerPos, worldBackOffset);
+
+		float lerpRate = 0.05f; // スムーズ追従率（0.0～1.0）
+		pos_.x += (targetCamPos.x - pos_.x) * lerpRate;
+		pos_.y += (targetCamPos.y - pos_.y) * lerpRate;
+		pos_.z += (targetCamPos.z - pos_.z) * lerpRate;
+
+		targetPos_ = playerPos;
+		cameraUp_ = VGet(0, 1, 0);
+	}
+
+	// マウスを中央に戻す
 	SetMousePoint(centerX_, centerY_);
 }
 
@@ -506,6 +611,88 @@ VECTOR Camera::GetFrontVec(void) const
 		front.z /= length;
 	}
 	return front;
+}
+
+VECTOR Camera::GetRightVec(void) const
+{
+	// 上方向ベクトルは固定（Y軸）
+	VECTOR up = { 0.0f, 1.0f, 0.0f };
+
+	// 前方向を取得
+	VECTOR front = GetFrontVec();
+
+	// 右方向 = 前方向 × 上方向
+	VECTOR right = VCross(front, up);
+
+	// 水平方向だけにする
+	right.y = 0.0f;
+
+	// 正規化
+	right = VNorm(right);
+
+	return right;
+}
+
+Camera::MODE Camera::GetMode(void) const
+{
+	return mode_;
+}
+
+void Camera::SetLockon(bool loc)
+{
+	lockonFlag_ = loc;
+}
+
+bool Camera::IsLockon(void) const
+{
+	return lockonFlag_;
+}
+
+void Camera::SetFreezeFollow(bool freeze)
+{
+	freezeFollow_ = freeze;
+
+	// 凍結開始時に現在の状態を保存
+	if (freeze && followTransform_)
+	{
+		frozenTargetPos_ = followTransform_->pos;
+		frozenCameraPos_ = pos_;
+		initialYaw_ = yaw_;
+
+		// カメラとプレイヤーの距離を計算
+		VECTOR diff = VSub(followTransform_->pos, pos_);
+		initialDistance_ = VSize(diff);
+	}
+	else
+	{
+		// 凍結解除時はキー入力による回転をリセット
+		keyRotateSpeed_ = 0.0f;
+	}
+}
+
+VECTOR Camera::GetOrbitPosition(void) const
+{
+	if (!freezeFollow_)
+	{
+		return Utility::VECTOR_ZERO;
+	}
+
+	// yawの変化量を計算
+	float deltaYaw = yaw_ - initialYaw_;
+
+	// 注視点を固定カメラ位置から見た方向で計算
+	VECTOR direction;
+	direction.x = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+	direction.y = initialDistance_ * sinf(Utility::Deg2RadF(pitch_));
+	direction.z = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+	// プレイヤーの新しい位置（カメラ位置 + 方向ベクトル）
+	return VAdd(frozenCameraPos_, direction);
+}
+
+void Camera::SetKeyRotation(float rotSpeed)
+{
+	keyRotateSpeed_ = rotSpeed;
 }
 
 void Camera::SetLockonTarget(const Transform* target)

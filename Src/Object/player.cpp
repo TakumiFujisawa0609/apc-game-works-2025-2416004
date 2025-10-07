@@ -5,7 +5,11 @@
 #include "../Utility/Utility.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/ResourceManager.h"
+#include "../Manager/Generic/SceneManager.h"
 #include "../Application.h"
+#include "Common/AnimationController.h"
+#include "Common/Transform.h"
+#include "../Manager/Generic/Camera.h"
 
 //コンストラクタ
 Player::Player(void)
@@ -27,6 +31,9 @@ Player::Player(void)
 
 	//地面にいるかどうか
 	isGround_ = true;
+
+    //動きているかどうか
+    isMoving_ = false;
 }
 
 //デストラクタ
@@ -110,6 +117,14 @@ void Player::Draw(void) const
 
 	// デバッグ用: プレイヤー座標に球を出す
 	DrawSphere3D(trans_.pos, 10.0f,16, GetColor(255, 0, 0), GetColor(255, 0, 0), true);
+
+    VECTOR debugEuler = trans_.rot;
+    DrawFormatString(0, 60, 0xffffff, "Player Rot Euler: (%.2f, %.2f, %.2f)",
+        debugEuler.x, debugEuler.y, debugEuler.z);
+
+    Quaternion currentRot = Quaternion::Euler(trans_.rot);
+    DrawFormatString(0, 80, 0xffffff, "Player Quat: w: %.2f x: %.2f y: %.2f z: %.2f",
+        currentRot.w, currentRot.x, currentRot.y, currentRot.z);
 #endif // _DEBUG
 
 }
@@ -139,78 +154,167 @@ bool Player::IsMovementEndbled(void) const
 //入力による移動制御
 void Player::ProcessMove(void)
 {
-	if (!movementEnabled_) return;
+    if (!movementEnabled_) return;
 
-	VECTOR moveDir = Utility::VECTOR_ZERO;
+    auto& input = InputManager::GetInstance();
+    auto camera = SceneManager::GetInstance().GetCamera();
 
-	auto& input = InputManager::GetInstance();
+    // 前回位置保存
+    prePos_ = trans_.pos;
 
-	//入力処理
-	if (input.IsNew(KEY_INPUT_W)) { moveDir = VAdd(moveDir, Utility::DIR_F); }
+    float forwardInput = 0.0f;
+    float rightInput = 0.0f;
 
-	if (input.IsNew(KEY_INPUT_S)) { moveDir = VAdd(moveDir, Utility::DIR_B); }
+    //前
+    if (input.IsNew(KEY_INPUT_W)) { forwardInput += 1.0f; }
 
-	if (input.IsNew(KEY_INPUT_A)) { moveDir = VAdd(moveDir, Utility::DIR_L); }
+    //後ろ
+    if (input.IsNew(KEY_INPUT_S)) { forwardInput -= 1.0f; }
 
-	if (input.IsNew(KEY_INPUT_D)) { moveDir = VAdd(moveDir, Utility::DIR_R); }
+    //左
+    if (input.IsNew(KEY_INPUT_A)) { rightInput -= 1.0f; }
 
-	//ジャンプ入力
-	if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
-	{
-		velocityY_ = jumpPower_;
-		isGround_ = false;
-	}
+    //右
+    if (input.IsNew(KEY_INPUT_D)) { rightInput += 1.0f; }
 
-	//重力処理
-	if (!isGround_)
-	{
-		velocityY_ += gravity_;
+    isMoving_ = false;
 
-		trans_.pos.y += velocityY_;
+    //左右移動
+    if (rightInput != 0.0f && forwardInput == 0.0f)
+    {
+        //カメラを停止
+        camera->SetFreezeFollow(true);
 
-		//地面判定
-		if (trans_.pos.y <= 0.0f)
-		{
-			trans_.pos.y = 0.0f;
+        
+        // 回転速度
+        float keyRotSpeed = rightInput * 1.5f;
 
-			velocityY_ = 0.0f;
-			
-			isGround_ = true;
-		}
-	}
+        // カメラにキー入力による回転速度を設定
+        camera->SetKeyRotation(keyRotSpeed);
 
-	//移動制限
-	if (blockedDirX_ == 1 && moveDir.x < 0) { moveDir.x = 0; }
-	
-	if (blockedDirX_ == -1 && moveDir.x < 0) { moveDir.x = 0; }
-	
-	if (blockedDirX_ == 1 && moveDir.z < 0) { moveDir.z = 0; }
-	
-	if (blockedDirX_ == -1 && moveDir.z < 0) { moveDir.z = 0; }
+        // カメラの位置を取得
+        VECTOR camPos = camera->GetPos();
 
-	//アニメーションの制御
-	if (!Utility::EqualsVZero(moveDir))
-	{
-		moveDir = VNorm(moveDir);
+        // カメラからプレイヤーへのベクトル（XZ平面のみ）
+        VECTOR toPlayer = VSub(trans_.pos, camPos);
 
-		VECTOR movePow = VScale(moveDir, 10.0f);
+        // Y座標は保持
+        float currentHeight = toPlayer.y;
 
-		trans_.pos = VAdd(trans_.pos, movePow);
+        toPlayer.y = 0.0f;
 
-		//向きの設定
-		VECTOR rot = trans_.rot;
+        // 現在の距離を保存
+        float radius = VSize(toPlayer);
 
-		rot.y = atan2f(moveDir.x, moveDir.z) + Utility::Deg2RadF(180.0f);
+        // 現在の角度を計算
+        float currentAngle = atan2f(toPlayer.x, toPlayer.z);
 
-		trans_.rot = rot;
+        // 新しい角度（キー入力による回転を加える）
+        float newAngle = currentAngle + Utility::Deg2RadF(keyRotSpeed);
 
-		//歩きアニメーション
-		PlayAnim(ANIM::WALK, true, 0.2f);
-	}
-	else
-	{
-		//待機アニメーション
-		PlayAnim(ANIM::IDEL, true, 0.2f);
-	}
+        // 新しい位置を計算（極座標→直交座標）
+        VECTOR newOffset;
+        newOffset.x = radius * sinf(newAngle);
+        newOffset.y = currentHeight;
+        newOffset.z = radius * cosf(newAngle);
 
+        // カメラ位置を基準に新しい位置を設定
+        trans_.pos = VAdd(camPos, newOffset);
+
+        isMoving_ = true;
+
+        // カメラの前方向を向く
+        VECTOR camForward = camera->GetFrontVec();
+        camForward.y = 0.0f;
+
+        if (VSize(camForward) > 0.0001f)
+        {
+            camForward = VNorm(camForward);
+            Quaternion targetLocalRot = Quaternion::LookRotation(camForward);
+            trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
+        }
+    }
+    else
+    {
+        // 左右移動していない時はカメラの追従を再開
+        camera->SetFreezeFollow(false);
+
+        //前後左右入力がある場合
+        if (forwardInput != 0.0f || rightInput != 0.0f)
+        {
+            // カメラの前方向
+            VECTOR camForward = camera->GetFrontVec();
+            camForward.y = 0.0f;
+            camForward = VNorm(camForward);
+
+            // カメラの右方向
+            VECTOR camRight = camera->GetRightVec();
+            camRight.y = 0.0f;
+            camRight = VNorm(camRight);
+
+            // 移動方向を合成
+            VECTOR moveDir = Utility::VECTOR_ZERO;
+            moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
+            moveDir = VAdd(moveDir, VScale(camRight, -rightInput));
+            moveDir.y = 0.0f;
+
+            // 移動方向を正規化
+            if (VSize(moveDir) > 0.0001f)
+            {
+                moveDir = VNorm(moveDir);
+                
+                // 移動量を適用
+                VECTOR movement = VScale(moveDir, 10.5f);
+                trans_.pos = VAdd(trans_.pos, movement);
+                
+                isMoving_ = true;
+                
+                // 移動方向に向く
+                Quaternion targetLocalRot = Quaternion::LookRotation(moveDir);
+                trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
+            }
+        }
+    }
+
+    // アニメーション制御
+    if (isMoving_)
+    {
+        PlayAnim(ANIM::WALK, true, 0.2f);
+    }
+    else
+    {
+        PlayAnim(ANIM::IDEL, true, 0.2f);
+    }
+
+    // ジャンプ処理
+    if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
+    {
+        velocityY_ = jumpPower_;
+        isGround_ = false;
+    }
+
+    // 重力処理
+    if (!isGround_)
+    {
+        velocityY_ += gravity_;
+        trans_.pos.y += velocityY_;
+        if (trans_.pos.y <= 0.0f)
+        {
+            trans_.pos.y = 0.0f;
+            velocityY_ = 0.0f;
+            isGround_ = true;
+        }
+    }
+
+    // 移動制限（壁など）
+    VECTOR moveDir = VSub(trans_.pos, prePos_);
+    if ((blockedDirX_ == 1 && moveDir.x < 0) || (blockedDirX_ == -1 && moveDir.x > 0))
+    {
+        trans_.pos.x = prePos_.x;
+    }
+
+    if ((blockedDirZ_ == 1 && moveDir.z < 0) || (blockedDirZ_ == -1 && moveDir.z > 0))
+    {
+        trans_.pos.z = prePos_.z;
+    }
 }

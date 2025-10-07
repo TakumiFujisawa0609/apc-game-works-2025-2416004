@@ -13,6 +13,22 @@ class Transform;
 class Camera
 {
 public:
+
+	//カメラモード
+	enum class MODE
+	{
+		NONE,
+		FIXED_POINT,		//定点カメラ
+		FREE,				//フリーモード
+		FOLLOW,				//追従モード
+		FOLLOW_SPRING,		//ばね付き追従モード
+		FOLLOW_PERSPECTIVE,	//追従対象視点モード
+		SHAKE,				//カメラ揺らし
+		FREE_MOUSE,			//マウス自由カメラ
+		TPS_MOUSE,          //TPS用マウスカメラ
+		VERSATILITY_LOCKON  //汎用ロックオンカメラ
+	};
+
 	//カメラの描画域(Near.Far)関連の定数
 
 	static constexpr float SPEED = 10.0f;			//カメラスピード : NEAR
@@ -55,7 +71,7 @@ public:
 
 	static constexpr float CAMERA_PITCH = 15.0f;				//上下回転
 
-	static constexpr float CAMERA_DISTANCE = 500.0f;			//ターゲットからの距離
+	static constexpr float CAMERA_DISTANCE = 600.0f;			//ターゲットからの距離
 
 	//マウス感度
 	static constexpr float DEFAULT_SENSITIVITY = 0.2f;
@@ -64,22 +80,10 @@ public:
 
 	static constexpr float PITCH_UP = 80.0f;	//ピッチ最大上限
 
-	static constexpr float PITCH_DWON = -30.0f;	//ピッチ最低上限
+	static constexpr float PITCH_DWON = -80.0f;	//ピッチ最低上限
 
-	//カメラモード
-	enum class MODE
-	{
-		NONE,			
-		FIXED_POINT,		//定点カメラ
-		FREE,				//フリーモード
-		FOLLOW,				//追従モード
-		FOLLOW_SPRING,		//ばね付き追従モード
-		FOLLOW_PERSPECTIVE,	//追従対象視点モード
-		SHAKE,				//カメラ揺らし
-		FREE_MOUSE,			//マウス自由カメラ
-		TPS_MOUSE,          //TPS用マウスカメラ
-		LOCKON              //ロックオンカメラ
-	};
+	//XZ平面の制限
+	const float MAX_DIST_XZ = 500.0f;
 
 	//コンストラクタ
 	Camera(void);
@@ -114,10 +118,32 @@ public:
 	//座標の設定
 	void SetPos(const VECTOR& pos, const VECTOR& target);
 
-	VECTOR GetFrontVec(void) const;
-
 	//ロックオン対象の設定
 	void SetLockonTarget(const Transform* target);
+
+	//カメラの前方向を取得
+	VECTOR GetFrontVec(void) const;
+
+	//カメラの右方向を取得
+	VECTOR GetRightVec(void) const;
+
+	//カメラモードの取得
+	MODE GetMode(void) const;
+
+	//ロックオンの設定
+	void SetLockon(bool loc);
+
+	//ロックオンの取得
+	bool IsLockon(void) const;
+
+	//固定された注視点
+	void SetFreezeFollow(bool freeze);
+
+	// 公転位置を取得
+	VECTOR GetOrbitPosition(void) const;
+
+	// 自動回転を追加
+	void SetKeyRotation(float rotSpeed);
 
 private:
 
@@ -193,6 +219,27 @@ private:
 	//Yの移動量
 	int deltaY_;
 
+	//ロックオンフラグ
+	bool lockonFlag_;
+
+	// 追従を一時停止するフラグ
+	bool freezeFollow_;
+
+	// 固定された注視点
+	VECTOR frozenTargetPos_;
+
+	// 固定されたカメラ位置
+	VECTOR frozenCameraPos_;
+
+	// 凍結開始時のyaw角度
+	float initialYaw_;
+
+	// 凍結開始時のカメラとプレイヤーの距離
+	float initialDistance_;
+
+	// キー入力による回転速度
+	float keyRotateSpeed_;
+
 	//カメラを初期位置に戻す
 	void SetDefault(void);
 
@@ -225,7 +272,7 @@ private:
 	//TPS用マウス操作カメラ
 	void SetBeforeDrawTPSMouse(void);
 
-	//ロックオンカメラ
+	//汎用ロックオンカメラ
 	void SetBeforeDrawLockon(void);
 
 	//カメラ揺らし

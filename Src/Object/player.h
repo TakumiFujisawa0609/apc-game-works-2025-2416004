@@ -64,6 +64,9 @@ private:
 	//’n–Ê‚É‚¢‚é‚©‚Ç‚¤‚©
 	bool isGround_;
 
+	//“®‚¢‚Ä‚¢‚é‚©‚Ç‚¤‚©
+	bool isMoving_;
+
 	//ˆÚ“®“ü—Í
 	void ProcessMove(void);
 

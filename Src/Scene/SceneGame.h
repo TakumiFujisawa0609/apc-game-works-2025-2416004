@@ -7,6 +7,7 @@
 
 class Grid;
 class Player;
+class EnemyDummy;
 
 
 class SceneGame : public SceneBase
@@ -45,10 +46,17 @@ private:
 	//プレイヤー
 	std::shared_ptr<Player> player_;
 
+	//仮のエネミー
+	std::shared_ptr<EnemyDummy> dummy_;
+
 	//グリッド線
 	Grid* grid_;
 
 	bool isStartFont_;
+
+	float lockonTimer_;
+
+	float deltaTime_;
 
 	//描画(デバッグ)
 	void DrawDebug(void);

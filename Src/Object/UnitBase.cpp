@@ -3,10 +3,13 @@
 #include "../Application.h"
 #include "../Utility/Utility.h"
 #include "../Common/Quaternion.h"
+#include "Common/AnimationController.h"
+
 
 //コンストラクタ
 UnitBase::UnitBase(void)
 {
+
 	//半径の初期化
 	radius_ = 0.0f;
 
@@ -15,6 +18,9 @@ UnitBase::UnitBase(void)
 
 	//移動量の初期化
 	movePow_ = Utility::VECTOR_ZERO;
+
+	//前座標の初期化
+	prePos_ = Utility::VECTOR_ZERO;
 
 	//アニメーションの初期化
 	currentAnim_ = ANIM::NONE;
@@ -80,7 +86,7 @@ void UnitBase::Draw(void) const
 //モデル情報の取得
 const Transform& UnitBase::GetTransform(void) const
 {
-	return trans_;
+   return trans_;
 }
 
 //座標の取得

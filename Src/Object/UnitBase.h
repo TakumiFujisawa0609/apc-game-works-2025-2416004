@@ -1,10 +1,13 @@
 #pragma once
 
+#include <DxLib.h>
 #include <unordered_map>
 #include <memory>
 
 #include "Common/Transform.h"
-#include "Common/AnimationController.h"
+
+class AnimationController;
+
 
 class UnitBase
 {
