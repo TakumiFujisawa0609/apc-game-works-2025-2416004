@@ -19,6 +19,7 @@ public:
 
 		//モデル
 		MODEL_PLAYER,			//プレイヤーモデル
+		MODEL_GROUND,			//ステージ地面のモデル
 
 		//サウンド
 

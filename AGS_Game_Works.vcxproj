@@ -143,7 +143,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Src\Object\EnemyDummy.h" />
+    <ClInclude Include="Src\Object\Manager\GroundManager.h" />
+    <ClInclude Include="Src\Object\Stage\Ground.h" />
     <ClInclude Include="Src\Manager\System\Loading.h" />
     <ClInclude Include="Src\DrawUI\SceneUI\SceneUi.h" />
     <ClInclude Include="Src\Application.h" />
@@ -179,7 +180,8 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Src\Object\EnemyDummy.cpp" />
+    <ClCompile Include="Src\Object\Manager\GroundManager.cpp" />
+    <ClCompile Include="Src\Object\Stage\Ground.cpp" />
     <ClCompile Include="Src\Manager\System\Loading.cpp" />
     <ClCompile Include="Src\DrawUI\SceneUI\SceneUi.cpp" />
     <ClCompile Include="Src\Application.cpp" />

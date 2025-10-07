@@ -6,14 +6,13 @@
 #include "../Manager/Generic/Camera.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
-#include "../Manager/Generic/Resource.h"
+#include"../Manager/Generic/Resource.h"
 #include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/System/Collision.h"
 
 #include "../Object/Grid.h"
 #include "../Object/Player.h"
-#include "../Object/EnemyDummy.h"
 #include "../DrawUI/Font.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Object/Common/AnimationController.h"
@@ -29,11 +28,8 @@ SceneGame::SceneGame(void)
 	//プレイヤー
 	player_ = std::make_shared<Player>();
 
-	dummy_ = std::make_shared<EnemyDummy>();
-
-	lockonTimer_ = 0.0f;
-
-	deltaTime_ = 0.0f;
+	//ステージ
+	ground_ = std::make_shared<Ground>();
 
 	
 }
@@ -47,10 +43,11 @@ void SceneGame::Load()
 
 	//プレイヤーのリソース読み込み
 	player_->Load();
-	// サウンドの読み込み
 
-	//仮のエネミーの読み込みs
-	dummy_->Load();
+	//ステージ
+	
+	
+	// サウンドの読み込み
 
 	//ロード完了
 	EndLoad();
@@ -76,15 +73,9 @@ void SceneGame::Init()
 
 	isStartFont_ = true;
 
-	deltaTime_ = SceneManager::GetInstance().GetDeltaTime();
-
 	//プレイヤーの初期化
 	player_->Init();
 	camera->SetFollow(&player_->GetTransform());
-
-	// 仮ターゲット初期化
-	dummy_->Init();
-	camera->SetLockonTarget(&dummy_->GetTransform());
 }
 
 void SceneGame::Update(void)
@@ -96,35 +87,18 @@ void SceneGame::Update(void)
 	//プレイヤーの更新
 	player_->Update();
 
-	dummy_->Update(); // 仮ターゲット更新
-
-	//// スペース押下でロックオン開始
-	//if (input.IsTrgDown(KEY_INPUT_RETURN))
-	//{
- //  		camera->SetLockon(true);
-	//	lockonTimer_ = 0.0f; // タイマーリセット
-	//}
-
-	//// ロックオン中のタイマー更新
-	//if (camera->IsLockon() == true)
-	//{
-	//	lockonTimer_ += deltaTime_;
-
-	//	// スペースを押していない状態で2秒経過したらTPS_MOUSEに戻す
- //  		if (!input.IsNew(KEY_INPUT_RETURN) && lockonTimer_ >= 2.0f)
-	//	{
-	//		camera->SetLockon(false);
-	//	}
-	//}
+	//ステージ
+	
 
 }
 
 void SceneGame::Draw(void)
 {
+	//ステージの描画
+	
+
 	//プレイヤーの描画
 	player_->Draw();
-
-	dummy_->Draw();   // 仮ターゲット描画
 
 #ifdef _DEBUG
 	//デバック表示
@@ -143,11 +117,8 @@ void SceneGame::Release(void)
 	player_->Release();
 	player_.reset();
 
-	if (dummy_)
-	{
-		dummy_->Release();
-		dummy_.reset();
-	}
+	//ステージの解放
+
 
 	
 }

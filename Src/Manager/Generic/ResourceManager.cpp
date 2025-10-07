@@ -39,6 +39,8 @@ void ResourceManager::InitTitle(void)
 void ResourceManager::InitGame(void)
 {
 	Resource res;
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/stagetest.mv1");
+	resourcesMap_.emplace(SRC::MODEL_GROUND, res);
 
 	// プレイヤー関連リソースの初期化
 	ResourcePlayer();
