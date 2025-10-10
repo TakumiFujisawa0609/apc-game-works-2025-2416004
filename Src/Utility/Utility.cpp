@@ -6,6 +6,7 @@
 #include<sstream>
 #include<vector>
 #include<math.h>
+#include <cstdlib>
 
 #include "../Manager/Generic/SceneManager.h"
 
@@ -541,4 +542,10 @@ bool Utility::IsTimeOver(float& totalTime, const float& waitTime)
 	}
 
 	return false;
+}
+
+// ランダムな数値を返す(float用)
+float Utility::RandRangeF(float min, float max)
+{
+	return min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (max - min);
 }

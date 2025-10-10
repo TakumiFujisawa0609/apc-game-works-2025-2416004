@@ -380,5 +380,8 @@ public:
 
 	//待機時間
 	static bool IsTimeOver(float& totalTime, const float& waitTime);
+
+	// ランダムな数値を返す(float用)
+	static float  RandRangeF(float min, float max);
 };
 

@@ -27,7 +27,7 @@ void Ground::Init(const VECTOR& pos, int modelId)
 	pos_ = pos;
 
 	//ƒ‚ƒfƒ‹“Ç‚İ‚İ
-	modelId_ = modelId_;
+  	modelId_ = modelId;
 
 }
 
@@ -41,7 +41,14 @@ void Ground::Draw(void)
 	MV1DrawModel(modelId_);
 }
 
+//ƒ‚ƒfƒ‹ID‚ğæ“¾
 int Ground::GetModelId(void) const
 {
 	return modelId_;
+}
+
+//À•W‚ğæ“¾
+VECTOR Ground::GetPos(void) const
+{
+	return pos_;
 }

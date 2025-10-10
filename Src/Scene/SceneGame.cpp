@@ -13,6 +13,7 @@
 
 #include "../Object/Grid.h"
 #include "../Object/Player.h"
+#include "../Object/Manager/GroundManager.h"
 #include "../DrawUI/Font.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Object/Common/AnimationController.h"
@@ -29,8 +30,7 @@ SceneGame::SceneGame(void)
 	player_ = std::make_shared<Player>();
 
 	//ステージ
-	ground_ = std::make_shared<Ground>();
-
+	groundManager_ = std::make_shared<GroundManager>();
 	
 }
 
@@ -45,7 +45,7 @@ void SceneGame::Load()
 	player_->Load();
 
 	//ステージ
-	
+	groundManager_->Load();
 	
 	// サウンドの読み込み
 
@@ -76,6 +76,9 @@ void SceneGame::Init()
 	//プレイヤーの初期化
 	player_->Init();
 	camera->SetFollow(&player_->GetTransform());
+
+	//ステージの初期化
+	groundManager_->Init();
 }
 
 void SceneGame::Update(void)
@@ -88,14 +91,16 @@ void SceneGame::Update(void)
 	player_->Update();
 
 	//ステージ
-	
+	groundManager_->Update();
 
 }
 
 void SceneGame::Draw(void)
 {
+	auto camera = SceneManager::GetInstance().GetCamera();
+
 	//ステージの描画
-	
+	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVec());
 
 	//プレイヤーの描画
 	player_->Draw();
@@ -118,7 +123,8 @@ void SceneGame::Release(void)
 	player_.reset();
 
 	//ステージの解放
-
+	groundManager_->Release();
+	groundManager_.reset();
 
 	
 }

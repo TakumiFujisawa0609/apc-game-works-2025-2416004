@@ -143,6 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
+    <ClInclude Include="Src\Object\Enemy\EnemySlime.h" />
+    <ClInclude Include="Src\Object\Enemy\EnemyBase.h" />
     <ClInclude Include="Src\Object\Manager\GroundManager.h" />
     <ClInclude Include="Src\Object\Stage\Ground.h" />
     <ClInclude Include="Src\Manager\System\Loading.h" />
@@ -180,6 +183,9 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
+    <ClCompile Include="Src\Object\Enemy\EnemySlime.cpp" />
+    <ClCompile Include="Src\Object\Enemy\EnemyBase.cpp" />
     <ClCompile Include="Src\Object\Manager\GroundManager.cpp" />
     <ClCompile Include="Src\Object\Stage\Ground.cpp" />
     <ClCompile Include="Src\Manager\System\Loading.cpp" />

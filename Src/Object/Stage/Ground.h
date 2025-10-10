@@ -22,6 +22,9 @@ public:
 	//ƒ‚ƒfƒ‹ID‚ğæ“¾
 	int GetModelId(void) const;
 
+	//À•W‚ğæ“¾
+	VECTOR GetPos(void) const;
+
 private:
 	//ƒ‚ƒfƒ‹ID
 	int modelId_;

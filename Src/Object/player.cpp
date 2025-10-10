@@ -47,7 +47,7 @@ void Player::Load(void)
 {
 	auto& res = ResourceManager::GetInstance();
 
-	////ƒ‚ƒfƒ‹“Ç‚İ‚İ
+	//ƒ‚ƒfƒ‹“Ç‚İ‚İ
 	modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
 	trans_.SetModel(modelId_);
 }

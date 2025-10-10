@@ -7,7 +7,7 @@
 
 class Grid;
 class Player;
-class Ground;
+class GroundManager;
 
 
 class SceneGame : public SceneBase
@@ -47,6 +47,7 @@ private:
 	std::shared_ptr<Player> player_;
 
 	//ステージ
+	std::shared_ptr<GroundManager> groundManager_;
 	
 
 	//グリッド線
