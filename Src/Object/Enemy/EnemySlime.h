@@ -32,6 +32,8 @@ public:
 	//パラメータ
 	void SetParam(void) override;
 
+	//自身のタイプを返す
+	EnemyManager::ENEMY_TYPE GetType(void) const override;
 private:
 
 	//移動速度

@@ -1,6 +1,7 @@
 #include "EnemySlime.h"
 
 #include "../../Utility/Utility.h"
+#include "../Manager/EnemyManager.h"
 
 //コンストラクタ
 EnemySlime::EnemySlime(void)
@@ -76,4 +77,9 @@ void EnemySlime::SetParam(void)
 	moveSpeed_ = DEFAULT_SPEED;
 
 	radius_ = 50.0f;
+}
+
+EnemyManager::ENEMY_TYPE EnemySlime::GetType(void) const
+{
+	return EnemyManager::ENEMY_TYPE::SLIME;
 }

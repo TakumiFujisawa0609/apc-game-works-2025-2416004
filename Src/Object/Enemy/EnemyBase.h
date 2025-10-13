@@ -45,6 +45,9 @@ public:
 	//パラメータ
 	virtual void SetParam(void) = 0;
 
+	//自身のタイプを返す
+	virtual EnemyManager::ENEMY_TYPE GetType(void) const = 0;
+
 protected:
 
 	//体力

@@ -47,6 +47,9 @@ public:
 	// 解放処理
 	void Release(void);
 
+	//ターゲット座標を設定
+	void SetTargetPos(const VECTOR& pos);
+
 private:
 	
 	// 敵ごとの最大生成数
@@ -61,7 +64,10 @@ private:
 	// 敵のリスト
 	std::vector<std::unique_ptr<EnemyBase>> enemies_;
 
-	//ランダム座標を返す
+	// ターゲット座標
+	VECTOR targetPos_;
+
+	// ランダム座標を返す
 	VECTOR RandomSpawnPos(void) const;
 	
 
