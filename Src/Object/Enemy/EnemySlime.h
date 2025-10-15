@@ -29,11 +29,9 @@ public:
 	//描画処理
 	void Draw(void) const override;
 
-	//パラメータ
-	void SetParam(void) override;
+	//
+	void ApplyData(const EnemyInfo& info) override;
 
-	//自身のタイプを返す
-	EnemyManager::ENEMY_TYPE GetType(void) const override;
 private:
 
 	//移動速度

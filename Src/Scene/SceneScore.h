@@ -5,15 +5,21 @@
 #include"SceneBase.h"
 
 
-class SceneGameClear : public SceneBase
+class SceneScore : public SceneBase
 {
 public:
 
 	//コンストラクタ
-	SceneGameClear(void);
+	SceneScore(void);
 
 	//デストラクタ
-	~SceneGameClear(void) = default;
+	~SceneScore(void) = default;
+
+	//読み込み
+	void Load(void) override;
+
+	//読み込み完了
+	void EndLoad(void) override;
 
 	//初期化処理
 	void Init(void)override;

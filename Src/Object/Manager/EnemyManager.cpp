@@ -7,15 +7,8 @@
 //コンストラクタ
 EnemyManager::EnemyManager(void)
 {
-    // 各敵の生成上限を設定
-    maxSpawns_[ENEMY_TYPE::SLIME] = 10;
-
-    // 現在数を初期化
-    curSpawns_[ENEMY_TYPE::SLIME] = 0;
-
     //ターゲット座標を初期化
-    targetPos_ = Utility::VECTOR_ZERO;
-	
+    targetPos_ = Utility::VECTOR_ZERO;	
 }
 
 // モデル読み込み
@@ -23,9 +16,11 @@ void EnemyManager::Load(void)
 {
     auto& res = ResourceManager::GetInstance();
 
-    // スライムのモデルをロード
-    modelIds_[ENEMY_TYPE::SLIME] = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
+    // スライムの生成上限を初期化
+      maxSpawns_["SLIME"] = 10;
 
+    //スライムの現在数を初期化
+    curSpawns_["SLIME"] = 0;
 }
 
 // 初期化
@@ -40,39 +35,28 @@ void EnemyManager::Init(void)
 }
 
 // ランダム生成
-void EnemyManager::RandomSpawn(ENEMY_TYPE type)
+void EnemyManager::RandomSpawn(const std::string& type, const EnemyData& data)
 {
     // 上限をチェック
     if (curSpawns_[type] >= maxSpawns_[type]) { return; }
+
+    //エネミーのデータを取得
+    const EnemyInfo* info = data.GetData(type);
+    
+    if (!info) { return; }
 
     //座標をランダム生成
     VECTOR spawnPos = RandomSpawnPos();
 
     //敵の生成
-    std::unique_ptr<EnemyBase> enemy = nullptr;
+    auto enemy = CreateEnemy(*info);
 
-    switch (type)
-    {
-    case ENEMY_TYPE::SLIME:
+    //敵の初期化
+    enemy->Init(spawnPos);
 
-        //スライムの生成
-        auto slime = std::make_unique<EnemySlime>();
+    enemies_.push_back(std::move(enemy));
 
-        slime->Load(modelIds_[ENEMY_TYPE::SLIME]);
-        
-        slime->Init(spawnPos);
-
-        enemy = std::move(slime);
-
-        break;
-
-    }
-
-    if (enemy)
-    {
-        enemies_.push_back(std::move(enemy));
-        curSpawns_[type]++;
-    }
+    curSpawns_[type]++;
 
 }
 
@@ -96,14 +80,12 @@ void EnemyManager::Update(void)
     //各敵の更新処理
     for (auto& enemy : enemies_)
     {
-        //スライムの追従対象を更新
-        if (enemy->GetType() == ENEMY_TYPE::SLIME)
+        if (auto slime = dynamic_cast<EnemySlime*>(enemy.get()))
         {
-            auto slime = static_cast<EnemySlime*>(enemy.get());
-
             slime->SetTargetPos(targetPos_);
         }
 
+        //共通の更新
         enemy->Update();
     }
 
@@ -135,6 +117,14 @@ void EnemyManager::Draw(void)
     {
         enemy->Draw();
     }
+
+#ifdef _DEBUG
+    for (auto& enemy : enemies_)
+    {
+        const VECTOR& pos = enemy->GetTransform().pos;
+        DrawSphere3D(pos, enemy->GetRadius(), 5.0f,0x00FF00, 0x00FF00, true);
+    }
+#endif
 }
 
 // 解放処理
@@ -155,7 +145,36 @@ void EnemyManager::Release(void)
     curSpawns_.clear();
 }
 
+//追従対象の設定
 void EnemyManager::SetTargetPos(const VECTOR& pos)
 {
     targetPos_ = pos;
 }
+
+//敵の生成
+std::unique_ptr<EnemyBase> EnemyManager::CreateEnemy(const EnemyInfo& info)
+{
+    auto& res = ResourceManager::GetInstance();
+
+    if (info.type == "SLIME")
+    {
+        auto slime = std::make_unique<EnemySlime>();
+
+        //スライムモデルロード
+        int modelId = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
+
+        //モデルIDを渡す
+        slime->Load(modelId);
+
+        //初期データを適用
+        slime->ApplyData(info);
+
+        return slime;
+    }
+
+    // 対応するタイプがなければ nullptr を返す
+    return std::unique_ptr<EnemyBase>(nullptr);
+}
+
+
+

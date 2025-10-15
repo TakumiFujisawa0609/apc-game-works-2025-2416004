@@ -8,11 +8,16 @@
 class Grid;
 class Player;
 class GroundManager;
+class EnemyManager;
+class EnemyData;
 
 
 class SceneGame : public SceneBase
 {
 public:
+
+	//クリア時間
+	static constexpr float LIMIT_TIME = 999.0f;
 
 	//コンストラクタ
 	SceneGame(void);
@@ -49,6 +54,11 @@ private:
 	//ステージ
 	std::shared_ptr<GroundManager> groundManager_;
 	
+	//エネミーマネージャー
+	std::shared_ptr<EnemyManager> enemyManager_;
+
+	//エネミーデータ
+	std::shared_ptr<EnemyData> enemyData_;
 
 	//グリッド線
 	Grid* grid_;

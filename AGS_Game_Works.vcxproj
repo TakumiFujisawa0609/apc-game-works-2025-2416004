@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
     <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemySlime.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyBase.h" />
@@ -177,12 +178,12 @@
     <ClInclude Include="Src\Object\UnitBase.h" />
     <ClInclude Include="Src\Scene\SceneBase.h" />
     <ClInclude Include="Src\Scene\SceneGame.h" />
-    <ClInclude Include="Src\Scene\SceneGameClear.h" />
-    <ClInclude Include="Src\Scene\SceneGameOver.h" />
+    <ClInclude Include="Src\Scene\SceneScore.h" />
     <ClInclude Include="Src\Scene\SceneTitle.h" />
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />
     <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemySlime.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyBase.cpp" />
@@ -217,8 +218,7 @@
     <ClCompile Include="Src\Object\UnitBase.cpp" />
     <ClCompile Include="Src\Scene\SceneBase.cpp" />
     <ClCompile Include="Src\Scene\SceneGame.cpp" />
-    <ClCompile Include="Src\Scene\SceneGameClear.cpp" />
-    <ClCompile Include="Src\Scene\SceneGameOver.cpp" />
+    <ClCompile Include="Src\Scene\SceneScore.cpp" />
     <ClCompile Include="Src\Scene\SceneTitle.cpp" />
     <ClCompile Include="Src\Utility\Utility.cpp" />
   </ItemGroup>

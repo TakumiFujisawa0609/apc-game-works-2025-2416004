@@ -2,16 +2,24 @@
 
 #include "../../Utility/Utility.h"
 
+
 //コンストラクタ
 EnemyBase::EnemyBase(void)
 {
-	hp_ = MAX_HP;
+	hp_ = 0.0f;
 
-	maxHp_ = MAX_HP;
+	maxHp_ = 0.0f;
 
-	moveSpeed_ = DEFAULT_SPEED;
+	moveSpeed_ = 0.0f;
 
-	radius_ = 0.0f;
+	type_ = "";
+}
+
+void EnemyBase::Load(int modelId)
+{
+	trans_.modelId = modelId;
+
+	trans_.SetModel(trans_.modelId);
 }
 
 //初期化
@@ -26,8 +34,6 @@ void EnemyBase::Init(const VECTOR& startPos)
 	movePow_ = Utility::VECTOR_ZERO;
 
 	currentAnim_ = ANIM::NONE;
-
-	SetParam();
 }
 
 //更新処理
@@ -49,6 +55,20 @@ void EnemyBase::Draw(void) const
 
 }
 
+//CSVデータを適用
+void EnemyBase::ApplyData(const EnemyInfo& info)
+{
+	type_ = info.type;
+
+	maxHp_ = info.hp;
+	
+	hp_ = info.hp;
+	
+	moveSpeed_ = info.speed;
+
+	radius_ = info.radius;
+}
+
 //体力を設定
 void EnemyBase::SetHp(float hp)
 {
@@ -67,4 +87,9 @@ void EnemyBase::TakeDamage(float damage)
 	hp_ -= damage;
 
 	if (hp_ < 0.0f) { hp_ = 0.0f; }
+}
+
+const std::string& EnemyBase::GetType(void) const
+{
+	return type_;
 }

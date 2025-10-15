@@ -1,7 +1,6 @@
 #include "EnemySlime.h"
 
 #include "../../Utility/Utility.h"
-#include "../Manager/EnemyManager.h"
 
 //コンストラクタ
 EnemySlime::EnemySlime(void)
@@ -14,7 +13,8 @@ EnemySlime::EnemySlime(void)
 void EnemySlime::Load(int modelId)
 {
 	//モデルの読み込み
-	trans_.SetModel(modelId);
+	trans_.modelId = modelId;
+	trans_.SetModel(trans_.modelId);
 
 }
 
@@ -23,6 +23,8 @@ void EnemySlime::Init(const VECTOR& startPos)
 {
 	//基底クラスの初期化
 	EnemyBase::Init(startPos);
+
+	trans_.scl = Utility::VECTOR_ONE;
 
 
 }
@@ -68,18 +70,7 @@ void EnemySlime::Draw(void) const
 
 }
 
-void EnemySlime::SetParam(void)
+void EnemySlime::ApplyData(const EnemyInfo& info)
 {
-	maxHp_ = MAX_HP;
-
-	hp_ = maxHp_;
-
-	moveSpeed_ = DEFAULT_SPEED;
-
-	radius_ = 50.0f;
-}
-
-EnemyManager::ENEMY_TYPE EnemySlime::GetType(void) const
-{
-	return EnemyManager::ENEMY_TYPE::SLIME;
+	EnemyBase::ApplyData(info);
 }

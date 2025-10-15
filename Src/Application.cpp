@@ -26,6 +26,7 @@ const std::string Application::PATH_BGM = "Data/Sound/BGM/";
 const std::string Application::PATH_SE = "Data/Sound/SE/";
 const std::string Application::PATH_MOVIE = "Data/Movie/";
 const std::string Application::PATH_MAP_DATA = "Data/MapData/MapData.csv";
+const std::string Application::PATH_CSV = "Data/CSV/";
 
 void Application::CreateInstance(void)
 {

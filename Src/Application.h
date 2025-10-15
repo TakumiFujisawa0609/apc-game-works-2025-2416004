@@ -43,6 +43,7 @@ public:
 	static const std::string PATH_SE;
 	static const std::string PATH_MOVIE;
 	static const std::string PATH_MAP_DATA;
+	static const std::string PATH_CSV;
 	//----------------------------------------
 
 	//明治的にインスタンスを生成する

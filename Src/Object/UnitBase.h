@@ -28,10 +28,10 @@ public:
 	virtual ~UnitBase(void);
 
 	//リソースの読み込み
-	virtual void Load(void) = 0;
+	virtual void Load(void);
 
 	//初期化
-	virtual void Init(void) = 0;
+	virtual void Init(void);
 
 	//更新処理
 	virtual void Update(void);
@@ -40,7 +40,7 @@ public:
 	virtual void Draw(void) const;
 
 	//解放処理
-	virtual void Release(void) = 0;
+	virtual void Release(void);
 
 	//モデル情報
 	const Transform& GetTransform(void) const;

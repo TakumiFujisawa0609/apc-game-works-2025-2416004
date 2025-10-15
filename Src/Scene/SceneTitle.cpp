@@ -12,6 +12,7 @@
 #include "../Application.h"
 #include "../DrawUI/Font.h"
 #include "../Manager/System/Loading.h"
+#include "../Manager/System/TimeManager.h"
 
 SceneTitle::SceneTitle(void)
 {
@@ -67,6 +68,9 @@ void SceneTitle::Load(void)
     uiHowToPlay_->AddCharctor("ガーデンについて");
     uiHowToPlay_->AddCharctor("戻る");
     uiHowToPlay_->SetCurrentIndex(0);
+
+    //時間カウントリセット
+    TimeManager::GetInstance().Reset();
 }
 
 void SceneTitle::EndLoad(void)

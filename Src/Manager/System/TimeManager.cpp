@@ -37,7 +37,7 @@ void TimeManager::Reset(void)
 void TimeManager::Init(void)
 {
 	gameTime_ = 0.0f;
-	gameSpeed_ = 144.0f;
+	gameSpeed_ = 1.0f;
 	timers_.clear();
 
 	prevTime_ = std::chrono::steady_clock::now();

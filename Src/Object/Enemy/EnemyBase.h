@@ -1,19 +1,17 @@
 #pragma once
 
 #include <DxLib.h>
+#include <string>
 
 #include "../UnitBase.h"
+#include "EnemyData.h"
+
 
 
 //エネミーのベース
 class EnemyBase : public UnitBase
 {
 public:
-	//最大体力
-	static constexpr float MAX_HP = 100.0f;
-
-	//移動速度
-	static constexpr float DEFAULT_SPEED = 10.0f;
 
 	//コンストラクタ
 	EnemyBase(void);
@@ -33,6 +31,9 @@ public:
 	//描画処理
 	void Draw(void) const override;
 
+	//CSVデータを適用
+	virtual void ApplyData(const EnemyInfo& info);;
+
 	//HPの設定
 	void SetHp(float hp);
 
@@ -42,12 +43,8 @@ public:
 	//ダメージ処理
 	virtual void TakeDamage(float damage);
 
-	//パラメータ
-	virtual void SetParam(void) = 0;
-
 	//自身のタイプを返す
-	virtual EnemyManager::ENEMY_TYPE GetType(void) const = 0;
-
+	const std::string& GetType(void) const;
 protected:
 
 	//体力
@@ -58,5 +55,8 @@ protected:
 
 	//基本移動速度
 	float moveSpeed_;
+
+	//タイプ
+	std::string type_;
 };
 

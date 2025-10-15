@@ -47,6 +47,14 @@ UnitBase::~UnitBase(void)
 
 }
 
+void UnitBase::Load(void)
+{
+}
+
+void UnitBase::Init(void)
+{
+}
+
 //XVˆ—
 void UnitBase::Update(void)
 {
@@ -81,6 +89,10 @@ void UnitBase::Draw(void) const
 	{
 		MV1DrawModel(trans_.modelId);
 	}
+}
+
+void UnitBase::Release(void)
+{
 }
 
 //ƒ‚ƒfƒ‹î•ñ‚Ìæ“¾
