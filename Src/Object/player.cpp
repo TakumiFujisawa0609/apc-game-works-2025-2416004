@@ -63,7 +63,7 @@ void Player::Init(void)
 	trans_.rot = VGet(0, Utility::Deg2RadF(180.0f), 0);
 
 	//ƒXƒP[ƒ‹‚Ì‰Šú‰»
-	trans_.scl = { 0.5f, 0.5f, 0.5f };
+	trans_.scl = { 0.2f, 0.2f, 0.2f };
 
 	//“–‚½‚è”»’è
 	radius_ = 1.0f;

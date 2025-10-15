@@ -1,5 +1,2 @@
 ﻿  EnemySlime.cpp
-  EnemyManager.cpp
-D:\AGSdeta\AGS_Game_Works\Src\Object\Manager\EnemyManager.cpp(125,47): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
-  コードを生成中...
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

@@ -9,7 +9,7 @@ class EnemySlime : public EnemyBase
 {
 public:
 	//Å‘å‹–ì
-	static constexpr float VIEW_RANGE = 200.0f;
+	static constexpr float VIEW_RANGE = 600.0f;
 
 	//‹–ì‚Ì‰ğœ‹——£
 	static constexpr float LOST_RANGE = 30.0f;

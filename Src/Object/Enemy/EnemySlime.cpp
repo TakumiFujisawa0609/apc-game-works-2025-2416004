@@ -44,7 +44,7 @@ void EnemySlime::Init(const VECTOR& startPos)
 	//基底クラスの初期化
 	EnemyBase::Init(startPos);
 
-	trans_.scl = VGet(0.5f, 0.5f, 0.5f);
+	trans_.scl = VGet(0.2f, 0.2f, 0.2f);
 
 
 }
@@ -58,40 +58,42 @@ void EnemySlime::SetTargetPos(const VECTOR& pos)
 //更新処理
 void EnemySlime::Update(void)
 {
-	//ターゲット方向へ移動
-	VECTOR dirPlayer;
-
-	dirPlayer.x = targetPos_.x - trans_.pos.x;
-
-	dirPlayer.y = targetPos_.y - trans_.pos.y;
-
-	dirPlayer.z = targetPos_.z - trans_.pos.z;
-
+	// プレイヤーへの方向ベクトル
+	VECTOR dirPlayer = VSub(targetPos_, trans_.pos);
 	float distance = static_cast<float>(Utility::MagnitudeF(dirPlayer));
-
-	//正規化
 	VECTOR dirNorm = Utility::VNormalize(dirPlayer);
 
-	//視野内か判定
-	if (distance <= viewAngle_)
-	{
-		//内積計算
-		double angle = Utility::AngleDeg(forward_, dirNorm);
+	// プレイヤーが視野内にいるか判定
+	double angle = Utility::AngleDeg(forward_, dirNorm);
+	bool inView = (distance <= viewRange_ && angle <= viewAngle_ * 0.5);
 
-		if (distance <= viewAngle_ * 0.5f)
-		{
-			isInView_ = true;
-		}
+	// --- 状態更新 ---
+	if (inView)
+	{
+		// プレイヤーを発見 → 追跡開始
+		isChasing_ = true;
+	}
+	else if (distance > lostRange_)
+	{
+		// 完全に見失ったら追跡解除
+		isChasing_ = false;
 	}
 
-	//追跡処理
+	// --- 移動処理 ---
+	if (isChasing_)
+	{
+		movePow_ = VScale(dirNorm, moveSpeed_);
+	}
+	else
+	{
+		movePow_ = Utility::VECTOR_ZERO;
+	}
 
-	//正面方向を更新
+	// 正面方向更新
 	if (!Utility::EqualsVZero(movePow_))
 	{
 		forward_ = Utility::VNormalize(movePow_);
 	}
-	
 
 	//共通更新処理
 	EnemyBase::Update();
