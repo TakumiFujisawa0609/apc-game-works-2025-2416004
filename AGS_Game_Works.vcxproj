@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Manager\System\CollisionManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
     <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemySlime.h" />
@@ -173,7 +174,6 @@
     <ClInclude Include="Src\Object\Common\AnimationController.h" />
     <ClInclude Include="Src\Object\Common\Transform.h" />
     <ClInclude Include="Src\Object\Grid.h" />
-    <ClInclude Include="Src\Object\NullHitObject.h" />
     <ClInclude Include="Src\Object\Player.h" />
     <ClInclude Include="Src\Object\UnitBase.h" />
     <ClInclude Include="Src\Scene\SceneBase.h" />
@@ -183,6 +183,7 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Manager\System\CollisionManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />
     <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemySlime.cpp" />
@@ -213,7 +214,6 @@
     <ClCompile Include="Src\Object\Common\AnimationController.cpp" />
     <ClCompile Include="Src\Object\Common\Transform.cpp" />
     <ClCompile Include="Src\Object\Grid.cpp" />
-    <ClCompile Include="Src\Object\NullHitObject.cpp" />
     <ClCompile Include="Src\Object\Player.cpp" />
     <ClCompile Include="Src\Object\UnitBase.cpp" />
     <ClCompile Include="Src\Scene\SceneBase.cpp" />

@@ -74,8 +74,8 @@ void EnemySlime::Update(void)
 		isChasing_ = true;
 	}
 	else if (distance > lostRange_)
-	{
-		// Š®‘S‚ÉŒ©¸‚Á‚½‚ç’ÇÕ‰ğœ
+	{ 
+		 // Š®‘S‚ÉŒ©¸‚Á‚½‚ç’ÇÕ‰ğœ
 		isChasing_ = false;
 	}
 

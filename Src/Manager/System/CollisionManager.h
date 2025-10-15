@@ -3,49 +3,63 @@
 #include <DxLib.h>
 #include <vector>
 #include <memory>
+#include <algorithm>
 
-#include "../../Object/Interact/HitObject.h"
-#include "../../Object/NullHitObject.h"
-
-class Player;
-
+// 消灯管理クラス
 class CollisionManager
 {
 public:
-	// 表示開始距離
-	static constexpr float SHOW_RADIUS = 50.0f; 
-	
-	// 非表示開始距離（少し大きく）
-	static constexpr float HIDE_RADIUS = 60.0f; 
+
+	// 当たり判定タイプ
+	enum class COLLISION_TYPE
+	{
+		SPHERE,      //球体
+
+		BOX,         //直方体
+
+		SPHERE_PUSH, //球体(押し出し)
+
+		BOX_PUSH,    //直方体(押し出し)
+	};
+
+	// 当たり判定情報
+	struct CollisionObject
+	{
+		VECTOR pos;                     //座標
+
+		float radius = 0.0f;            //半径(球体)
+
+		VECTOR min = VGet(0, 0, 0);     //最小座標(直方体)
+
+		VECTOR max = VGet(0, 0, 0);     //最大座標(直方体)
+
+		COLLISION_TYPE type;            //当たり判定タイプ
+
+		bool pushEnabled = false;       //押し出し判定
+	};
 
 	// インスタンスの生成
 	static void CreateInstance(void);
 
-	// インスタンスの取得
+	// シングルトン取得
 	static CollisionManager& GetInstance(void);
 
-	// 初期化処理
+	// インスタンスの破棄
+	static void Destrpy(void);
+
+	// 初期化
 	void Init(void);
 
+	// 登録
+	void Register(const std::shared_ptr<CollisionObject>& obj);
 
-	// 登録(ポインタ渡し)
-	void Register(const std::shared_ptr<HitObject>& obj);
-
-	// 全てクリア
+	// 全削除
 	void Clear(void);
 
-	// プレイヤーとの当たり判定チェック(UI表示)
-	void CheckHitWithPlayer(Player* player, VECTOR& playerPos, float playerRadius, const VECTOR& playerMin, const VECTOR& playerMax);
-
-
-
-	// リソースの解放
-	void Destroy(void);
+	// 全オブジェクトの当たり判定・押し出し処理
+	void Update(void);
 
 private:
-
-	// 静的インスタンス
-	static CollisionManager* instance_;
 
 	// コンストラクタ
 	CollisionManager(void) = default;
@@ -53,27 +67,9 @@ private:
 	// デストラクタ
 	~CollisionManager(void) = default;
 
-	std::vector<std::shared_ptr<HitObject>> hitObjects_;
+	//シングルトンインスタンスのコピー禁止
+	static CollisionManager* instance_;
 
-	NullHitObject nullObject_;
-
-	VECTOR objPos_;
-
-	float objRadius_;
-
-	VECTOR objMin_;
-
-	VECTOR objMax_;
-
-	float objSizeX_;
-	
-	float objSizeZ_;
-
-	VECTOR diff_;
-
-	HitObject* SafeGet(HitObject* obj);
-
-	//判定方式別の処理
-	void CheckHitSphere(std::shared_ptr<HitObject> obj, VECTOR& playerPos, float playerRadius);
-	void CheckHitAABB(std::shared_ptr<HitObject> obj, Player* player, VECTOR& playerPos, const VECTOR& playerMin, const VECTOR& playerMax);
+	//全ての当たり判定オブジェクト
+	std::vector<std::shared_ptr<CollisionObject>> objects_;
 };
