@@ -34,6 +34,12 @@ public:
 	//CSVデータを適用
 	virtual void ApplyData(const EnemyInfo& info);;
 
+	//前方向を設定
+	void SetForward(const VECTOR& forward);
+
+	//視野角を設定
+	void SetViewAngle(float angle);
+
 	//HPの設定
 	void SetHp(float hp);
 
@@ -55,6 +61,24 @@ protected:
 
 	//基本移動速度
 	float moveSpeed_;
+
+	//視野距離
+	float viewRange_;
+
+	//視野解除距離
+	float lostRange_;
+
+	//視野角
+	float viewAngle_;
+
+	//追跡中フラグ
+	bool isChasing_;
+
+	//視野ないかどうか
+	bool isInView_;
+
+	//前方向
+	VECTOR forward_;
 
 	//タイプ
 	std::string type_;

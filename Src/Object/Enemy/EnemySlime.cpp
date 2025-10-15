@@ -6,7 +6,26 @@
 EnemySlime::EnemySlime(void)
 {
 
+	//ターゲットの初期化
 	targetPos_ = Utility::VECTOR_ZERO;
+
+	//視野の初期化
+	viewRange_ = VIEW_RANGE;
+
+	//視野解除距離の初期化
+	lostRange_ = LOST_RANGE;
+
+	//正面ベクトルの初期化
+	forward_ = Utility::DIR_F;
+
+	//視野角の初期化
+	viewAngle_ = VIEW_ANGLE;
+
+	//追跡中かどうかを初期化
+	isChasing_ = false;
+
+	//視野内かどうかを初期化
+	isInView_ = false;
 }
 
 //読み込み
@@ -14,6 +33,7 @@ void EnemySlime::Load(int modelId)
 {
 	//モデルの読み込み
 	trans_.modelId = modelId;
+
 	trans_.SetModel(trans_.modelId);
 
 }
@@ -24,7 +44,7 @@ void EnemySlime::Init(const VECTOR& startPos)
 	//基底クラスの初期化
 	EnemyBase::Init(startPos);
 
-	trans_.scl = Utility::VECTOR_ONE;
+	trans_.scl = VGet(0.5f, 0.5f, 0.5f);
 
 
 }
@@ -39,21 +59,39 @@ void EnemySlime::SetTargetPos(const VECTOR& pos)
 void EnemySlime::Update(void)
 {
 	//ターゲット方向へ移動
-	VECTOR dir = VSub(targetPos_, trans_.pos);
+	VECTOR dirPlayer;
 
-	float len = sqrtf(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+	dirPlayer.x = targetPos_.x - trans_.pos.x;
 
-	if (len > 1.0f)
+	dirPlayer.y = targetPos_.y - trans_.pos.y;
+
+	dirPlayer.z = targetPos_.z - trans_.pos.z;
+
+	float distance = static_cast<float>(Utility::MagnitudeF(dirPlayer));
+
+	//正規化
+	VECTOR dirNorm = Utility::VNormalize(dirPlayer);
+
+	//視野内か判定
+	if (distance <= viewAngle_)
 	{
-		//正規化
-		dir = VScale(dir, 1.0f / len);
+		//内積計算
+		double angle = Utility::AngleDeg(forward_, dirNorm);
 
-		movePow_ = VScale(dir, moveSpeed_);
+		if (distance <= viewAngle_ * 0.5f)
+		{
+			isInView_ = true;
+		}
 	}
-	else
+
+	//追跡処理
+
+	//正面方向を更新
+	if (!Utility::EqualsVZero(movePow_))
 	{
-		movePow_ = Utility::VECTOR_ZERO;
+		forward_ = Utility::VNormalize(movePow_);
 	}
+	
 
 	//共通更新処理
 	EnemyBase::Update();
@@ -65,7 +103,13 @@ void EnemySlime::Draw(void) const
 	EnemyBase::Draw();
 
 #ifdef _DEBUG
-	DrawCapsule3D(trans_.pos, trans_.pos, radius_, 12, 0x0000ff, 0x0000ff, false);
+	Utility::DrawLineDir(trans_.pos, forward_, GetColor(0, 255, 0), 50.0f);
+	VECTOR dir;
+	dir.x = targetPos_.x - trans_.pos.x;
+	dir.y = targetPos_.y - trans_.pos.y;
+	dir.z = targetPos_.z - trans_.pos.z;
+
+	Utility::DrawLineDir(trans_.pos, Utility::VNormalize(dir), GetColor(255, 0, 0), viewRange_);
 #endif // _DEBUG
 
 }

@@ -13,6 +13,18 @@ EnemyBase::EnemyBase(void)
 	moveSpeed_ = 0.0f;
 
 	type_ = "";
+
+	viewRange_ = 0.0f;
+
+	lostRange_ = 0.0f;
+
+	forward_ = Utility::DIR_F;
+
+	viewAngle_ = 0.0f;
+
+	isChasing_ = false;
+
+	isInView_ = false;
 }
 
 void EnemyBase::Load(int modelId)
@@ -67,6 +79,16 @@ void EnemyBase::ApplyData(const EnemyInfo& info)
 	moveSpeed_ = info.speed;
 
 	radius_ = info.radius;
+}
+
+void EnemyBase::SetForward(const VECTOR& forward)
+{
+	forward_ = forward;
+}
+
+void EnemyBase::SetViewAngle(float angle)
+{
+	viewAngle_ = angle;
 }
 
 //ëÃóÕÇê›íË

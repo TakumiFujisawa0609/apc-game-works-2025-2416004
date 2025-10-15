@@ -32,5 +32,9 @@ public:
 	bool IsLoading(void) const;
 
 private:
+	//ƒ[ƒh’†‚©‚Ç‚¤‚©
 	bool isLoading_;
+
+	
+
 };

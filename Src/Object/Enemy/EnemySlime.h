@@ -8,6 +8,15 @@
 class EnemySlime : public EnemyBase
 {
 public:
+	//最大視野
+	static constexpr float VIEW_RANGE = 200.0f;
+
+	//視野の解除距離
+	static constexpr float LOST_RANGE = 30.0f;
+
+	//視野角
+	static constexpr float VIEW_ANGLE = 60.0f;
+
 	//コンストラクタ
 	EnemySlime(void);
 
