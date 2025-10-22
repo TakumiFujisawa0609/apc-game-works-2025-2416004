@@ -134,7 +134,7 @@ void SceneManager::PushScene(std::shared_ptr<SceneBase> scene)
 }
 
 // シーンを外す（上を削除する）
-void SceneManager::PopScene()
+void SceneManager::PopScene(void)
 {
     if (scenes_.size() > 1)
     {

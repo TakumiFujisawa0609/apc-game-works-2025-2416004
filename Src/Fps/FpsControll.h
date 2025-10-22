@@ -1,28 +1,45 @@
 #pragma once
-//FPSクラス(FPSオブジェクトの設計図)
+#include <DxLib.h>
+
+// FPS制御クラス
 class Fps
 {
 public:
-	//定数宣言
-	static constexpr int N = 60;         //平均をとるサンプル数
-	static constexpr int FPS = 60;       //設定下fps
+    // FPS計算周期（フレーム数）
+    static constexpr int N = 60;    
+    
+    // 目標FPS
+    static constexpr int FPS = 60;  
+
+    // コンストラクタ
+    Fps(void);
+
+    // デストラクタ
+    ~Fps(void);
+
+    // 初期化
+    void FpsControll_Initialize(void);
+   
+    // 更新処理
+    bool FpsControll_Update(void);
+    
+    // 描画処理
+    void FpsControll_Draw(void);
+    
+    // フレーム待機処理
+    void FpsControll_Wait();
+
 private:
-	//変数宣言
-	int _mStartTime;           //FPS計算用の測定開始時刻
-	int _mFrameStartTime;      //フレーム処理開始時刻（フレーム制御用）
-	int _mConut;               //カウンタ
-	float _mFps;               //fps
-public:
-	//デフォルトコンストラクタ
-	Fps(void);
-	//デストラクタ
-	~Fps(void);
-	// 初期処理(最初の１回のみ実行)
-	void FpsControll_Initialize();
-	// 更新処理(毎フレーム実行)
-	bool FpsControll_Update();
-	// 描画処理(毎フレーム実行)
-	void FpsControll_Draw();
-	// 解放処理(最後の１回のみ実行)
-	void FpsControll_Wait();
+
+    // FPS計算用の開始時間
+    int mStartTime_;    
+
+    // フレーム制御用の開始時間
+    int mFrameStartTime_; 
+
+    // FPS計算カウンタ
+    int mCount_;   
+
+    // 現在のFPS
+    float mFps_;            
 };

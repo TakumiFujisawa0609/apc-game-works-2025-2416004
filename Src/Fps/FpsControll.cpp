@@ -1,69 +1,72 @@
 #include "FpsControll.h"
-#include <math.h>
 #include <DxLib.h>
+#include <math.h>
 
 // デフォルトコンストラクタ
 Fps::Fps(void)
 {
-	_mStartTime = 0;
-	_mConut = 0;
-	_mFps = 0.0f;
-	_mFrameStartTime = 0;
+    mStartTime_ = 0;
+    mCount_ = 0;
+    mFps_ = 0.0f;
+    mFrameStartTime_ = 0;
 }
 
 // デストラクタ
-Fps::~Fps(void)
-{
-}
+Fps::~Fps(void) {}
 
 // 初期化
-void Fps::FpsControll_Initialize()
+void Fps::FpsControll_Initialize(void)
 {
-	_mStartTime = GetNowCount();
-	_mFrameStartTime = GetNowCount();
-	_mConut = 0;
-	_mFps = 0.0f;
+    mStartTime_ = GetNowCount();
+    mFrameStartTime_ = GetNowCount();
+    mCount_ = 0;
+    mFps_ = 0.0f;
 }
 
-// FPS制御
-bool Fps::FpsControll_Update()
+// FPS計算（Nフレームごと）
+bool Fps::FpsControll_Update(void)
 {
-	if (_mConut == 0)
-	{
-		_mStartTime = GetNowCount();
-	}
+    if (mCount_ == 0)
+    {
+        mStartTime_ = GetNowCount();
+    }
 
-	// N フレームごとにFPS計算
-	if (_mConut == N)
-	{
-		int t = GetNowCount();
-		_mFps = 1000.0f / ((t - _mStartTime) / (float)N);
-		_mConut = 0;
-		_mStartTime = t;
-	}
+    if (mCount_ == N)
+    {
+        int t = GetNowCount();
+        mFps_ = 1000.0f / ((t - mStartTime_) / (float)N);
+        mCount_ = 0;
+        mStartTime_ = t;
+    }
 
-	_mConut++;
-	return true;
+    mCount_++;
+    return true;
 }
 
 // FPS表示
-void Fps::FpsControll_Draw()
+void Fps::FpsControll_Draw(void)
 {
-	DrawFormatString(0, 0, GetColor(255, 255, 255), "FPS: %.1f", _mFps);
+    DrawFormatString(0, 0, GetColor(255, 255, 255), "FPS: %.1f", mFps_);
 }
 
-// 時間測定・待機
-void Fps::FpsControll_Wait()
+// フレーム待機（高精度ポーリング + Sleep）
+void Fps::FpsControll_Wait(void)
 {
-	int frameTime = GetNowCount() - _mFrameStartTime;    // このフレームの処理にかかった時間
-	int targetFrameTime = 1000 / FPS;                     // 目標フレーム時間（ミリ秒）
-	int waitTime = targetFrameTime - frameTime;           // 待つべき時間
+    const int targetFrameTime = 1000 / FPS; // 目標フレーム時間(ms)
+    int elapsed = GetNowCount() - mFrameStartTime_;
 
-	if (waitTime > 0)
-	{
-		Sleep(waitTime);
-	}
+    int sleepTime = targetFrameTime - elapsed - 1; // 1ms手前までSleep
+    if (sleepTime > 0)
+    {
+        Sleep(sleepTime);
+    }
 
-	// 次フレームの計測開始
-	_mFrameStartTime = GetNowCount();
+    // 1ms未満の微調整
+    while (GetNowCount() - mFrameStartTime_ < targetFrameTime)
+    {
+        // ポーリングで待機
+    }
+
+    // 次フレームの基準時間更新
+    mFrameStartTime_ = GetNowCount();
 }
