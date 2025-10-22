@@ -50,7 +50,7 @@ void Application::Init(void)
 	//ウィンドウのサイズ
 	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
 
-	ChangeWindowMode(false);
+	ChangeWindowMode(true);
 
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);
@@ -118,8 +118,6 @@ void Application::Run(void)
 
 		Sleep(1);
 
-		fps_->FpsControll_Update();
-
 		isActiveUI_ = false;
 
 		// --- ESCキーでポーズ表示 ---
@@ -174,9 +172,16 @@ void Application::Run(void)
 		// エフェクト更新
 		UpdateEffekseer3D();
 
+		
 
 		// 描画
 		sceneManager.Draw();
+
+		fps_->FpsControll_Update();
+
+		// フレームレート表示
+		fps_->FpsControll_Draw();
+
 		// エフェクト描画
 		DrawEffekseer3D();
 
@@ -185,7 +190,9 @@ void Application::Run(void)
 			pauseMenu_->Draw();  // ポーズメニュー前面に
 		}
 		ScreenFlip();
+
 		fps_->FpsControll_Wait();
+		
 	}
 }
 

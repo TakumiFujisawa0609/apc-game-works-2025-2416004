@@ -1,5 +1,51 @@
-﻿  Application.cpp
-  CollisionManager.cpp
+﻿  CollisionManager.cpp
+  EnemyData.cpp
+  EnemyManager.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Manager\EnemyManager.cpp(137,41): warning C4244: '引数': 'float' から 'int' への変換です。データが失われる可能性があります。
+  EnemySlime.cpp
+  EnemyBase.cpp
+  GroundManager.cpp
+  Ground.cpp
+  Loading.cpp
+  SceneUi.cpp
+  Application.cpp
+  Easing.cpp
+  IntVector3.cpp
+  Quaternion.cpp
+  Vector2.cpp
+  Font.cpp
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(64,19): warning C4244: '初期化中': 'LONGLONG' から 'int' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(181,31): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(181,28): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  PauseMenu.cpp
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(84,69): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(116,78): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(164,40): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(164,26): warning C4267: '初期化中': 'size_t' から 'const int' に変換しました。データが失われているかもしれません。
+  FpsControll.cpp
+  main.cpp
+  EffectManager.cpp
+  SoundManager.cpp
+  コードを生成中...
+  コンパイル中...
+  Camera.cpp
+  InputManager.cpp
+  Resource.cpp
+  ResourceManager.cpp
+  SceneManager.cpp
+  Collision.cpp
+  DateTimeManager.cpp
+  TimeManager.cpp
+  AnimationController.cpp
+  Transform.cpp
+  Grid.cpp
+  Player.cpp
+  UnitBase.cpp
+  SceneBase.cpp
+  SceneGame.cpp
+  SceneScore.cpp
+  SceneTitle.cpp
+  Utility.cpp
   コードを生成中...
 EffekseerForDXLib_vs2019_x64_d.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB '' が 'EffekseerForDXLib_vs2019_x64_d.lib(EffekseerForDXLib.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
 Effekseer_vs2019_x64_d.lib(Effekseer.Vector3D.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Vector3D.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。

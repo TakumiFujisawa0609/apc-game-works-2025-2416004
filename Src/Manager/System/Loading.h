@@ -4,61 +4,71 @@
 #include <atomic>
 #include <functional>
 
+/// <summary>
+/// ローディング画面を制御するクラス（非同期ロード対応）
+/// </summary>
 class Loading
 {
 public:
 
-	//シングルトンインスタンス生成
-	static void CreateInstance(void);
+    // インスタンスを生成する
+    static void CreateInstance(void);
 
-	//シングルトンインスタンス取得
-	static Loading* GetInstance(void);
+    // インスタンスを取得する
+    static Loading* GetInstance(void);
 
-	//シングルトンインスタンス破棄
-	void DestroyInstance(void);
+    // インスタンスを破棄する
+    static void DestroyInstance(void);
 
-	//初期化処理
-	void Init(void);
+    // 初期化する
+    void Init(void);
 
-	//更新処理
-	void Update(void);
+    // 更新する
+    void Update(void);
 
-	//描画処理
-	void Draw(void);
+    // 描画する
+    void Draw(void);
 
-	//非同期ロード開始
-	void StartAsyncLoad(std::function<void()> loadFunc);
+    // 非同期ロードを開始する
+    void StartAsyncLoad(std::function<void()> loadFunc);
 
-	//ロード完了確認
-	void EndAsyncLoad(void);
+    // ロード完了処理を行う
+    void EndAsyncLoad(void);
 
-	//ロード中か
-	bool IsLoading(void) const;
+    // ロード中か確認する
+    bool IsLoading(void) const;
 
-	//進捗状況を取得
-	int GetProgress(void) const;
+    // 進捗率を取得する
+    int GetProgress(void) const;
 
 private:
 
-	//コンストラクタ
-	Loading(void) = default;
 
-	//デストラクタ
-	~Loading(void);
+    // シングルトンインスタンス
+    static Loading* instance_;
 
-	//シングルトンインスタンス
-	static Loading* instance_;
+    // 非同期ロード処理スレッド
+    std::thread loadingThread_;
 
-	// 非同期ロード処理用のスレッド
-	std::thread loadingThread_;
+    // ロード中フラグ
+    std::atomic<bool> isLoading_{ false };
 
-	//非同期ロード中か
-	std::atomic<bool> isLoading_{ false };
+    // 進捗率
+    std::atomic<float> progress_{ 0 };
 
-	//進行速度表示用
-	std::atomic<float> progress_{ 0 };
+    // コンストラクタ
+    Loading(void) = default;
 
-	//非同期ロード用のスレッド関数。
-	void ThreadFunc(std::function<void()> loadFunc);
+    // デストラクタ
+    ~Loading(void);
+
+    // コピーやムーブを禁止する
+    Loading(const Loading&) = delete;
+    Loading& operator=(const Loading&) = delete;
+    Loading(Loading&&) = delete;
+    Loading& operator=(Loading&&) = delete;
+
+    // 非同期ロード用のスレッド関数を実行する
+    void ThreadFunc(std::function<void()> loadFunc);
 
 };

@@ -32,6 +32,7 @@ private:
     std::unique_ptr<SceneUi> uiMain_;      // メインメニュー
     std::unique_ptr<SceneUi> uiHowToPlay_; // 遊び方サブメニュー
 
+
     int logo_;
     int movieHandle_;
     int operationHandle_;
@@ -50,7 +51,8 @@ private:
     bool exitRequested_;
     bool isPlay_;
 
-    int howToPlayPage_; // 0=なし, 1=目標, 2=錬金
+
+    int howToPlayPage_;
 
     void DrawDebug(void);
 

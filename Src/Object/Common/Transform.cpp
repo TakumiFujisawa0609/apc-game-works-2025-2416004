@@ -120,3 +120,13 @@ VECTOR Transform::GetDir(const VECTOR& vec) const
 {
 	return quaRot.PosAxis(vec);
 }
+
+VECTOR* Transform::GetPosPtr(void)
+{
+	return &pos;
+}
+
+const VECTOR* Transform::GetPosPtr(void) const
+{
+	return &pos;
+}

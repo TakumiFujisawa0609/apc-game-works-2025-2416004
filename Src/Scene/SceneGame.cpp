@@ -11,12 +11,10 @@
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/System/Collision.h"
 #include "../Manager/System/TimeManager.h"
-#include "../Object/Grid.h"
 #include "../Object/Player.h"
 #include "../Object/Manager/GroundManager.h"
 #include "../DrawUI/Font.h"
 #include "../Object/Common/AnimationController.h"
-#include "../Object/Manager/EnemyManager.h"
 #include "../Object/Enemy/EnemyData.h"
 #include "../Scene/SceneScore.h"
 #include "../Manager/System/Loading.h"
@@ -26,7 +24,6 @@
 // コンストラクタ
 SceneGame::SceneGame(void)
 {
-	grid_ = nullptr;
 	isStartFont_ = true;
 
 	//プレイヤー
@@ -34,12 +31,12 @@ SceneGame::SceneGame(void)
 
 	//ステージ
 	groundManager_ = std::make_shared<GroundManager>();
-	
+
 	//エネミーデータ
 	enemyData_ = std::make_shared<EnemyData>();
 
 	//エネミーマネージャー
-	enemyManager_ = std::make_shared<EnemyManager>();
+	enemyManager_ = std::make_unique<EnemyManager>();
 }
 
 // 読み込み
@@ -50,9 +47,6 @@ void SceneGame::Load()
 	// ここで必要なリソースを読み込む
 	ResourceManager::GetInstance().InitGame();
 
-	//エネミーデータ読み込み
-	enemyData_->LoadCSV(Application::PATH_CSV + "EnemyData.csv");
-
 	//プレイヤーの読み込み
 	player_->Load();
 
@@ -61,6 +55,9 @@ void SceneGame::Load()
 
 	//エネミーの読み込み
 	enemyManager_->Load();
+
+	//エネミーデータ読み込み
+	enemyData_->LoadCSV(Application::PATH_CSV + "EnemyData.csv");
 	
 	// サウンドの読み込み
 
@@ -85,10 +82,6 @@ void SceneGame::Init()
 	auto camera = SceneManager::GetInstance().GetCamera();
 	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
 
-	// グリッド初期化
-	grid_ = new Grid();
-	grid_->Init();
-
 	// サウンド音量調整
 
 	isStartFont_ = true;
@@ -104,7 +97,7 @@ void SceneGame::Init()
 	enemyManager_->Init();
 
 	//敵のランダム生成(初期スポーン)
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 10; ++i)
 	{
 		enemyManager_->RandomSpawn("SLIME", *enemyData_);
 	}
@@ -117,6 +110,7 @@ void SceneGame::Update(void)
 	auto& input = InputManager::GetInstance();
 	auto& time = TimeManager::GetInstance();
 	auto camera = SceneManager::GetInstance().GetCamera();
+	auto loader = Loading::GetInstance();
 
 	//プレイヤーの更新
 	player_->Update();
@@ -135,17 +129,12 @@ void SceneGame::Update(void)
 
 	if (times >= LIMIT_TIME)
 	{
+		sound.Play(SoundManager::SOUND::SE_PUSH);
+
 		auto newScene = std::make_shared<SceneScore>();
 
-		//非同期ロード
-		Loading::GetInstance()->StartAsyncLoad([newScene]()
-			{
-				newScene->Load();
-
-				newScene->Init();
-			});
-
 		SceneManager::GetInstance().ChangeScene(newScene);
+
 		return;
 	}
 }
@@ -174,10 +163,6 @@ void SceneGame::Draw(void)
 void SceneGame::Release(void)
 {
 
-	grid_->Release();
-	delete grid_;
-	grid_ = nullptr;
-
 	//プレイヤーの解放
 	player_->Release();
 	player_.reset();
@@ -195,6 +180,5 @@ void SceneGame::Release(void)
 
 void SceneGame::DrawDebug(void)
 {
-	grid_->Draw();
 }
 

@@ -42,7 +42,10 @@ public:
 	//解放処理
 	virtual void Release(void);
 
-	//モデル情報
+	//モデル情報（非const版）
+	Transform& GetTransform(void);
+
+	//モデル情報（const版）
 	const Transform& GetTransform(void) const;
 
 	//座標を取得

@@ -75,5 +75,11 @@ public:
 	//対象方向を取得
 	VECTOR GetDir(const VECTOR& vec) const;
 
+	//座標のポインタを取得
+	VECTOR* GetPosPtr(void);
+
+	//読み取り専用の座標ポインタを取得
+	const VECTOR* GetPosPtr(void) const;
+
 };
 

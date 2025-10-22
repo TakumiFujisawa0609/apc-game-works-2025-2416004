@@ -21,8 +21,8 @@ public:
 	static constexpr int SCREEN_SIZE_Y = 1080;
 
 	//フルスクリーンサイズ
-	static constexpr int DEFA_SCREEN_SIZE_X = 1920;
-	static constexpr int DEFA_SCREEN_SIZE_Y = 1080;
+	static constexpr int DEFA_SCREEN_SIZE_X = 1200;
+	static constexpr int DEFA_SCREEN_SIZE_Y = 800;
 
 	
 

@@ -2,6 +2,7 @@
 
 #include "../../Utility/Utility.h"
 
+
 //コンストラクタ
 EnemySlime::EnemySlime(void)
 {
@@ -45,7 +46,6 @@ void EnemySlime::Init(const VECTOR& startPos)
 	EnemyBase::Init(startPos);
 
 	trans_.scl = VGet(0.2f, 0.2f, 0.2f);
-
 
 }
 

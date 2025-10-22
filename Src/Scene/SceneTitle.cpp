@@ -62,10 +62,8 @@ void SceneTitle::Load(void)
 
     uiHowToPlay_ = std::make_unique<SceneUi>();
     uiHowToPlay_->AddCharctor("目標について");
-    uiHowToPlay_->AddCharctor("錬金について");
-    uiHowToPlay_->AddCharctor("アトリエについて");
-    uiHowToPlay_->AddCharctor("ギルドについて");
-    uiHowToPlay_->AddCharctor("ガーデンについて");
+    uiHowToPlay_->AddCharctor("戦闘方法");
+    uiHowToPlay_->AddCharctor("化学反応");
     uiHowToPlay_->AddCharctor("戻る");
     uiHowToPlay_->SetCurrentIndex(0);
 
@@ -154,18 +152,17 @@ void SceneTitle::Update(void)
             Application::GetInstance().SetActiveUI(true);
             int selected = ui->GetCurrentIndex();
 
+            // ゲーム開始
             if (selected == 0) 
             {
                 isDecided_ = true;
 
+                sound.Play(SoundManager::SOUND::SE_PUSH);
+
                 auto newScene = std::make_shared<SceneGame>();
 
-                Loading::GetInstance()->StartAsyncLoad([newScene]() {
-                    newScene->Load();      // リソース読み込み
-                    newScene->Init();      // Initはロード完了後に呼ぶ
-                    });
-
                 SceneManager::GetInstance().ChangeScene(newScene);
+                return;
             }
             else if (selected == 1) { // 遊び方
                 sound.Play(SoundManager::SOUND::SE_PUSH);

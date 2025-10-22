@@ -22,10 +22,26 @@ public:
 		BOX_PUSH,    //直方体(押し出し)
 	};
 
+	// タグタイプ
+	enum class TAG_TYPE
+	{
+		NONE,        //無し
+
+		PLAYER,      //プレイヤー
+
+		ENEMY,       //エネミー
+
+		WALL,        //壁
+
+		ITEM,        //アイテム
+	};
+
 	// 当たり判定情報
 	struct CollisionObject
 	{
-		VECTOR pos;                     //座標
+		std::shared_ptr<void> owner;    //所持者
+
+		std::weak_ptr<VECTOR> posPtr;   //座標
 
 		float radius = 0.0f;            //半径(球体)
 
@@ -36,7 +52,11 @@ public:
 		COLLISION_TYPE type;            //当たり判定タイプ
 
 		bool pushEnabled = false;       //押し出し判定
+
+		TAG_TYPE tag = TAG_TYPE::NONE;  // タグ
 	};
+
+	
 
 	// インスタンスの生成
 	static void CreateInstance(void);
@@ -45,19 +65,25 @@ public:
 	static CollisionManager& GetInstance(void);
 
 	// インスタンスの破棄
-	static void Destrpy(void);
+	static void Destroy(void);
 
 	// 初期化
 	void Init(void);
 
-	// 登録
-	void Register(const std::shared_ptr<CollisionObject>& obj);
+	// 球の登録
+	void RegisterSphere(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, float radius, TAG_TYPE tag, bool push = false);
+
+	// BOXの登録
+	void RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push = false);
 
 	// 全削除
 	void Clear(void);
 
 	// 全オブジェクトの当たり判定・押し出し処理
 	void Update(void);
+
+	// タグ同士で判定するかをチェック
+	bool CanCollide(TAG_TYPE tagA, TAG_TYPE tagB) const;
 
 private:
 

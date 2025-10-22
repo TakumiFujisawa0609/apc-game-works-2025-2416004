@@ -1,75 +1,66 @@
 #pragma once
-
 #include <DxLib.h>
-#include <memory>
 #include <vector>
-#include <unordered_map>
+#include <memory>
 #include <string>
-
-#include "../Enemy/EnemyBase.h"
+#include <unordered_map>
 #include "../Enemy/EnemyData.h"
 
-class EnemySlime;
+class EnemyBase;
 
-//エネミーマネージャークラス
 class EnemyManager
 {
 public:
-
-	//ランダム生成範囲
+	// ランダム生成範囲
 	static constexpr float RANDOM_RANGE = 500.0f;
 
-	//コンストラクタ
+	// コンストラクタ
 	EnemyManager(void);
-
+	
 	// デストラクタ
 	~EnemyManager(void) = default;
 
-	//読み込み
+	// モデル読み込み
 	void Load(void);
-
+	
 	// 初期化
 	void Init(void);
-
-	// 生成
+	
+	// ランダム生成
 	void RandomSpawn(const std::string& type, const EnemyData& data);
-
+	
+	// ランダム座標の生成
+	VECTOR RandomSpawnPos(void) const;
+	
 	// 更新処理
 	void Update(void);
-
+	
 	// 描画処理
 	void Draw(void);
-
+	
 	// 解放処理
 	void Release(void);
 
-	//ターゲット座標を設定
+	// 追従対象の設定
 	void SetTargetPos(const VECTOR& pos);
 
-	//敵の生成
-	std::unique_ptr<EnemyBase> CreateEnemy(const EnemyInfo& info);
-
 private:
-	
-	// 敵ごとの最大生成数
-	std::unordered_map<std::string, int> maxSpawns_;
 
+	// 敵リスト（shared_ptr に変更）
+	std::vector<std::shared_ptr<EnemyBase>> enemies_;
+	
+	// ターゲット座標
+	VECTOR targetPos_;
+	
+	// モデルID
+	std::unordered_map<std::string, int> modelIds_;
+	
+	// 生成上限
+	std::unordered_map<std::string, int> maxSpawns_;
+	
 	// 現在の生成数
 	std::unordered_map<std::string, int> curSpawns_;
 
-	// モデルの共有管理
-	std::unordered_map<std::string, int> modelIds_;
-
-	// 敵のリスト
-	std::vector<std::unique_ptr<EnemyBase>> enemies_;
-
-	// ターゲット座標
-	VECTOR targetPos_;
-
-	// ランダム座標を返す
-	VECTOR RandomSpawnPos(void) const;
-	
-
-	
+	// 敵の生成
+	std::shared_ptr<EnemyBase> CreateEnemy(const EnemyInfo& info);
 };
-

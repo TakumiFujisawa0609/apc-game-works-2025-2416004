@@ -1,126 +1,111 @@
 #pragma once
 
-#include<chrono>
-#include<vector>
-#include<memory>
+#include <chrono>
 #include <list>
+#include <memory>
+#include <mutex>
+#include <thread>
 
-#include"../../Application.h"
+#include "../../Application.h"
 
 class SceneBase;
 class Camera;
 
-class SceneManager
+class SceneManager 
 {
 public:
 
-	//シーン管理用
-	enum class SCENE_ID
-	{
-		NONE,
-		TITLE,
-		GAME,
-		GAMECLEAR,
-		GAMEOVER,
-	};
+    // インスタンスを生成する
+    static void CreateInstance(void);
 
-	//コントローラ系統
-	enum class CNTL
-	{
-		NONE,
-		KEYBOARD,
-		PAD
-	};
+    // インスタンスを取得する
+    static SceneManager& GetInstance(void);
 
-	//インスタンスの生成
-	static void CreateInstance(void);
+    // インスタンスを破棄する
+    static void DestroyInstance(void);
 
-	//インスタンスの取得
-	static SceneManager& GetInstance(void);
+    // 初期化する
+    void Init(void);
 
-	//インスタンスの破棄
-	static void DestroyInstance(void);
+    // 更新する
+    void Update(void);
 
-	//初期化処理
-	void Init(void);
+    // 描画する
+    void Draw(void);
 
-	//3Dの初期化処理
-	void Init3D(void);
+    // 解放する
+    void Release(void);
 
-	//更新処理
-	void Update(void);
+    // シーンを変更する（全削除→新規追加）
+    void ChangeScene(std::shared_ptr<SceneBase> scene);
 
-	//描画処理
-	void Draw(void);
+    // シーンを積む（上に追加する）
+    void PushScene(std::shared_ptr<SceneBase> scene);
 
-	//リソースの解放
-	void Release(void);
+    // シーンを外す（上を削除する）
+    void PopScene(void);
 
-	//シーン操作
-	void ChangeScene(std::shared_ptr<SceneBase> scene);
+    // シーンをジャンプする（全削除→新規ロード）
+    void JumpScene(std::shared_ptr<SceneBase> scene);
 
-	//シーンの追加
-	void PushScene(std::shared_ptr<SceneBase> scene);
+    // ゲーム終了フラグを取得する
+    bool GetGameEnd(void) const;
 
-	//シーンの削除
-	void PopScene(void);
+    // デルタタイムを取得する
+    float GetDeltaTime(void) const;
 
-	//シーンの強制変更
-	void JumpScene(std::shared_ptr<SceneBase> scene);
+    // カメラを取得する
+    std::shared_ptr<Camera> GetCamera(void) const;
 
-	// シーンIDの取得
-	SCENE_ID GetSceneID(void) const;
-
-	//ゲームの終了
-	void GameEnd(void);
-
-	//ゲーム終了の取得
-	bool GetGameEnd(void) const;
-
-	//デルタタイムの取得
-	float GetDeltaTime(void) const;
-
-	//カメラの取得
-	std::shared_ptr<Camera> GetCamera(void) const;
+    // ゲームを終了させる
+    void GameEnd(void);
 
 private:
+    // 唯一のインスタンス
+    static SceneManager* instance_;
 
-	//静的インスタンス
-	static SceneManager* instance_;
+    // シーンを保持する（スタック構造）
+    std::list<std::shared_ptr<SceneBase>> scenes_;
 
-	//シーンリスト
-	std::list<std::shared_ptr<SceneBase>> scenes_;
+    // シーンアクセスを保護するミューテックス
+    std::mutex sceneMutex_;
 
-	//シーンID
-	SCENE_ID sceneId_;
+    // ゲーム終了フラグ
+    bool isGameEnd_;
 
-	//ゲーム終了
-	bool isGameEnd_;
+    // シーン切り替え中フラグ
+    bool isSceneChanging_;
 
-	//カメラ
-	std::shared_ptr<Camera> camera_;
+    // カメラ
+    std::shared_ptr<Camera> camera_;
 
-	//シーン遷移中判定
-	bool isSceneChanging_;
+    // 前フレームの時刻
+    std::chrono::system_clock::time_point preTime_;
 
-	//デルタタイム
-	std::chrono::system_clock::time_point preTime_;
-	float deltaTime_;
+    // デルタタイム
+    float deltaTime_;
 
-	//デフォルトコンストラクタをpriateにして、
-	//外部から生成できないようにする
-	SceneManager(void);
-	~SceneManager(void);
+    // 3D描画設定を初期化する
+    void Init3D(void);
 
-	//コピーコンストラクタ
-	SceneManager(const SceneManager&) = delete;
-	SceneManager& operator=(const SceneManager&) = delete;
-	SceneManager(SceneManager&&) = delete;
-	SceneManager& operator=(SceneManager&&) = delete;
+    // デルタタイムをリセットする
+    void ResetDeltaTime(void);
 
-	//デルタタイムをリセットする
-	void ResetDeltaTime(void);
+    // コンストラクタ
+    SceneManager(void);
 
+    // デストラクタ
+    ~SceneManager(void);
 
+    // コピーコンストラクタを禁止する
+    SceneManager(const SceneManager&) = delete;
+
+    // 代入演算子を禁止する
+    SceneManager& operator=(const SceneManager&) = delete;
+
+    // ムーブコンストラクタを禁止する
+    SceneManager(SceneManager&&) = delete;
+
+    // ムーブ代入演算子を禁止する
+    SceneManager& operator=(SceneManager&&) = delete;
 };
-

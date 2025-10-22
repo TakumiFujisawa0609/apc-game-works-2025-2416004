@@ -3,12 +3,12 @@
 #include<memory>
 
 #include "SceneBase.h"
+
+#include "../Object/Manager/EnemyManager.h"
 #include "../Application.h"
 
-class Grid;
 class Player;
 class GroundManager;
-class EnemyManager;
 class EnemyData;
 
 
@@ -17,7 +17,7 @@ class SceneGame : public SceneBase
 public:
 
 	//クリア時間
-	static constexpr float LIMIT_TIME = 999.0f;
+	static constexpr float LIMIT_TIME = 5.0f;
 
 	//コンストラクタ
 	SceneGame(void);
@@ -55,13 +55,10 @@ private:
 	std::shared_ptr<GroundManager> groundManager_;
 	
 	//エネミーマネージャー
-	std::shared_ptr<EnemyManager> enemyManager_;
+	std::unique_ptr<EnemyManager> enemyManager_;
 
 	//エネミーデータ
 	std::shared_ptr<EnemyData> enemyData_;
-
-	//グリッド線
-	Grid* grid_;
 
 	bool isStartFont_;
 

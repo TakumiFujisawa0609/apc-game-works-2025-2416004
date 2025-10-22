@@ -95,7 +95,13 @@ void UnitBase::Release(void)
 {
 }
 
-//モデル情報の取得
+//モデル情報（非const版）
+Transform& UnitBase::GetTransform(void)
+{
+	return trans_;
+}
+
+//モデル情報（const版）
 const Transform& UnitBase::GetTransform(void) const
 {
    return trans_;

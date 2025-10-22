@@ -46,26 +46,20 @@ void SceneScore::Update(void)
 	auto& sound = SoundManager::GetInstance();
 	auto& input = InputManager::GetInstance();
 
-	if (input.IsTrgDown(KEY_INPUT_SPACE))
-	{
-		// 決定音
-		sound.Play(SoundManager::SOUND::SE_PUSH);
+    if (input.IsTrgDown(KEY_INPUT_SPACE))
+    {
+        // 決定音
+        sound.Play(SoundManager::SOUND::SE_PUSH);
 
-		// BGM停止
-		sound.Stop(SoundManager::SOUND::BGM_TITLE);
+        // BGM停止
+        sound.Stop(SoundManager::SOUND::BGM_TITLE);
 
-		// ★タイトルシーンへ遷移
 		auto newScene = std::make_shared<SceneTitle>();
 
-		// ローディング処理つきで非同期読み込み
-		Loading::GetInstance()->StartAsyncLoad([newScene]() {
-			newScene->Load();
-			newScene->Init();
-			});
-
 		SceneManager::GetInstance().ChangeScene(newScene);
+		
 		return;
-	}
+    }
 }
 
 void SceneScore::Draw(void)
