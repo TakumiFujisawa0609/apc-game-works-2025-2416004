@@ -8,7 +8,7 @@
 #include "Manager/Generic/InputManager.h"
 #include "Manager/Generic/SceneManager.h"
 #include "DrawUI/Font.h"
-#include "Fps/FpsControll.h"
+#include "Fps/FpsController.h"
 #include "DrawUI/SceneUI/PauseMenu.h"
 #include "Scene/SceneTitle.h"
 
@@ -55,6 +55,9 @@ void Application::Init(void)
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);
 
+	//FPS制御クラス
+	fps_ = std::make_unique<FpsController>(DEFAULT_FPS);
+
 	//DXLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 	isInitFail_ = false;
@@ -83,13 +86,6 @@ void Application::Init(void)
 	Font::CreateInstance();
 
 	EffectManager::CreateInstance();
-
-	std::string fontPath = Application::PATH_FONT + "NikkyouSans-mLKax.ttf";
-
- 	Font::GetInstance().AddFont("GameFont","Nikkyou Sans", fontPath, 24, 6, Font::FONT_TYPE_EDGE);
-
-	//FPS制御初期化
-	fps_->FpsControll_Initialize();
 
 	pauseMenu_ = new PauseMenu();
 	pauseMenu_->Init();
@@ -176,11 +172,8 @@ void Application::Run(void)
 
 		// 描画
 		sceneManager.Draw();
-
-		fps_->FpsControll_Update();
-
-		// フレームレート表示
-		fps_->FpsControll_Draw();
+		// 平均FPS描画
+		fps_->Draw();
 
 		// エフェクト描画
 		DrawEffekseer3D();
@@ -191,7 +184,7 @@ void Application::Run(void)
 		}
 		ScreenFlip();
 
-		fps_->FpsControll_Wait();
+		fps_->Wait();
 		
 	}
 }
@@ -214,7 +207,10 @@ void Application::Destroy(void)
 		isReleaseFail_ = true;
 	}
 	
-	delete fps_;
+	if (fps_)
+	{
+		fps_.reset();
+	}
 	delete instance_;
 }
 
@@ -266,7 +262,6 @@ void Application::InitEffekseer(void)
 
 Application::Application(void)
 {
-	fps_ = new Fps();
 	isInitFail_ = false;
 	isReleaseFail_ = false;
 }

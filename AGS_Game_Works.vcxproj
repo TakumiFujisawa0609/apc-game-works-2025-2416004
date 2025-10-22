@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Manager\System\CollisionManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
     <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
@@ -159,7 +160,6 @@
     <ClInclude Include="Src\Common\Vector2.h" />
     <ClInclude Include="Src\DrawUI\Font.h" />
     <ClInclude Include="Src\DrawUI\SceneUI\PauseMenu.h" />
-    <ClInclude Include="Src\Fps\FpsControll.h" />
     <ClInclude Include="Src\main.h" />
     <ClInclude Include="Src\Manager\Decoration\EffectManager.h" />
     <ClInclude Include="Src\Manager\Decoration\SoundManager.h" />
@@ -183,6 +183,7 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Fps\FpsController.cpp" />
     <ClCompile Include="Src\Manager\System\CollisionManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />
     <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
@@ -199,7 +200,6 @@
     <ClCompile Include="Src\Common\Vector2.cpp" />
     <ClCompile Include="Src\DrawUI\Font.cpp" />
     <ClCompile Include="Src\DrawUI\SceneUI\PauseMenu.cpp" />
-    <ClCompile Include="Src\Fps\FpsControll.cpp" />
     <ClCompile Include="Src\main.cpp" />
     <ClCompile Include="Src\Manager\Decoration\EffectManager.cpp" />
     <ClCompile Include="Src\Manager\Decoration\SoundManager.cpp" />

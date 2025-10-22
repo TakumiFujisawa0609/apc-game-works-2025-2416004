@@ -1,7 +1,9 @@
 #pragma once
 #include<string>
+#include<memory>
 #include<windows.h>
-class Fps;
+
+class FpsController;
 class PauseMenu;
 
 enum class ActiveUI {
@@ -90,11 +92,11 @@ private:
 	bool isActiveUI_;
 
 	//フレームレート制御
-	Fps* fps_;
+	std::unique_ptr<FpsController> fps_;
 
 	PauseMenu* pauseMenu_;
 
-	ActiveUI activeUI_;;
+	ActiveUI activeUI_;
 
 	//エフェクシアの初期化
 	void InitEffekseer(void);

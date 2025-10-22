@@ -17,7 +17,7 @@ class SceneGame : public SceneBase
 public:
 
 	//クリア時間
-	static constexpr float LIMIT_TIME = 5.0f;
+	static constexpr float LIMIT_TIME = 999.0f;
 
 	//コンストラクタ
 	SceneGame(void);
