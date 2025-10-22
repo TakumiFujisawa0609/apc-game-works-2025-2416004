@@ -1,22 +1,8 @@
-﻿  Application.cpp
-  PauseMenu.cpp
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(84,69): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(116,78): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(164,40): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(164,26): warning C4267: '初期化中': 'size_t' から 'const int' に変換しました。データが失われているかもしれません。
-  SceneUi.cpp
-  Camera.cpp
-  ResourceManager.cpp
+﻿  Camera.cpp
   SceneManager.cpp
-  Loading.cpp
-  AnimationController.cpp
   GroundManager.cpp
   Player.cpp
-  UnitBase.cpp
   SceneGame.cpp
-  SceneScore.cpp
   SceneTitle.cpp
-  Utility.cpp
-  main.cpp
   コードを生成中...
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

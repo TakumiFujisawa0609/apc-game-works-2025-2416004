@@ -101,6 +101,9 @@ Camera::Camera(void)
 
    // キー入力による回転速度
    keyRotateSpeed_ = 0.0f;
+
+   // 凍結開始時のY軸オフセット
+   initialHeightOffset_ = 0.0f;
 }
 
 Camera::~Camera(void)
@@ -397,7 +400,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
 	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
 	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	//回転角度更新（マウス入力）
+	//回転角度更新（マウス入力） - freezeFollow_に関わらず常に更新
 	yaw_ += deltaX_ * sensitivity_;
 	pitch_ -= deltaY_ * sensitivity_;
 
@@ -429,30 +432,27 @@ void Camera::SetBeforeDrawTPSMouse(void)
 	}
 	else
 	{
-		// 凍結中：カメラ位置は固定、注視点だけ回転
-		pos_ = frozenCameraPos_;
-
-		// プレイヤーの現在位置
+		// 凍結中：カメラ位置は毎フレーム再計算（マウス操作を反映）
 		VECTOR playerPos = followTransform_->pos;
 
-		// カメラからプレイヤーへのベクトル
-		VECTOR toPlayer = VSub(playerPos, frozenCameraPos_);
-		float distToPlayer = VSize(toPlayer);
+		// XZ平面での距離を計算
+		float xzDistance = sqrtf(initialDistance_ * initialDistance_ - initialHeightOffset_ * initialHeightOffset_);
 
-		// マウス操作による注視点オフセット（カメラの向きを変える）
-		VECTOR lookOffset;
-		lookOffset.x = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-		lookOffset.y = distToPlayer * sinf(Utility::Deg2RadF(pitch_));
-		lookOffset.z = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+		// プレイヤーからカメラへのオフセットを球面座標で計算
+		VECTOR cameraOffset;
+		
+		cameraOffset.x = xzDistance * sinf(Utility::Deg2RadF(yaw_));
 
-		// 注視点 = カメラ位置 + 向きオフセット
-		VECTOR calculatedTarget = VAdd(frozenCameraPos_, lookOffset);
+		// Y軸は凍結時のオフセットを維持
+		cameraOffset.y = initialHeightOffset_; 
+		
+		cameraOffset.z = xzDistance * cosf(Utility::Deg2RadF(yaw_));
 
-		// プレイヤーとの距離が近い場合はプレイヤーを見る（スムーズに補間）
-		float blendFactor = 0.7f; // プレイヤー追従の強さ（0.0～1.0）
-		targetPos_.x = calculatedTarget.x * (1.0f - blendFactor) + playerPos.x * blendFactor;
-		targetPos_.y = calculatedTarget.y * (1.0f - blendFactor) + playerPos.y * blendFactor;
-		targetPos_.z = calculatedTarget.z * (1.0f - blendFactor) + playerPos.z * blendFactor;
+		// カメラ位置を更新（プレイヤー位置 + オフセット）
+		pos_ = VAdd(playerPos, cameraOffset);
+
+		// 注視点はプレイヤー
+		targetPos_ = playerPos;
 	}
 
 	//上方向は固定
@@ -460,7 +460,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 
 	//マウスを中央に戻す
 	SetMousePoint(centerX_, centerY_);
-
 }
 
 void Camera::SetBeforeDrawLockon(void)
@@ -659,9 +658,12 @@ void Camera::SetFreezeFollow(bool freeze)
 		frozenCameraPos_ = pos_;
 		initialYaw_ = yaw_;
 
-		// カメラとプレイヤーの距離を計算
-		VECTOR diff = VSub(followTransform_->pos, pos_);
+		// カメラとプレイヤーの距離を計算（XZ平面の距離も保存）
+		VECTOR diff = VSub(pos_, followTransform_->pos);
 		initialDistance_ = VSize(diff);
+
+		// Y軸のオフセットも保存
+		initialHeightOffset_ = diff.y;
 	}
 	else
 	{
@@ -669,7 +671,6 @@ void Camera::SetFreezeFollow(bool freeze)
 		keyRotateSpeed_ = 0.0f;
 	}
 }
-
 VECTOR Camera::GetOrbitPosition(void) const
 {
 	if (!freezeFollow_)

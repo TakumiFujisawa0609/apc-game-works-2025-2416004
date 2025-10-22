@@ -240,6 +240,9 @@ private:
 	// キー入力による回転速度
 	float keyRotateSpeed_;
 
+	// 凍結開始時のY軸オフセット
+	float initialHeightOffset_;
+
 	//カメラを初期位置に戻す
 	void SetDefault(void);
 
