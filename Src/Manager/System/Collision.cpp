@@ -122,3 +122,59 @@ bool Collision::IsHitSphereCapsule(const VECTOR& sphPos, float sphRadius, const 
     return ret;
 }
 
+// メッシュと球の衝突判定
+bool Collision::IsHitMeshSphere(int modelId, const VECTOR& sphPos, float sphRadius, VECTOR* hitPos, VECTOR* hitNor)
+{
+    // 衝突判定
+    MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(modelId, -1, sphPos, sphRadius);
+
+
+    if (hitResult.HitNum > 0)
+    {
+        // 最も近い衝突地点を探す
+        float minDist = FLT_MAX;
+
+        int nearIndex = 0;
+
+        for (int i = 0; i < hitResult.HitNum; i++)
+        {
+            VECTOR hitPos = hitResult.Dim[i].HitPosition;
+
+            float dist = static_cast<float>(Utility::Distance(hitPos, sphPos));
+
+            if (dist < minDist)
+            {
+                minDist = dist;
+
+                nearIndex = i;
+            }
+        }
+
+        if (hitPos)
+        {
+            *hitPos = hitResult.Dim[nearIndex].HitPosition;
+        }
+
+        if (hitNor)
+        {
+            VECTOR v1 = hitResult.Dim[nearIndex].Position[0];
+
+            VECTOR v2 = hitResult.Dim[nearIndex].Position[1];
+
+            VECTOR v3 = hitResult.Dim[nearIndex].Position[2];
+
+            VECTOR edge1 = VSub(v2, v1);
+
+            VECTOR edge2 = VSub(v3, v1);
+
+            *hitNor = Utility::VNormalize(VCross(edge1, edge2));
+        }
+
+        MV1CollResultPolyDimTerminate(hitResult);
+
+        return true;
+    }
+
+    return false;
+}
+

@@ -7,6 +7,7 @@
 #include "../../Object/player.h"
 #include "../../Manager/Generic/SceneManager.h"
 #include "../../Manager/Generic/Camera.h"
+#include "../../Manager/System/CollisionManager.h"
 #include "../../Utility/Utility.h"
 
 // コンストラクタ
@@ -65,6 +66,41 @@ void GroundManager::Init(void)
 			grounds_.push_back(std::move(g));
 		}
 	}
+
+	// 各タイルにコリジョン情報を構築（最適化）
+	for (auto& g : grounds_)
+	{
+		int modelId = g.GetModelId();
+
+		MV1SetPosition(modelId, g.GetPos());
+
+		MV1SetupCollInfo(modelId, -1);
+	}
+
+	
+}
+
+// カメラ位置に近いタイルのモデルIDと位置を取得
+std::vector<std::pair<int, VECTOR>> GroundManager::GetNearbyTiles(const VECTOR& cameraPos, float range) const
+{
+	std::vector<std::pair<int, VECTOR>> nearbyTiles;
+	nearbyTiles.reserve(9); // 最大9タイル程度を想定
+
+	float rangeSq = range * range;
+
+	for (const auto& g : grounds_)
+	{
+		VECTOR diff = VSub(g.GetPos(), cameraPos);
+		diff.y = 0.0f; // Y軸は無視（水平距離のみ）
+		float distSq = VSquareSize(diff);
+
+		if (distSq <= rangeSq)
+		{
+			nearbyTiles.push_back({ g.GetModelId(), g.GetPos() });
+		}
+	}
+
+	return nearbyTiles;
 }
 
 // 更新処理
@@ -76,12 +112,16 @@ void GroundManager::Update(void)
 // 描画処理
 void GroundManager::Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const VECTOR& cameraDir)
 {
-	const float cullDistance = 1500.0f;   // プレイヤーからの描画距離制限
-	const float viewAngleCos = cosf(Utility::Deg2RadF(80.0f)); // 視野80度
+	// プレイヤーからの描画距離制限
+	const float cullDistance = 1500.0f;   
+	
+	// 視野80度
+	const float viewAngleCos = cosf(Utility::Deg2RadF(80.0f)); 
 
 	for (auto& g : grounds_)
 	{
 		VECTOR toGround = VSub(g.GetPos(), centerPos);
+		
 		float distSq = VSquareSize(toGround);
 
 		// 一定距離外なら描画しない
@@ -89,7 +129,9 @@ void GroundManager::Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const
 
 		// 視野外（カメラ後方）なら描画しない
 		VECTOR toGroundCam = VNorm(VSub(g.GetPos(), cameraPos));
+		
 		float dot = VDot(cameraDir, toGroundCam);
+		
 		if (dot < viewAngleCos) continue;
 
 		// 表示
@@ -104,11 +146,13 @@ void GroundManager::Release(void)
 	{
 		MV1DeleteModel(g.GetModelId());
 	}
+	
 	grounds_.clear();
 
 	if (baseModelId_ != -1)
 	{
 		MV1DeleteModel(baseModelId_);
+		
 		baseModelId_ = -1;
 	}
 

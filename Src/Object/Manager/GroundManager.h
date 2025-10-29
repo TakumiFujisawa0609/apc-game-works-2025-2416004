@@ -26,6 +26,9 @@ public:
 	//初期化
 	void Init(void);
 
+	//カメラ位置に近いタイルのモデルIDと位置を取得
+	std::vector<std::pair<int, VECTOR>> GetNearbyTiles(const VECTOR& cameraPos, float range) const;
+
 	//更新処理
 	void Update(void);
 

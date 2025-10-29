@@ -86,14 +86,23 @@ void AnimationController::Add(int type, AnimData anim)
 //アニメーションの再生
 void AnimationController::Play(int type, bool isLoop, float blendTime)
 {
-	// ブレンド中なら無視して安全
-	if (prevType_ != -1) return;
 
 	//同じアニメーションなら何もしない
 	if (type == playType_) return;
 
-	//前回のアニメーションを保存
-	prevType_ = playType_;
+	//以前のブレンドを中断する
+	if (prevType_ != -1)
+	{
+		auto& prevAnim = animations_[prevType_];
+		MV1DetachAnim(modeId_, prevAnim.attachNo);
+		prevType_ = -1;
+	}
+
+	//現在のアニメを前回にセット
+	if (playType_ != -1)
+	{
+		prevType_ = playType_;
+	}
 
 	//再生中のアニメーションを保存
 	playType_ = type;
@@ -126,8 +135,15 @@ void AnimationController::Play(int type, bool isLoop, float blendTime)
 	//アニメーションの総時間を取得
 	anim.totalTime = MV1GetAttachAnimTotalTime(modeId_, anim.attachNo);
 
-	// 新アニメの初期ブレンド率は 0 にしておく
-	MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 0.0f);
+	// 前回のアニメーションがない場合は即座に100%、ある場合は0%から開始
+	if (prevType_ == -1)
+	{
+		MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 1.0f);
+	}
+	else
+	{
+		MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 0.0f);
+	}
 }
 
 //アニメーションの更新

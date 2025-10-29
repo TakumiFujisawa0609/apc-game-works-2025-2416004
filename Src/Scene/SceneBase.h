@@ -22,6 +22,9 @@ public:
 	//解放処理
 	virtual void Release(void) = 0;
 
+	// 衝突判定用のオブジェクトを登録
+	virtual void RegisterCollisions(void);
+
 	//リソースロード開始
 	virtual void Load(void) = 0;
 

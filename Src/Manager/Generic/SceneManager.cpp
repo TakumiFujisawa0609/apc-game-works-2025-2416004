@@ -166,10 +166,12 @@ void SceneManager::Update(void)
 
     // デルタタイムを計算する
     auto nowTime = std::chrono::system_clock::now();
+   
     deltaTime_ = static_cast<float>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(nowTime - preTime_).count()
         / 1000000000.0
         );
+   
     preTime_ = nowTime;
 
     // 現在のシーンを取得する
@@ -190,11 +192,23 @@ void SceneManager::Update(void)
     }
     else
     {
-        if (current) current->Update();
-    }
+        // 前フレームの衝突判定をクリアする
+        CollisionManager::GetInstance().Clear();
 
-    // カメラを更新する
-    if (camera_) camera_->Update();
+        // 衝突判定用のオブジェクトを登録
+        if (current) { current->RegisterCollisions(); }
+
+        if (camera_) { camera_->UpdateBeforeCollision(); }
+
+        // シーンを更新する
+        if (current) { current->Update(); }
+
+        // 衝突を更新する
+        CollisionManager::GetInstance().Update();
+
+        // カメラを更新する
+        if (camera_) camera_->Update();
+    }
 
     // 終了フラグを確認する
     if (isGameEnd_)
@@ -202,9 +216,6 @@ void SceneManager::Update(void)
         scenes_.clear();
         Release();
     }
-
-    // 衝突を更新する
-    CollisionManager::GetInstance().Update();
 }
 
 // 描画する

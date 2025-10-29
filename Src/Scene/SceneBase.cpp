@@ -27,16 +27,24 @@ void SceneBase::Release(void)
 {
 }
 
+// 衝突判定用のオブジェクトを登録
+void SceneBase::RegisterCollisions(void)
+{
+}
+
+// ロード開始
 void SceneBase::Load(void)
 {
 	isLoading_ = true;
 }
 
+// ロード完了
 void SceneBase::EndLoad(void)
 {
 	isLoading_ = false;
 }
 
+// ロード中か
 bool SceneBase::IsLoading(void) const
 {
 	return isLoading_;

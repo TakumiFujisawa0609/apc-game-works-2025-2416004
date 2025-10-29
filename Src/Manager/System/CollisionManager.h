@@ -17,9 +17,15 @@ public:
 
 		BOX,         //直方体
 
+		MESH,        //メッシュ
+
 		SPHERE_PUSH, //球体(押し出し)
 
 		BOX_PUSH,    //直方体(押し出し)
+
+		MESH_PUSH,   //メッシュ(押し出し)
+
+		
 	};
 
 	// タグタイプ
@@ -34,6 +40,10 @@ public:
 		WALL,        //壁
 
 		ITEM,        //アイテム
+
+		CAMERA,      //カメラ
+
+		GROUND,      //地面
 	};
 
 	// 当たり判定情報
@@ -49,11 +59,17 @@ public:
 
 		VECTOR max = VGet(0, 0, 0);     //最大座標(直方体)
 
+		int modelId = -1;               //モデルID(メッシュ)
+
 		COLLISION_TYPE type;            //当たり判定タイプ
 
 		bool pushEnabled = false;       //押し出し判定
 
 		TAG_TYPE tag = TAG_TYPE::NONE;  // タグ
+
+		VECTOR center = VGet(0, 0, 0);  //中心座標(メッシュ)
+
+		float radiusBound = 0.0f;       //境界半径(メッシュ)
 	};
 
 	
@@ -75,6 +91,12 @@ public:
 
 	// BOXの登録
 	void RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push = false);
+
+	// メッシュの登録
+	void RegisterMesh(std::shared_ptr<void> owner, int modelId, TAG_TYPE tag, bool push = false);
+
+	// 地面用のメッシュ登録
+	void RegisterMeshTile(std::shared_ptr<void> owner, int modelId, VECTOR pos, float tileSize);
 
 	// 全削除
 	void Clear(void);

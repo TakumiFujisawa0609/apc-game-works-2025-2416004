@@ -44,6 +44,9 @@ public:
 	// 追従対象の設定
 	void SetTargetPos(const VECTOR& pos);
 
+	// 衝突判定用の再登録
+	void RegisterCollisions(void);
+
 private:
 
 	// 敵リスト（shared_ptr に変更）

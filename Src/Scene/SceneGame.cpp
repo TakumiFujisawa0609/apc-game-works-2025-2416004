@@ -11,6 +11,7 @@
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/System/Collision.h"
 #include "../Manager/System/TimeManager.h"
+#include "../Manager/System/CollisionManager.h"
 #include "../Object/Player.h"
 #include "../Object/Manager/GroundManager.h"
 #include "../DrawUI/Font.h"
@@ -178,6 +179,27 @@ void SceneGame::Release(void)
 	
 }
 
+// 衝突判定用のオブジェクトを登録
+void SceneGame::RegisterCollisions(void)
+{
+	auto camera = SceneManager::GetInstance().GetCamera();
+
+	// カメラの当たり判定再登録
+	camera->RegisterCollision();
+
+	// カメラ位置に近い地面タイルを登録
+	auto nearbyTiles = groundManager_->GetNearbyTiles(camera->GetPos(), 700.0f);
+
+	for (const auto& tile : nearbyTiles)
+	{
+		CollisionManager::GetInstance().RegisterMeshTile(nullptr, tile.first, tile.second, GroundManager::TILE_SIZE);
+	}
+
+	// えねみーの当たり判定登録
+	enemyManager_->RegisterCollisions();
+}
+
+// 描画(デバック)
 void SceneGame::DrawDebug(void)
 {
 }

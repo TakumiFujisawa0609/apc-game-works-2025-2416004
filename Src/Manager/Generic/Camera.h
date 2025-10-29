@@ -83,7 +83,10 @@ public:
 	static constexpr float PITCH_DWON = -80.0f;	//ピッチ最低上限
 
 	//XZ平面の制限
-	const float MAX_DIST_XZ = 500.0f;
+	static constexpr float MAX_DIST_XZ = 500.0f;
+
+	// 注視点（プレイヤーの少し上を見る）
+	static constexpr float TARGET_HEIGHT_OFFSET = 100.0f;
 
 	//コンストラクタ
 	Camera(void);
@@ -93,6 +96,9 @@ public:
 
 	//初期化処理
 	void Init(void);
+
+	// 更新処理（衝突判定前）
+	void UpdateBeforeCollision(void);
 
 	//更新処理
 	void Update(void);
@@ -145,6 +151,9 @@ public:
 	// 自動回転を追加
 	void SetKeyRotation(float rotSpeed);
 
+	// 当たり判定の再登録
+	void RegisterCollision(void);
+
 private:
 
 	//追従対象
@@ -162,6 +171,12 @@ private:
 	//カメラの描画モード
 	std::map<MODE, std::function<void(void)>> setBeforeDrawMode_;
 
+	//カメラの当たり判定用
+	std::shared_ptr<VECTOR> collisionPos_;
+
+	//カメラの当たり判定用半径
+	float radius_;
+
 	//カメラの位置
 	VECTOR pos_;
 
@@ -176,6 +191,9 @@ private:
 
 	//カメラの速度(移動量)
 	VECTOR velocity_;
+
+	// 押し出し前の座標
+	VECTOR prevPos_;  
 
 	//移動量
 	float moveSpeed_;

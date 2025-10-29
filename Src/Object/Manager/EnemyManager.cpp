@@ -59,14 +59,6 @@ void EnemyManager::RandomSpawn(const std::string& type, const EnemyData& data)
 	auto enemy_sp = enemy;
 	enemies_.push_back(enemy_sp);
 
-	// “–‚½‚è”»’è‚Ì“o˜^
-	if (auto slime = dynamic_cast<EnemySlime*>(enemy_sp.get()))
-	{
-		VECTOR* posPtr = slime->GetTransform().GetPosPtr();
-
-		col.RegisterSphere(std::static_pointer_cast<void>(enemy_sp), std::shared_ptr<VECTOR>(enemy_sp, posPtr), slime->GetRadius(), CollisionManager::TAG_TYPE::ENEMY, true);
-	}
-
 	curSpawns_[type]++;
 }
 
@@ -161,6 +153,22 @@ void EnemyManager::Release(void)
 void EnemyManager::SetTargetPos(const VECTOR& pos)
 {
 	targetPos_ = pos;
+}
+
+// Õ“Ë—p‚ÌÄ“o˜^
+void EnemyManager::RegisterCollisions(void)
+{
+	auto& col = CollisionManager::GetInstance();
+
+	for (auto& enemy : enemies_)
+	{
+		if (auto slime = dynamic_cast<EnemySlime*>(enemy.get()))
+		{
+			VECTOR* posPtr = slime->GetTransform().GetPosPtr();
+
+			col.RegisterSphere(std::static_pointer_cast<void>(enemy), std::shared_ptr<VECTOR>(enemy, posPtr), slime->GetRadius(), CollisionManager::TAG_TYPE::ENEMY, true);
+		}
+	}
 }
 
 //“G‚Ì¶¬
