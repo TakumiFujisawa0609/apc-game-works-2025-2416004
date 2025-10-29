@@ -12,6 +12,9 @@ public:
 	// ( DxLib_Init前に呼ぶこと )
     FpsController(int fixedFps);
 
+    // デストラクタ
+    ~FpsController(void);
+
     // 1フレームごとのFPS制御
     // ( ScreenFlip後に呼ぶこと ）
     void Wait(void);
@@ -23,6 +26,9 @@ public:
     float GetFPS(void) const { return fps_; }
 
 private:
+
+    // 最大FPS
+    static constexpr int MAX_FPS = 1200;
 
 	// 平均FPS計算に使用するフレーム数
 	static constexpr int AVG_FPS_COUNT = 60;

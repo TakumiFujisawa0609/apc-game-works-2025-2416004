@@ -5,8 +5,10 @@
 
 FpsController::FpsController(int fixedFps)
     :
-    fixedFps_(fixedFps), 
-	idealFrameTime_(1.0f / static_cast<double>(fixedFps)),
+	// 最大FPSを超えないように制限
+    fixedFps_(fixedFps > MAX_FPS ? MAX_FPS : fixedFps),
+	// 1フレームの理想時間を計算
+	idealFrameTime_(1.0f / static_cast<double>(fixedFps_)),
     fps_(0.0f),
 	timeList_(),
 	prevTime_()
@@ -17,6 +19,10 @@ FpsController::FpsController(int fixedFps)
 	// DxLibの垂直同期待ちを無効化
     SetWaitVSyncFlag(false);
 
+}
+
+FpsController::~FpsController(void)
+{
 }
 
 void FpsController::Wait()
@@ -38,21 +44,21 @@ void FpsController::Wait()
 		// 待つべき時間(ミリ秒)
         double waitMiliSecond = (idealFrameTime_ - deltaTime) * 1000.0;
 
-        // Sleepで粗調整
+        // Sleepで待ち時間分を待機
         if (waitMiliSecond >= 1.0)
         {
             // 指定ミリ秒数待つ(DxLib関数)
             WaitTimer(static_cast<int>(waitMiliSecond));
 
-            // 指定時間になるまでbusyになるが待つ
-            while (deltaTime < idealFrameTime_)
-            {
-                // 再計測
-                nowTime = std::chrono::high_resolution_clock::now();
-                delta = nowTime - prevTime_;
-                deltaTime = delta.count();
-            }
+        }
 
+        // 指定時間になるまでbusyになるが待つ
+        while (deltaTime < idealFrameTime_)
+        {
+            // 再計測
+            nowTime = std::chrono::high_resolution_clock::now();
+            delta = nowTime - prevTime_;
+            deltaTime = delta.count();
         }
 
     }

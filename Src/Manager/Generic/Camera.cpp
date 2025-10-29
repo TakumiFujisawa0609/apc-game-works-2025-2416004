@@ -449,7 +449,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 		{
 			fixedGroundY = pos_.y - 15.0f; // 現在位置から15下を地面として記録
 			isGroundFixed = true;
-			printfDx("【地面固定】Y座標: %.2f\n", fixedGroundY);
 		}
 	}
 	else if (wasGroundContact)
@@ -460,8 +459,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
 		{
 			groundContactTime = 0.0f;
 			wasGroundContact = false;
-			isGroundFixed = false; // 固定解除
-			printfDx("【地面固定解除】\n");
+			isGroundFixed = false; 
 		}
 	}
 
@@ -488,7 +486,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 		groundContactTime = 0.0f;
 		wasGroundContact = false;
 		isGroundFixed = false;
-		printfDx("【地面固定解除（上向き）】\n");
 	}
 
 	// 接触判定を再計算（上向きで解除された場合に反映）
@@ -497,9 +494,8 @@ void Camera::SetBeforeDrawTPSMouse(void)
 	// 地面固定中で下を向こうとしている場合のみ距離を縮める
 	if (isStableGroundContact && pitchDelta < 0.0f)
 	{
-		// 下を向こうとしている＆地面に接触している
 		// → 距離を縮める（ピッチは変更しない）
-		distance_ -= 30.0f;
+		distance_ -= 20.0f;
 
 		// 最小距離を0に（プレイヤーと同じ位置まで）
 		const float MIN_DISTANCE = 0.0f;
@@ -508,7 +504,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 			distance_ = MIN_DISTANCE;
 		}
 
-		printfDx("【地面接触中・距離縮小】距離: %.1f, ピッチ: %.2f度\n", distance_, pitch_);
 	}
 	else
 	{
@@ -524,7 +519,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 		{
 			distance_ = CAMERA_DISTANCE;
 		}
-		printfDx("【距離復帰】距離: %.1f\n", distance_);
 	}
 
 	// キー入力による回転を適用（凍結中のみ）
@@ -546,10 +540,6 @@ void Camera::SetBeforeDrawTPSMouse(void)
 			pitch_ = MIN_PITCH_ON_GROUND;
 		}
 	}
-
-	// デバッグ表示
-	printfDx("接触判定: %d, 接触時間: %.2f, ピッチデルタ: %.2f\n",
-		isStableGroundContact, groundContactTime, pitchDelta);
 
 	// 注視点の高さオフセット（プレイヤーの胸の高さ）
 	const float TARGET_HEIGHT_OFFSET = 100.0f;
