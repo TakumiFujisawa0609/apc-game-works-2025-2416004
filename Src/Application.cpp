@@ -47,10 +47,24 @@ void Application::Init(void)
 	//アプリケーションの初期設定
 	SetWindowText("Fly");
 	
-	//ウィンドウのサイズ
-	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
+	if (debugSc_)
+	{
+		//ウィンドウのサイズ
+		SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
 
-	ChangeWindowMode(true);
+		ChangeWindowMode(true);
+	}
+	else
+	{
+		//ウィンドウのサイズ
+		SetGraphMode(SCREEN_SIZE_X, SCREEN_SIZE_Y, 32);
+
+		ChangeWindowMode(false);
+	}
+
+	
+
+	
 
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);
@@ -158,12 +172,6 @@ void Application::Run(void)
 		{
 			// 通常ゲーム処理
 			sceneManager.Update();
-
-			//auto scene = dynamic_cast<SceneTitle*>(sceneManager.GetScene());
-			/*if (scene && scene->IsExitRequested())
-			{
-				return;
-			}*/
 		}
 		// エフェクト更新
 		UpdateEffekseer3D();
@@ -182,9 +190,12 @@ void Application::Run(void)
 		{
 			pauseMenu_->Draw();  // ポーズメニュー前面に
 		}
-		ScreenFlip();
 
 		fps_->Wait();
+
+		ScreenFlip();
+
+		
 		
 	}
 }
@@ -264,4 +275,7 @@ Application::Application(void)
 {
 	isInitFail_ = false;
 	isReleaseFail_ = false;
+
+	// デバックスクリーンかどうか
+	debugSc_ = true;
 }

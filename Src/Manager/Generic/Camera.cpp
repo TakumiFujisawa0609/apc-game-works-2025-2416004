@@ -69,10 +69,10 @@ Camera::Camera(void)
 	sensitivity_ = DEFAULT_SENSITIVITY;
 
 	// x中央
-	centerX_ = Application::DEFA_SCREEN_SIZE_X / 2;
+	centerX_ = Application::SCREEN_SIZE_X / 2;
 
 	// y中央
-	centerY_ = Application::DEFA_SCREEN_SIZE_Y / 2;
+	centerY_ = Application::SCREEN_SIZE_Y / 2;
 
 	// xの移動量
 	deltaX_ = 0;

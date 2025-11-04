@@ -34,7 +34,7 @@ void SceneUi::DrawFont(int baseYOverride)
         const auto& font = fontList_[i];
         int textWidth = GetDrawStringWidth(font.message.c_str(), (int)font.message.length());
 
-        int xPos = (Application::DEFA_SCREEN_SIZE_X / 2) - textWidth;
+        int xPos = (Application::SCREEN_SIZE_X / 2) - textWidth;
         int yPos = baseY + (int)i * spacing;
 
         int color = ((int)i == currentIndex_) ? GetColor(255, 255, 0) : GetColor(170, 170, 170);

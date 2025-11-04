@@ -41,6 +41,9 @@ public:
 	//複数画像ハンドルを別配にコピー
 	void CoopyHandle(int* imgs);
 
+	// ハンドル取得
+	int GetHandle(void) const;
+
 	//リソースタイプ
 	TYPE resType_;
 

@@ -152,8 +152,8 @@ void PauseMenu::Draw(void)
 {
     if (!visible_) return;
 
-    const int screenW = Application::DEFA_SCREEN_SIZE_X;
-    const int screenH = Application::DEFA_SCREEN_SIZE_Y;
+    const int screenW = Application::SCREEN_SIZE_X;
+    const int screenH = Application::SCREEN_SIZE_Y;
 
     // --- 「遊び方」サブメニュー ---
     if (mode_ == MODE_POUSE::HOW_TO_PLAY_MENU)

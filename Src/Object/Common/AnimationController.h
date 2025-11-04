@@ -43,7 +43,7 @@ public:
 	void AddInternal(int type, int animIndex, float speed);
 
 	//外部アニメーションの追加
-	void AddExternal(int type, const std::string& filePath, float speed);
+	void AddExternal(int type, const int modelHandle, float speed);
 
 	//アニメーションの再生
 	void Play(int type, bool isLoop, float blendTime);

@@ -55,13 +55,13 @@ void AnimationController::AddInternal(int type, int animIndex, float speed)
 }
 
 //外部アニメーションの追加
-void AnimationController::AddExternal(int type, const std::string& path, float speed)
+void AnimationController::AddExternal(int type,  const int modelHandle, float speed)
 {
 	//アニメーションデータ
 	AnimData anim;
 
 	//アニメーションモデルの読み込み
-	anim.model = MV1LoadModel(path.c_str());
+	anim.model = modelHandle;
 
 	//アニメーションインデックス初期化
 	anim.animIndex = 0;

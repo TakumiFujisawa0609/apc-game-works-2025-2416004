@@ -29,7 +29,7 @@ void Ground::Init(const VECTOR& pos, int modelId)
 	//ƒ‚ƒfƒ‹“Ç‚İ‚İ
   	modelId_ = modelId;
 
-	MV1SetScale(modelId_, VGet(0.5f, 10.0f, 0.5f));
+	MV1SetScale(modelId_, VGet(2.0f, 1.0f, 2.0f));
 
 	// ƒ‚ƒfƒ‹ˆÊ’uİ’è
 	if (modelId_ != -1)

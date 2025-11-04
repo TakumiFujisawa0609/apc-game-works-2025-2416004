@@ -17,13 +17,16 @@ public:
 		GAMEOVER_LOGO,			//ゲームオーバー
 		GAMECLERA_LOGO,			//ゲームクリア
 
-		//モデル
+		// モデル
 		MODEL_PLAYER,			//プレイヤーモデル
 		MODEL_GROUND,			//ステージ地面のモデル
 
-		//サウンド
+		// サウンド
 
-		//エフェクト
+		// エフェクト
+
+		// アニメーション
+		ANIM_PLAYER_IDEL
 	};
 
 	//明示的にインスタンスを生成する
@@ -64,6 +67,9 @@ public:
 
 	//リソースの複製ロード(モデル用)
 	int LoadModelDuplicate(SRC src);
+
+	// ハンドルを取得
+	int GetHandle(SRC src);
 
 private:
 

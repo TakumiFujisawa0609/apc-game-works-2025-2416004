@@ -48,6 +48,9 @@ void SceneGame::Load()
 	// ここで必要なリソースを読み込む
 	ResourceManager::GetInstance().InitGame();
 
+	// プレイヤーのパラメータ読み込み
+	player_->LoadParamCSV(Application::PATH_CSV + "Player_param.csv");
+
 	//プレイヤーの読み込み
 	player_->Load();
 
@@ -87,18 +90,20 @@ void SceneGame::Init()
 
 	isStartFont_ = true;
 
-	//プレイヤーの初期化
-	player_->Init();
-	camera->SetFollow(&player_->GetTransform());
-
 	//ステージの初期化
 	groundManager_->Init();
 
 	//エネミーマネージャー初期化
 	enemyManager_->Init();
 
+	//プレイヤーの初期化
+	player_->Init();
+	camera->SetFollow(&player_->GetTransform());
+
+
+
 	//敵のランダム生成(初期スポーン)
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 250; ++i)
 	{
 		enemyManager_->RandomSpawn("SLIME", *enemyData_);
 	}

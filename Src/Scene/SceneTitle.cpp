@@ -229,7 +229,7 @@ void SceneTitle::Draw(void)
     // ---- 遊び方説明ページ表示中 ----
     if (howToPlayPage_ > 0)
     {
-        DrawBox(0, 0, Application::DEFA_SCREEN_SIZE_X, Application::DEFA_SCREEN_SIZE_Y, GetColor(0, 0, 0), TRUE);
+        DrawBox(0, 0, Application::SCREEN_SIZE_X, Application::SCREEN_SIZE_Y, GetColor(0, 0, 0), TRUE);
 
         if (howToPlayPage_ == 1) {
             DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
@@ -257,7 +257,7 @@ void SceneTitle::Draw(void)
                 1.0, 0.0, gardenHandle_, true);
         }
 
-        DrawString(50, Application::DEFA_SCREEN_SIZE_Y - 30, "ESCキーで戻る", GetColor(200, 200, 200));
+        DrawString(50, Application::SCREEN_SIZE_Y - 30, "ESCキーで戻る", GetColor(200, 200, 200));
         return;
     }
 
@@ -267,15 +267,15 @@ void SceneTitle::Draw(void)
         DrawRotaGraph(Application::SCREEN_SIZE_X / 2 + 55,
             Application::SCREEN_SIZE_Y / 2,
             1.0, 0.0, logo_, true);
-        uiMain_->Draw(Application::DEFA_SCREEN_SIZE_Y / 2);
+        uiMain_->Draw(Application::SCREEN_SIZE_Y / 2);
 
         // 操作説明やクレジットを選んだとき
         if (showBlackBackground_)
         {
             // 黒背景
             DrawBox(0, 0,
-                Application::DEFA_SCREEN_SIZE_X,
-                Application::DEFA_SCREEN_SIZE_Y,
+                Application::SCREEN_SIZE_X,
+                Application::SCREEN_SIZE_Y,
                 GetColor(0, 0, 0), TRUE);
 
             int selected = uiMain_->GetCurrentIndex();
@@ -319,11 +319,11 @@ void SceneTitle::Draw(void)
     else
     {
         DrawBox(0, 0,
-            Application::DEFA_SCREEN_SIZE_X,
-            Application::DEFA_SCREEN_SIZE_Y,
+            Application::SCREEN_SIZE_X,
+            Application::SCREEN_SIZE_Y,
             GetColor(0, 0, 0), TRUE);
 
-        int centerY = Application::DEFA_SCREEN_SIZE_Y / 2;
+        int centerY = Application::SCREEN_SIZE_Y / 2;
         int offsetY = centerY - 100;  // 上にずらす
 
         uiHowToPlay_->Draw(offsetY);

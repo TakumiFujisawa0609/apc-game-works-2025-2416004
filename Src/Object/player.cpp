@@ -1,154 +1,254 @@
 #include "Player.h"
 
-#include <DxLib.h>
+#include <fstream>
+#include <sstream>
 
 #include "../Utility/Utility.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Generic/SceneManager.h"
+#include "../Manager/Generic/Camera.h"
 #include "../Application.h"
 #include "Common/AnimationController.h"
 #include "Common/Transform.h"
-#include "../Manager/Generic/Camera.h"
+#include "../DrawUI/Font.h"
 
-//コンストラクタ
+
+// コンストラクタ
 Player::Player(void)
 {
-	//移動制限xの初期化
-	blockedDirX_ = 0;
+    // モデルの初期化
+    modelId_ = -1;
 
-	//移動制限zの初期化
-	blockedDirZ_ = 0;
+    // 移動制限xの初期化
+    blockedDirX_ = 0;
 
-	//移動可能かの初期化
-	movementEnabled_ = true;
+    // 移動制限zの初期化
+    blockedDirZ_ = 0;
 
-	//ジャンプ力の初期化
-	jumpPower_ = JUMP_POWER;
+    // 移動可能かの初期化
+    movementEnabled_ = true;
 
-	//重力加速度
-	gravity_ = GRAVITY;
+    // ジャンプ力の初期化
+    jumpPower_ = param_.jumpPower;
 
-	//地面にいるかどうか
-	isGround_ = true;
+    // 重力加速度
+    gravity_ = GRAVITY;
 
-    //動きているかどうか
+    // 現在のY方向速度
+    velocityY_ = 0.0f;
+
+    // 地面にいるかどうか
+    isGround_ = true;
+
+    // 動きているかどうか
     isMoving_ = false;
 }
 
-//デストラクタ
+// デストラクタ
 Player::~Player(void)
 {
 
 }
 
-//リソースの読み込み
+// CSV読み込み
+void Player::LoadParamCSV(const std::string& path)
+{
+    std::ifstream file(path);
+
+    if (!file.is_open()) { return; }
+
+    std::string line;
+
+    // ヘッダを飛ばす
+    std::getline(file, line);
+
+    if (std::getline(file, line))
+    {
+        std::stringstream ss(line);
+
+        std::string value;
+
+        // 名前
+        std::getline(ss, value, ',');
+
+        // 攻撃力
+        std::getline(ss, value, ','); param_.attack = std::stoi(value);
+
+        // 防御力
+        std::getline(ss, value, ','); param_.defensse = std::stoi(value);
+
+        // 現在体力
+        std::getline(ss, value, ','); param_.hp = std::stoi(value);
+
+        // 最大体力
+        std::getline(ss, value, ','); param_.maxHp = std::stoi(value);
+
+        // スタミナ
+        std::getline(ss, value, ','); param_.stamina = std::stoi(value);
+
+        // 当たり判定(球体)
+        std::getline(ss, value, ','); param_.collisionRadius = std::stoi(value);;
+
+        // レベル
+        std::getline(ss, value, ','); param_.level = std::stoi(value);
+
+        // 最大レベル
+        std::getline(ss, value, ','); param_.maxLevel = std::stoi(value);
+
+        // ジャンプ力
+        std::getline(ss, value, ','); param_.jumpPower = std::stoi(value);
+    }
+
+    file.close();
+}
+
+// リソースの読み込み
 void Player::Load(void)
 {
-	auto& res = ResourceManager::GetInstance();
+    auto& res = ResourceManager::GetInstance();
 
-	//モデル読み込み
-	modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
-	trans_.SetModel(modelId_);
+    // モデル読み込み
+    modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
+    trans_.SetModel(modelId_);
 }
 
-//初期化
+// 初期化
 void Player::Init(void)
 {
+    auto& res = ResourceManager::GetInstance();
 
-	//初期化座標
-	trans_.pos = Utility::VECTOR_ZERO;
+    // 初期化座標
+    trans_.pos = Utility::VECTOR_ZERO;
 
-	//回転の初期化
-	trans_.rot = VGet(0, Utility::Deg2RadF(180.0f), 0);
+    // 回転の初期化
+    trans_.rot = VGet(0, 0, 0);
 
-	//スケールの初期化
-	trans_.scl = { 0.2f, 0.2f, 0.2f };
+    // ローカル回転の初期化
+    trans_.quaRotLocal = Quaternion::Identity();
 
-	//当たり判定
-	radius_ = 1.0f;
+   
 
-	//アニメーションの初期化
-	anim_ = std::make_unique<AnimationController>(modelId_);
+    // スケールの初期化
+    trans_.scl = PLAYER_SCL;
 
+    // 当たり判定
+    radius_ = param_.collisionRadius;
 
-	anim_->AddExternal(static_cast<int>(ANIM::IDEL), "player/Idle.mv1", 35.0f);
-	anim_->AddExternal(static_cast<int>(ANIM::WALK), "player/Walk.mv1", 25.0f);
+    // アニメーションの初期化
+    anim_ = std::make_unique<AnimationController>(modelId_);
+
+    anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 25.0f);
 
 }
 
-//更新処理
+// 更新処理
 void Player::Update(void)
 {
-	//前座標の保存
-	prePos_ = trans_.pos;
+    // 前座標の保存
+    prePos_ = trans_.pos;
 
-	//入力による移動制御
-	ProcessMove();
-	
-	//Transform　更新
-	trans_.Update();
+    // 入力による移動制御
+    ProcessMove();
 
-	//アニメーションの更新
-	if (anim_) anim_->Update();
+    // Transform　更新
+    trans_.Update();
+
+    // アニメーションの更新
+    if (anim_) anim_->Update();
 }
 
-//描画処理
+// 描画処理
 void Player::Draw(void) const
 {
-	//モデルの描画
-	if (trans_.modelId != -1)
-	{
+    auto& font = Font::GetInstance();
 
-		//座標の設定
-		MV1SetPosition(trans_.modelId, trans_.pos);
+    // モデルの描画
+    if (trans_.modelId != -1)
+    {
 
-		//大きさの設定
-		MV1SetScale(trans_.modelId, trans_.scl);
+        // 座標の設定
+        MV1SetPosition(trans_.modelId, trans_.pos);
 
-		//回転の設定
-		MV1SetRotationXYZ(trans_.modelId, trans_.rot);
+        // 大きさの設定
+        MV1SetScale(trans_.modelId, trans_.scl);
 
-		MV1DrawModel(trans_.modelId);
-	}
+        // 回転の設定
+        MV1SetRotationXYZ(trans_.modelId, trans_.rot);
 
+        MV1DrawModel(trans_.modelId);
+    }
+
+    // HPバーの長さ
+    const int barWidth = HP_BAR_WIDTH;
+
+    // HPバーの高さ
+    const int barHeight = HP_BAR_HEIGHT;
+
+    // 画面下中央に配置
+    int barX = (Application::SCREEN_SIZE_X - barWidth) / 2;
+    int barY = Application::SCREEN_SIZE_Y - BAR_Y;
+
+    // HP割合
+    float hpRate = (float)param_.hp / (float)param_.maxHp;
+    hpRate = std::clamp(hpRate, 0.0f, 1.0f);
+
+    int curWidth = (int)(barWidth * hpRate);
+
+    // ◆ 枠
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(255, 255, 255), false);
+
+    // ◆ 中身 (緑)
+    DrawBox(barX, barY, barX + curWidth, barY + barHeight, GetColor(0, 255, 0), true);
+
+    // ◆ 数値文字列生成
+    char hpStr[32];
+    sprintf_s(hpStr, "%d / %d", param_.hp, param_.maxHp);
+
+    // ◆ 文字幅を Font 側で取得
+    int textWidth = font.GetDefaultTextWidth(hpStr);
+
+    // ◆ 中央に位置調整
+    int textX = barX + (barWidth / 2) - (textWidth / 2);
+    int textY = barY + (barHeight / 2) - 8; // 垂直位置の微調整は好み
+
+    // ◆ 描画（デフォルトフォント）
+    font.DrawDefaultText(textX, textY, hpStr, GetColor(255, 255, 255), 18);
+
+    // デバック表示
 #ifdef _DEBUG
-	DrawFormatString(0, 40, 0xffffff, "Player Pos:(%.2f, %.2f, %.2f)", trans_.pos.x, trans_.pos.y, trans_.pos.z);
-
-	// デバッグ用: プレイヤー座標に球を出す
-	DrawSphere3D(trans_.pos, 10.0f,16, GetColor(255, 0, 0), GetColor(255, 0, 0), true);
-
-    VECTOR debugEuler = trans_.rot;
-    DrawFormatString(0, 60, 0xffffff, "Player Rot Euler: (%.2f, %.2f, %.2f)",
-        debugEuler.x, debugEuler.y, debugEuler.z);
-
-    Quaternion currentRot = Quaternion::Euler(trans_.rot);
-    DrawFormatString(0, 80, 0xffffff, "Player Quat: w: %.2f x: %.2f y: %.2f z: %.2f",
-        currentRot.w, currentRot.x, currentRot.y, currentRot.z);
-#endif // _DEBUG
+    DrawFormatString(0, 40, 0xffffff, "Player Pos:(%.2f, %.2f, %.2f)", trans_.pos.x, trans_.pos.y, trans_.pos.z);
+#endif 
 
 }
 
 //解放処理
 void Player::Release(void)
 {
-	if (anim_)
-	{
-		anim_->Release();
-		anim_.reset();
-	}
+    if (anim_)
+    {
+        anim_->Release();
+        anim_.reset();
+    }
 }
 
 //移動可能かを設定
 void Player::SetMovementEndbled(bool enabled)
 {
-	movementEnabled_ = enabled;
+    movementEnabled_ = enabled;
 }
 
 //移動かのかを取得
 bool Player::IsMovementEndbled(void) const
 {
-	return movementEnabled_;
+    return movementEnabled_;
+}
+
+// パラメータの取得
+const Player::Param& Player::GetParam(void) const
+{
+    return param_;
 }
 
 //入力による移動制御
@@ -185,7 +285,7 @@ void Player::ProcessMove(void)
         //カメラを停止
         camera->SetFreezeFollow(true);
 
-        
+
         // 回転速度
         float keyRotSpeed = rightInput * 1.5f;
 
@@ -262,15 +362,15 @@ void Player::ProcessMove(void)
             if (VSize(moveDir) > 0.0001f)
             {
                 moveDir = VNorm(moveDir);
-                
+
                 // 移動量を適用
                 VECTOR movement = VScale(moveDir, 10.5f);
                 trans_.pos = VAdd(trans_.pos, movement);
-                
+
                 isMoving_ = true;
-                
+
                 // 移動方向に向く
-                Quaternion targetLocalRot = Quaternion::LookRotation(moveDir);
+                Quaternion targetLocalRot = Quaternion::LookRotation(VScale(moveDir, -1.0f));
                 trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
             }
         }

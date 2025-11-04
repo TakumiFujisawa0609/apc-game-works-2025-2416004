@@ -75,8 +75,13 @@ void ResourceManager::ResourcePlayer(void)
 {
 	Resource res;
 
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/playerkari.mv1");
+	// プレイヤーのモデル
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/bouningen.mv1");
 	resourcesMap_.emplace(SRC::MODEL_PLAYER, res);
+
+	// プレイヤーの歩くアニメーション
+	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
+	resourcesMap_.emplace(SRC::ANIM_PLAYER_IDEL, res);
 }
 
 // 敵用リソース初期化
@@ -127,6 +132,16 @@ int ResourceManager::LoadModelDuplicate(SRC src)
 	res->duplicateModelIds_.push_back(duId);
 
 	return duId;
+}
+
+int ResourceManager::GetHandle(SRC src)
+{
+	auto it = resourcesMap_.find(src);
+
+	if (it == resourcesMap_.end()) { return -1; }
+
+	// モデルならロードしてなければロード
+	return it->second.GetHandle();
 }
 
 // コンストラクタ
