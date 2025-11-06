@@ -19,12 +19,15 @@ public:
 
 		MESH,        //メッシュ
 
+		CAPSULE,     //カプセル
+
 		SPHERE_PUSH, //球体(押し出し)
 
 		BOX_PUSH,    //直方体(押し出し)
 
 		MESH_PUSH,   //メッシュ(押し出し)
 
+		CAPSULE_PUSH //カプセル(押し出し)
 		
 	};
 
@@ -49,27 +52,33 @@ public:
 	// 当たり判定情報
 	struct CollisionObject
 	{
-		std::shared_ptr<void> owner;    //所持者
+		std::shared_ptr<void> owner;            //所持者
 
-		std::weak_ptr<VECTOR> posPtr;   //座標
+		std::weak_ptr<VECTOR> posPtr;           //座標
 
-		float radius = 0.0f;            //半径(球体)
+		float radius = 0.0f;                    //半径(球体)
 
-		VECTOR min = VGet(0, 0, 0);     //最小座標(直方体)
+		VECTOR min = { 0.0f, 0.0f, 0.0f };      //最小座標(直方体)
 
-		VECTOR max = VGet(0, 0, 0);     //最大座標(直方体)
+		VECTOR max = { 0.0f, 0.0f, 0.0f };      //最大座標(直方体)
 
-		int modelId = -1;               //モデルID(メッシュ)
+		int modelId = -1;					    //モデルID(メッシュ)
 
-		COLLISION_TYPE type;            //当たり判定タイプ
+		COLLISION_TYPE type;                    //当たり判定タイプ
 
-		bool pushEnabled = false;       //押し出し判定
+		bool pushEnabled = false;               //押し出し判定
 
-		TAG_TYPE tag = TAG_TYPE::NONE;  // タグ
+		TAG_TYPE tag = TAG_TYPE::NONE;          // タグ
 
-		VECTOR center = VGet(0, 0, 0);  //中心座標(メッシュ)
+		VECTOR center = { 0.0f, 0.0f, 0.0f };   //中心座標(メッシュ)
 
-		float radiusBound = 0.0f;       //境界半径(メッシュ)
+		float radiusBound = 0.0f;               //境界半径(メッシュ)
+
+		VECTOR capStart = { 0.0f, 0.0f, 0.0f }; //カプセルの開始座標
+
+		VECTOR capEnd = { 0.0f, 0.0f, 0.0f };   //カプセルの終了座標
+
+		float capRadius = 0.0f;                 //カプセルの半径
 	};
 
 	
@@ -91,6 +100,9 @@ public:
 
 	// BOXの登録
 	void RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push = false);
+
+	// カプセルの登録
+	void RegistCapsule(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push);
 
 	// メッシュの登録
 	void RegisterMesh(std::shared_ptr<void> owner, int modelId, TAG_TYPE tag, bool push = false);

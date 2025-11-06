@@ -64,6 +64,9 @@ public:
 
 	// プレイヤーのパラメータ取得
 	const Param& GetParam(void) const;
+
+	// プレイヤーのhpバーの描画
+	void DrawHpBar(void) const;
 private:
 
 	// 重力加速度

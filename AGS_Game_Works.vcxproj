@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Pch.h" />
     <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Manager\System\CollisionManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
@@ -187,6 +188,7 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Pch.cpp" />
     <ClCompile Include="Src\Fps\FpsController.cpp" />
     <ClCompile Include="Src\Manager\System\CollisionManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />

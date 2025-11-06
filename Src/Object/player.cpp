@@ -26,9 +26,6 @@ Player::Player(void)
     // 移動制限zの初期化
     blockedDirZ_ = 0;
 
-    // 移動可能かの初期化
-    movementEnabled_ = true;
-
     // ジャンプ力の初期化
     jumpPower_ = param_.jumpPower;
 
@@ -43,6 +40,15 @@ Player::Player(void)
 
     // 動きているかどうか
     isMoving_ = false;
+
+    // 移動可能かの初期化
+    movementEnabled_ = true;
+
+    // 表示上のHP
+    hpDisplay_ = param_.hp;
+
+    // 遅延スピード
+    hpDelaySpeed_ = DELAY_SPEED;
 }
 
 // デストラクタ
@@ -157,12 +163,27 @@ void Player::Update(void)
 
     // アニメーションの更新
     if (anim_) anim_->Update();
+
+    // HPバーの遅延表示
+    if (hpDisplay_ > param_.hp)
+    {
+        // ダメージを受けた
+        hpDisplay_ -= hpDelaySpeed_;
+
+        if (hpDisplay_ < param_.hp)
+        {
+            hpDisplay_ = param_.hp;
+        }
+    }
+    else
+    {
+        hpDisplay_ = param_.hp;
+    }
 }
 
 // 描画処理
 void Player::Draw(void) const
 {
-    auto& font = Font::GetInstance();
 
     // モデルの描画
     if (trans_.modelId != -1)
@@ -180,41 +201,7 @@ void Player::Draw(void) const
         MV1DrawModel(trans_.modelId);
     }
 
-    // HPバーの長さ
-    const int barWidth = HP_BAR_WIDTH;
-
-    // HPバーの高さ
-    const int barHeight = HP_BAR_HEIGHT;
-
-    // 画面下中央に配置
-    int barX = (Application::SCREEN_SIZE_X - barWidth) / 2;
-    int barY = Application::SCREEN_SIZE_Y - BAR_Y;
-
-    // HP割合
-    float hpRate = (float)param_.hp / (float)param_.maxHp;
-    hpRate = std::clamp(hpRate, 0.0f, 1.0f);
-
-    int curWidth = (int)(barWidth * hpRate);
-
-    // ◆ 枠
-    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(255, 255, 255), false);
-
-    // ◆ 中身 (緑)
-    DrawBox(barX, barY, barX + curWidth, barY + barHeight, GetColor(0, 255, 0), true);
-
-    // ◆ 数値文字列生成
-    char hpStr[32];
-    sprintf_s(hpStr, "%d / %d", param_.hp, param_.maxHp);
-
-    // ◆ 文字幅を Font 側で取得
-    int textWidth = font.GetDefaultTextWidth(hpStr);
-
-    // ◆ 中央に位置調整
-    int textX = barX + (barWidth / 2) - (textWidth / 2);
-    int textY = barY + (barHeight / 2) - 8; // 垂直位置の微調整は好み
-
-    // ◆ 描画（デフォルトフォント）
-    font.DrawDefaultText(textX, textY, hpStr, GetColor(255, 255, 255), 18);
+    DrawHpBar();
 
     // デバック表示
 #ifdef _DEBUG
@@ -249,6 +236,57 @@ bool Player::IsMovementEndbled(void) const
 const Player::Param& Player::GetParam(void) const
 {
     return param_;
+}
+
+// プレイヤーのHPバー
+void Player::DrawHpBar(void) const
+{
+    auto& font = Font::GetInstance();
+
+    // hpバーの長さ
+    int barWidth = HP_BAR_WIDTH;
+
+    // hpバーの高さ
+    int barHeight = HP_BAR_HEIGHT;
+
+    // 画面中央
+    int barX = (Application::SCREEN_SIZE_X - barWidth) / 2;
+
+    // 画面中央下
+    int barY = Application::SCREEN_SIZE_Y - BAR_Y;
+
+    // 結合
+    float hpRate = (float)param_.hp / param_.maxHp;
+
+    float dispRate = hpDisplay_ / param_.maxHp;
+
+    hpRate = std::clamp(hpRate, 0.0f, 1.0f);
+
+    dispRate = std::clamp(dispRate, 0.0f, 1.0f);
+
+    int curHPWidth = (int)(barWidth * hpRate);
+    int dispHPWidth = (int)(barWidth * dispRate);
+
+    // 枠
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(255, 255, 255), false);
+
+    // 遅延バー（赤）
+    DrawBox(barX, barY, barX + dispHPWidth, barY + barHeight, GetColor(255, 60, 60), true);
+
+    // 現在HPバー（緑）
+    DrawBox(barX, barY, barX + curHPWidth, barY + barHeight, GetColor(0, 255, 0), true);
+
+    // 数値
+    char hpStr[32];
+    sprintf_s(hpStr, "%d / %d", param_.hp, param_.maxHp);
+
+    int textWidth = font.GetDefaultTextWidth(hpStr);
+    int textX = barX + (barWidth / 2) - (textWidth / 2);
+    int textY = barY + (barHeight / 2) - 8;
+
+    font.DrawDefaultText(textX, textY, hpStr, GetColor(255, 255, 255), 18);
+
+
 }
 
 //入力による移動制御
@@ -323,16 +361,27 @@ void Player::ProcessMove(void)
 
         isMoving_ = true;
 
-        // カメラの前方向を向く
-        VECTOR camForward = camera->GetFrontVec();
-        camForward.y = 0.0f;
+        VECTOR tangent;
 
-        if (VSize(camForward) > 0.0001f)
+        if (rightInput > 0)
         {
-            camForward = VNorm(camForward);
-            Quaternion targetLocalRot = Quaternion::LookRotation(camForward);
-            trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
+            tangent.x = -toPlayer.z;
+
+            tangent.z = toPlayer.x;
         }
+        else
+        {
+            tangent.x = toPlayer.z;
+            tangent.z = -toPlayer.x;
+        }
+
+        tangent.y = 0.0f;
+        
+        tangent = VNorm(tangent);
+
+        Quaternion targetLocalRot = Quaternion::LookRotation(tangent);
+
+        trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
     }
     else
     {

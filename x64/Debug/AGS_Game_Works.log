@@ -1,4 +1,36 @@
-﻿  Player.cpp
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player.cpp(91,73): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player.cpp(100,67): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+﻿  CollisionManager.cpp
+Effekseer_vs2019_x64_d.lib(Effekseer.CurveLoader.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.CurveLoader.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Effect.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Effect.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.EffectNode.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.EffectNode.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.FCurves.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.FCurves.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Instance.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Instance.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.InstanceContainer.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.InstanceContainer.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.InternalScript.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.InternalScript.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Manager.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Manager.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Matrix43.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Matrix43.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Matrix44.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Matrix44.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Setting.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Setting.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Server.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Server.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Vector3D.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Vector3D.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Effekseer.Parameters.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Effekseer.Parameters.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Mat43f.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Mat43f.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Mat44f.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Mat44f.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(ForceFields.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(ForceFields.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(ProceduralModelGenerator.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(ProceduralModelGenerator.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(Model.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(Model.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+Effekseer_vs2019_x64_d.lib(SplineGenerator.obj) : warning LNK4099: PDB '' が 'Effekseer_vs2019_x64_d.lib(SplineGenerator.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.CommonUtils.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.CommonUtils.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.Renderer_Impl.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.Renderer_Impl.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.TGATextureLoader.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRenderer.TGATextureLoader.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.ModelRenderer.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.ModelRenderer.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.Renderer.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.Renderer.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.Shader.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerRendererDX9.Shader.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(GraphicsDevice.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(GraphicsDevice.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerMaterialCompilerDX9.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(EffekseerMaterialCompilerDX9.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX9_vs2019_x64_d.lib(ShaderGenerator.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX9_vs2019_x64_d.lib(ShaderGenerator.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerRendererDX11.ModelRenderer.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerRendererDX11.ModelRenderer.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerRendererDX11.Renderer.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerRendererDX11.Renderer.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX11_vs2019_x64_d.lib(GraphicsDevice.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX11_vs2019_x64_d.lib(GraphicsDevice.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerMaterialCompilerDX11.obj) : warning LNK4099: PDB '' が 'EffekseerRendererDX11_vs2019_x64_d.lib(EffekseerMaterialCompilerDX11.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+EffekseerForDXLib_vs2019_x64_d.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB '' が 'EffekseerForDXLib_vs2019_x64_d.lib(EffekseerForDXLib.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

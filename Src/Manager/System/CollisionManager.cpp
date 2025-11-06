@@ -78,6 +78,30 @@ void CollisionManager::RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<
 	objects_.push_back(obj);
 }
 
+// カプセルの登録
+void CollisionManager::RegistCapsule(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push)
+{
+	auto obj = std::make_shared<CollisionObject>();
+
+	obj->owner = owner;
+
+	obj->posPtr = pos;
+
+	obj->capStart = start;
+
+	obj->capEnd = end;
+
+	obj->capRadius = radius;
+
+	obj->type = push ? COLLISION_TYPE::CAPSULE_PUSH : COLLISION_TYPE::CAPSULE;
+
+	obj->pushEnabled = push;
+
+	obj->tag = tag;
+
+	objects_.push_back(obj);
+}
+
 // メッシュの登録
 void CollisionManager::RegisterMesh(std::shared_ptr<void> owner, int modelId, TAG_TYPE tag, bool push)
 {
@@ -192,6 +216,64 @@ void CollisionManager::Update(void)
 							*pos1 = VSub(*pos1, pushVec);
 							*pos2 = VAdd(*pos2, pushVec);
 						}
+					}
+				}
+			}
+
+			// 球とカプセルの当たり判定
+			if ((obj1->type == COLLISION_TYPE::SPHERE || obj1->type == COLLISION_TYPE::SPHERE_PUSH) &&
+				(obj2->type == COLLISION_TYPE::CAPSULE || obj2->type == COLLISION_TYPE::CAPSULE_PUSH))
+			{
+				if (!pos1) { continue; }
+
+				// 衝突判定
+				if (Collision::GetInstance().IsHitSphereCapsule(*pos1, obj1->radius, obj2->capStart, obj2->capEnd, obj2->capRadius))
+				{
+					//押し出し処理
+					if (obj1->pushEnabled && obj2->pushEnabled)
+					{
+						// カプセル線分上で球に最も近い点を求める
+						VECTOR capVac = VSub(obj1->capEnd, obj2->capStart);
+
+						VECTOR pVec = VSub(*pos1, obj2->capStart);
+
+						float t = VDot(pVec, VNorm(capVac));
+
+						float capLen = Utility::MagnitudeF(capVac);
+
+						float rate = t / capLen;
+
+						VECTOR nearest;
+
+						if (rate <= 0.0f)
+						{
+							nearest = obj2->capStart; 
+						}
+						else if (rate >= 1.0f) 
+						{
+							nearest = obj2->capEnd; 
+						}
+						else 
+						{
+							nearest = VAdd(obj2->capStart, VScale(VNorm(capVac), t));
+						}
+
+						VECTOR diff = VSub(*pos1, nearest);
+
+						float dist = Utility::MagnitudeF(diff);
+
+						float overlap = (obj1->radius + obj2->capRadius) - dist;
+
+						if (overlap > 0.0f && dist > 0.00001f)
+						{
+							VECTOR pushDir = VScale(diff, 1.0f / dist);
+
+							VECTOR pushVec = VScale(pushDir, overlap);
+
+							*pos1 = VAdd(*pos1, pushVec);
+						}
+
+
 					}
 				}
 			}
