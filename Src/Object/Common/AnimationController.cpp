@@ -1,7 +1,4 @@
 #include "AnimationController.h"
-
-#include <DxLib.h>
-
 #include "../../Manager/Generic/SceneManager.h"
 
 //コンストラクタ

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <DxLib.h>
-#include <memory>
-
 #include "UnitBase.h"
 
 class Player : public UnitBase

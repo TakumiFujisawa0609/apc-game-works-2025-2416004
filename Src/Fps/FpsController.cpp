@@ -1,7 +1,4 @@
 #include "FpsController.h"
-#include <DxLib.h>
-#include <string>
-#include <thread>
 
 FpsController::FpsController(int fixedFps)
     :

@@ -1,7 +1,4 @@
 #include "SceneGame.h"
-
-#include <DxLib.h>
-
 #include "../Common/Easing.h"
 #include "../Manager/Generic/Camera.h"
 #include "../Manager/Generic/SceneManager.h"

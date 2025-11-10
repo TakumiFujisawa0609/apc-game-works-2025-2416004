@@ -1,5 +1,4 @@
 #include "SceneUi.h"
-#include <DxLib.h>
 #include "../../DrawUI/Font.h"
 #include "../../Application.h"
 

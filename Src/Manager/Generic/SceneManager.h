@@ -1,11 +1,4 @@
 #pragma once
-
-#include <chrono>
-#include <list>
-#include <memory>
-#include <mutex>
-#include <thread>
-
 #include "../../Application.h"
 
 class SceneBase;

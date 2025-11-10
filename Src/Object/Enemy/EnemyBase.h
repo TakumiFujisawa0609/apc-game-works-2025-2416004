@@ -1,8 +1,5 @@
 #pragma once
 
-#include <DxLib.h>
-#include <string>
-
 #include "../UnitBase.h"
 #include "EnemyData.h"
 
@@ -51,6 +48,12 @@ public:
 
 	//自身のタイプを返す
 	const std::string& GetType(void) const;
+
+	// 当たり判定用の座標ポインタを取得
+	VECTOR* GetCollisionPosPtr(void);
+
+	// 当たり判定のオフセット（派生クラスでオーバーライド可能）
+	virtual VECTOR GetCollisionOffset(void) const;
 protected:
 
 	//体力
@@ -82,5 +85,8 @@ protected:
 
 	//タイプ
 	std::string type_;
+
+	// 当たり判定用位置
+	VECTOR collisionPos_;
 };
 

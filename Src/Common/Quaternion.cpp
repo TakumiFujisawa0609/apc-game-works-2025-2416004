@@ -507,7 +507,7 @@ Quaternion Quaternion::RotateTowards(const Quaternion& from, const Quaternion& t
 	}
 
 	// 補間比率tを計算（最大角度で制限）
-	float t = min(1.0f, maxDegreesDelta / (float)num);
+	float t = std::min(1.0f, maxDegreesDelta / (float)num);
 	return Quaternion::SlerpUnclamped(from, to, t);
 }
 

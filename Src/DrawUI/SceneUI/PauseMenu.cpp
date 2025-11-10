@@ -1,5 +1,4 @@
 ﻿#include "PauseMenu.h"
-#include <DxLib.h>
 #include "../../Manager/Generic/InputManager.h"
 #include "../../Manager/Decoration/SoundManager.h"
 #include "../../Manager/Generic/SceneManager.h"

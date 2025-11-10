@@ -20,13 +20,15 @@ public:
 		// モデル
 		MODEL_PLAYER,			//プレイヤーモデル
 		MODEL_GROUND,			//ステージ地面のモデル
+		MODEL_SLIME,            //スライムモデル
 
 		// サウンド
 
 		// エフェクト
 
 		// アニメーション
-		ANIM_PLAYER_IDEL
+		ANIM_PLAYER_IDEL,       //プレイヤーの待機アニメーション
+		ANIM_PLAYER_WALK        //プレイヤーの歩きアニメーション
 	};
 
 	//明示的にインスタンスを生成する

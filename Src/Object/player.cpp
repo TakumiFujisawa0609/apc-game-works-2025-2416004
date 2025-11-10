@@ -1,8 +1,4 @@
 #include "Player.h"
-
-#include <fstream>
-#include <sstream>
-
 #include "../Utility/Utility.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/ResourceManager.h"
@@ -27,7 +23,7 @@ Player::Player(void)
     blockedDirZ_ = 0;
 
     // ジャンプ力の初期化
-    jumpPower_ = param_.jumpPower;
+    jumpPower_ = 0;
 
     // 重力加速度
     gravity_ = GRAVITY;
@@ -141,11 +137,14 @@ void Player::Init(void)
     // 当たり判定
     radius_ = param_.collisionRadius;
 
+    // ジャンプパワー
+    jumpPower_ = param_.jumpPower;
+
     // アニメーションの初期化
     anim_ = std::make_unique<AnimationController>(modelId_);
 
     anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 25.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_WALK).handleId_, 30.0f);
 
 }
 

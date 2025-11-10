@@ -1,8 +1,5 @@
 #include "GroundManager.h"
 
-#include <DxLib.h>
-#include <cmath>
-
 #include "../../Manager/Generic/ResourceManager.h"
 #include "../../Object/player.h"
 #include "../../Manager/Generic/SceneManager.h"

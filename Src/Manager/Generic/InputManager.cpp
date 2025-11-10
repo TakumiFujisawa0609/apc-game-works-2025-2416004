@@ -1,8 +1,5 @@
 #include "InputManager.h"
 
-#include <DxLib.h>
-
-
 InputManager* InputManager::instance_ = nullptr;
 
 void InputManager::CreateInstance(void)

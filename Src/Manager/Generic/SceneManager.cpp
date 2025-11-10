@@ -1,8 +1,4 @@
 #include "SceneManager.h"
-
-#include <DxLib.h>
-#include <cassert>
-
 #include "../../Scene/SceneBase.h"
 #include "../../Scene/SceneTitle.h"
 #include "ResourceManager.h"

@@ -1,7 +1,4 @@
 ﻿#include "Camera.h"
-
-#include <EffekseerForDXLib.h>
-
 #include "../../Application.h"
 #include "../../Utility/Utility.h"
 #include "SceneManager.h"
@@ -167,7 +164,7 @@ void Camera::Init(void)
 	radius_ = 35.0f;
 
 	// 当たり判定登録
-	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_, radius_, CollisionManager::TAG_TYPE::CAMERA, true);
+	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
 }
 
 // 更新処理（衝突判定前）
@@ -175,6 +172,8 @@ void Camera::UpdateBeforeCollision(void)
 {
 	// 押し出し前の座標を保存
 	prevPos_ = pos_;
+ 
+    CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
 
 	// 当たり判定の座標を更新（衝突前）
 	if (collisionPos_)
@@ -912,7 +911,7 @@ void Camera::RegisterCollision(void)
 	*collisionPos_ = pos_;
 
 	// 毎フレーム登録（Clearされるため）
-	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_, radius_, CollisionManager::TAG_TYPE::CAMERA, true);
+	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
 }
 
 void Camera::SetLockonTarget(const Transform* target)

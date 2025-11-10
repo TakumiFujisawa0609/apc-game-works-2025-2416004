@@ -1,6 +1,4 @@
 #pragma once
-
-#include <memory>
 #include "SceneBase.h"
 #include "../DrawUI/SceneUI/SceneUi.h"
 

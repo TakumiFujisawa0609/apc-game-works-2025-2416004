@@ -45,7 +45,7 @@ void EnemySlime::Init(const VECTOR& startPos)
 	//äÓíÍÉNÉâÉXÇÃèâä˙âª
 	EnemyBase::Init(startPos);
 
-	trans_.scl = VGet(0.2f, 0.2f, 0.2f);
+	trans_.scl = VGet(0.5f, 0.5f, 0.5f);
 
 }
 
@@ -105,13 +105,7 @@ void EnemySlime::Draw(void) const
 	EnemyBase::Draw();
 
 #ifdef _DEBUG
-	Utility::DrawLineDir(trans_.pos, forward_, GetColor(0, 255, 0), 50.0f);
-	VECTOR dir;
-	dir.x = targetPos_.x - trans_.pos.x;
-	dir.y = targetPos_.y - trans_.pos.y;
-	dir.z = targetPos_.z - trans_.pos.z;
 
-	Utility::DrawLineDir(trans_.pos, Utility::VNormalize(dir), GetColor(255, 0, 0), viewRange_);
 #endif // _DEBUG
 
 }
@@ -119,4 +113,9 @@ void EnemySlime::Draw(void) const
 void EnemySlime::ApplyData(const EnemyInfo& info)
 {
 	EnemyBase::ApplyData(info);
+}
+
+VECTOR EnemySlime::GetCollisionOffset(void) const
+{
+	return VGet(0.0f, COLLISION_HEIGHT_OFFSET, 0.0f);
 }

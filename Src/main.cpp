@@ -2,9 +2,6 @@
 
 #include"Application.h"
 
-#include <crtdbg.h>
-#include <DxLib.h>
-
 extern "C" {
 	__declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;  // NVIDIA—p
 	__declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1; // AMD—p

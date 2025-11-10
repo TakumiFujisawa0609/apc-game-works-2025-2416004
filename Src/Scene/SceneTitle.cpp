@@ -1,6 +1,4 @@
 ﻿#include "SceneTitle.h"
-
-#include <DxLib.h>
 #include "../Manager/Generic/Resource.h"
 #include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Generic/SceneManager.h"

@@ -4,29 +4,23 @@
 
 
 //コンストラクタ
-EnemyBase::EnemyBase(void)
+EnemyBase::EnemyBase(void) :
+	hp_(0.0f),
+	maxHp_(0.0f),
+	moveSpeed_(0.0f),
+	type_(""),
+	viewRange_(0.0f),
+	lostRange_(0.0f),
+	forward_(0.0f),
+	viewAngle_(0.0f),
+	isChasing_(false),
+	isInView_(false)
 {
-	hp_ = 0.0f;
-
-	maxHp_ = 0.0f;
-
-	moveSpeed_ = 0.0f;
-
-	type_ = "";
-
-	viewRange_ = 0.0f;
-
-	lostRange_ = 0.0f;
 
 	forward_ = Utility::DIR_F;
-
-	viewAngle_ = 0.0f;
-
-	isChasing_ = false;
-
-	isInView_ = false;
 }
 
+// 読み込み
 void EnemyBase::Load(int modelId)
 {
 	trans_.modelId = modelId;
@@ -46,12 +40,18 @@ void EnemyBase::Init(const VECTOR& startPos)
 	movePow_ = Utility::VECTOR_ZERO;
 
 	currentAnim_ = ANIM::NONE;
+
+	// 当たり判定用座標の初期化
+	collisionPos_ = VAdd(trans_.pos, GetCollisionOffset());
 }
 
 //更新処理
 void EnemyBase::Update(void)
 {
 	UnitBase::Update();
+
+	// 当たり判定用の座標を更新
+	collisionPos_ = VAdd(trans_.pos, GetCollisionOffset());
 }
 
 //描画処理
@@ -72,13 +72,13 @@ void EnemyBase::ApplyData(const EnemyInfo& info)
 {
 	type_ = info.type;
 
-	maxHp_ = info.hp;
+	maxHp_ = info.param.maxHp;
 	
-	hp_ = info.hp;
+	hp_ = info.param.hp;
 	
-	moveSpeed_ = info.speed;
+	moveSpeed_ = info.param.speed;
 
-	radius_ = info.radius;
+	radius_ = info.param.radius;
 }
 
 void EnemyBase::SetForward(const VECTOR& forward)
@@ -114,4 +114,16 @@ void EnemyBase::TakeDamage(float damage)
 const std::string& EnemyBase::GetType(void) const
 {
 	return type_;
+}
+
+// 当たり判定用の座標ポインタを取得
+VECTOR* EnemyBase::GetCollisionPosPtr(void)
+{
+	return &collisionPos_;
+}
+
+// 当たり判定のオフセット
+VECTOR EnemyBase::GetCollisionOffset(void) const
+{
+	return Utility::VECTOR_ZERO;
 }

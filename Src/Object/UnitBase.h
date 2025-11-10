@@ -1,9 +1,5 @@
 #pragma once
 
-#include <DxLib.h>
-#include <unordered_map>
-#include <memory>
-
 #include "Common/Transform.h"
 
 class AnimationController;

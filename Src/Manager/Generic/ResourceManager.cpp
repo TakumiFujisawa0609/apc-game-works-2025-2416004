@@ -82,12 +82,18 @@ void ResourceManager::ResourcePlayer(void)
 	// プレイヤーの歩くアニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_IDEL, res);
+
+	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Walking.mv1");
+	resourcesMap_.emplace(SRC::ANIM_PLAYER_WALK, res);
 }
 
 // 敵用リソース初期化
 void ResourceManager::ResourceEnemy(void)
 {
 	Resource res;
+
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Enemy/sulim.mv1");
+	resourcesMap_.emplace(SRC::MODEL_SLIME, res);
 }
 
 // 全リソースの解放処理

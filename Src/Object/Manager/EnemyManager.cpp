@@ -125,9 +125,11 @@ void EnemyManager::Draw(void)
 #ifdef _DEBUG
 	for (auto& enemy : enemies_)
 	{
-		const VECTOR& pos = enemy->GetTransform().pos;
-		DrawSphere3D(pos, enemy->GetRadius(), 5.0f, 0x00FF00, 0x00FF00, true);
+		// 当たり判定の位置（緑）
+		VECTOR colPos = *enemy->GetCollisionPosPtr();
+		DrawSphere3D(colPos, enemy->GetRadius(), 5, 0x00FF00, 0x00FF00, false);
 	}
+
 #endif
 }
 
@@ -162,12 +164,8 @@ void EnemyManager::RegisterCollisions(void)
 
 	for (auto& enemy : enemies_)
 	{
-		if (auto slime = dynamic_cast<EnemySlime*>(enemy.get()))
-		{
-			VECTOR* posPtr = slime->GetTransform().GetPosPtr();
-
-			col.RegisterSphere(std::static_pointer_cast<void>(enemy), std::shared_ptr<VECTOR>(enemy, posPtr), slime->GetRadius(), CollisionManager::TAG_TYPE::ENEMY, true);
-		}
+		VECTOR* posPtr = enemy->GetTransform().GetPosPtr();
+		col.RegisterSphere(enemy, posPtr, enemy->GetRadius(),CollisionManager::TAG_TYPE::ENEMY, true);
 	}
 }
 
@@ -180,7 +178,7 @@ std::shared_ptr<EnemyBase> EnemyManager::CreateEnemy(const EnemyInfo& info)
 		auto slime = std::make_shared<EnemySlime>();
 		
 		//スライムモデルロード
-		int modelId = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
+		int modelId = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_SLIME);
 		
 		//モデルIDを渡す
 		slime->Load(modelId);

@@ -1,8 +1,5 @@
 #include"Application.h"
 
-#include<DxLib.h>
-#include<EffekseerForDXLib.h>
-
 #include "Manager/Decoration/EffectManager.h"
 #include "Manager/Generic/ResourceManager.h"
 #include "Manager/Generic/InputManager.h"

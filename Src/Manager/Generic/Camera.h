@@ -1,11 +1,5 @@
 #pragma once
 
-#include <Dxlib.h>
-#include <functional>
-#include <map>
-#include <cmath>
-#include <DirectXMath.h>
-
 #include "../../Common/Quaternion.h"
 
 class Transform;

@@ -1,5 +1,3 @@
-#define NOMINMAX
-
 #include "CollisionManager.h"
 #include "Collision.h"
 #include "../../Utility/Utility.h"
@@ -37,7 +35,7 @@ void CollisionManager::Init(void)
 }
 
 // ‹…‚Ì“o˜^
-void CollisionManager::RegisterSphere(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, float radius, TAG_TYPE tag, bool push)
+void CollisionManager::RegisterSphere(std::shared_ptr<void> owner, VECTOR* pos, float radius, TAG_TYPE tag, bool push)
 {
 	auto obj = std::make_shared<CollisionObject>();
 	
@@ -57,7 +55,7 @@ void CollisionManager::RegisterSphere(std::shared_ptr<void> owner, std::shared_p
 }
 
 // BOX‚Ì“o˜^
-void CollisionManager::RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push)
+void CollisionManager::RegisterBox(std::shared_ptr<void> owner, VECTOR* pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push)
 {
 	auto obj = std::make_shared<CollisionObject>();
 	
@@ -79,7 +77,7 @@ void CollisionManager::RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<
 }
 
 // ƒJƒvƒZƒ‹‚Ì“o˜^
-void CollisionManager::RegistCapsule(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push)
+void CollisionManager::RegistCapsule(std::shared_ptr<void> owner, VECTOR* pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push)
 {
 	auto obj = std::make_shared<CollisionObject>();
 
@@ -170,14 +168,14 @@ void CollisionManager::Update(void)
 	for (size_t i = 0; i < n; ++i)
 	{
 		auto& obj1 = objects_[i];
-		std::shared_ptr<VECTOR> pos1 = obj1->posPtr.lock();
+		VECTOR* pos1 = obj1->posPtr;
 
 		bool isObj1Mesh = (obj1->type == COLLISION_TYPE::MESH || obj1->type == COLLISION_TYPE::MESH_PUSH);
 
 		for (size_t j = i + 1; j < n; ++j)
 		{
 			auto& obj2 = objects_[j];
-			std::shared_ptr<VECTOR> pos2 = obj2->posPtr.lock();
+			VECTOR* pos2 = obj2->posPtr;
 
 			// ƒ^ƒO“I‚ÉÕ“Ë•s—v‚È‚çƒXƒLƒbƒv
 			if (!CanCollide(obj1->tag, obj2->tag)) { continue; }

@@ -1,7 +1,5 @@
 #include "Loading.h"
 
-#include <DxLib.h>
-#include <iostream>
 #include "../../Application.h"
 
 // インスタンスを初期化する

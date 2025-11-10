@@ -1,10 +1,5 @@
 #pragma once
 
-#include <DxLib.h>
-#include <vector>
-#include <memory>
-#include <algorithm>
-
 // Á“”ŠÇ—ƒNƒ‰ƒX
 class CollisionManager
 {
@@ -54,7 +49,7 @@ public:
 	{
 		std::shared_ptr<void> owner;            //ŠÒ
 
-		std::weak_ptr<VECTOR> posPtr;           //À•W
+		VECTOR* posPtr;                         //À•W
 
 		float radius = 0.0f;                    //”¼Œa(‹…‘Ì)
 
@@ -96,13 +91,13 @@ public:
 	void Init(void);
 
 	// ‹…‚Ì“o˜^
-	void RegisterSphere(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, float radius, TAG_TYPE tag, bool push = false);
+	void RegisterSphere(std::shared_ptr<void> owner, VECTOR* pos, float radius, TAG_TYPE tag, bool push = false);
 
 	// BOX‚Ì“o˜^
-	void RegisterBox(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push = false);
+	void RegisterBox(std::shared_ptr<void> owner, VECTOR* pos, VECTOR min, VECTOR max, TAG_TYPE tag, bool push = false);
 
 	// ƒJƒvƒZƒ‹‚Ì“o˜^
-	void RegistCapsule(std::shared_ptr<void> owner, std::shared_ptr<VECTOR> pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push);
+	void RegistCapsule(std::shared_ptr<void> owner, VECTOR* pos, const VECTOR& start, const VECTOR& end, float radius, TAG_TYPE tag, bool push);
 
 	// ƒƒbƒVƒ…‚Ì“o˜^
 	void RegisterMesh(std::shared_ptr<void> owner, int modelId, TAG_TYPE tag, bool push = false);

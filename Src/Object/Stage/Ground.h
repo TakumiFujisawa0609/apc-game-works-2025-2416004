@@ -1,7 +1,5 @@
 #pragma once
 
-#include <DxLib.h>
-
 //ステージの地面部品クラス
 class Ground
 {

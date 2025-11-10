@@ -1,6 +1,4 @@
 #include "FpsControll.h"
-#include <math.h>
-#include <DxLib.h>
 
 // デフォルトコンストラクタ
 Fps::Fps(void)

@@ -1,9 +1,5 @@
 #pragma once
-#include <DxLib.h>
-#include <vector>
-#include <memory>
-#include <string>
-#include <unordered_map>
+
 #include "../Enemy/EnemyData.h"
 
 class EnemyBase;
