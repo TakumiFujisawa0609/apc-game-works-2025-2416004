@@ -159,6 +159,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Collider\ColliderModel.h" />
+    <ClInclude Include="Src\Collider\ColliderCapsule.h" />
+    <ClInclude Include="Src\Collider\ColliderSphere.h" />
+    <ClInclude Include="Src\Collider\ColliderLine.h" />
+    <ClInclude Include="Src\Collider\ColliderBase.h" />
     <ClInclude Include="Src\pch.h" />
     <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Manager\System\CollisionManager.h" />
@@ -200,6 +205,11 @@
     <ClInclude Include="Src\Utility\Utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Collider\ColliderModel.cpp" />
+    <ClCompile Include="Src\Collider\ColliderCapsule.cpp" />
+    <ClCompile Include="Src\Collider\ColliderSphere.cpp" />
+    <ClCompile Include="Src\Collider\ColliderLine.cpp" />
+    <ClCompile Include="Src\Collider\ColliderBase.cpp" />
     <ClCompile Include="Src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
