@@ -178,8 +178,9 @@ void Font::DrawText(const std::string& fontId, int x, int y, const char* text, i
 		fontHandle = DX_DEFAULT_FONT_HANDLE;
 	}
 
-    	DrawFormatStringFToHandle(x, y, color, fontHandle, text);
+         	DrawFormatStringFToHandle(x, y, color, fontHandle, text);
 }
+
 // デフォルトフォントで描画
 void Font::DrawDefaultText(int x, int y, const char* text, int color, int fontSize, int fontType)
 {

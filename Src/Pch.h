@@ -1,5 +1,6 @@
 #pragma once
 #define NOMINMAX
+
 #include <memory>
 #include <map>
 #include <string>
@@ -19,10 +20,6 @@
 #include <crtdbg.h>
 #include <unordered_map>
 #include <math.h>
+
 #include <DxLib.h>
 #include <EffekseerForDXLib.h>
-
-
-
-
-

@@ -15,6 +15,7 @@ public:
 		NONE,
 		IDEL,
 		WALK,
+		ATTACK,
 	};
 
 	//コンストラクタ

@@ -191,13 +191,14 @@
     <ClInclude Include="Src\Object\Common\AnimationController.h" />
     <ClInclude Include="Src\Object\Common\Transform.h" />
     <ClInclude Include="Src\Object\Grid.h" />
-    <ClInclude Include="Src\Object\Player.h" />
+    <ClInclude Include="Src\Object\Player\Player.h" />
     <ClInclude Include="Src\Object\UnitBase.h" />
     <ClInclude Include="Src\Scene\SceneBase.h" />
     <ClInclude Include="Src\Scene\SceneGame.h" />
     <ClInclude Include="Src\Scene\SceneScore.h" />
     <ClInclude Include="Src\Scene\SceneTitle.h" />
     <ClInclude Include="Src\Utility\Utility.h" />
+    <ClInclude Include="Src\Object\Player\Sword.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\pch.cpp">
@@ -237,13 +238,14 @@
     <ClCompile Include="Src\Object\Common\AnimationController.cpp" />
     <ClCompile Include="Src\Object\Common\Transform.cpp" />
     <ClCompile Include="Src\Object\Grid.cpp" />
-    <ClCompile Include="Src\Object\Player.cpp" />
+    <ClCompile Include="Src\Object\Player\Player.cpp" />
     <ClCompile Include="Src\Object\UnitBase.cpp" />
     <ClCompile Include="Src\Scene\SceneBase.cpp" />
     <ClCompile Include="Src\Scene\SceneGame.cpp" />
     <ClCompile Include="Src\Scene\SceneScore.cpp" />
     <ClCompile Include="Src\Scene\SceneTitle.cpp" />
     <ClCompile Include="Src\Utility\Utility.cpp" />
+    <ClCompile Include="Src\Object\Player\Sword.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

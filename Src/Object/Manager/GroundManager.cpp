@@ -1,7 +1,7 @@
 #include "GroundManager.h"
 
 #include "../../Manager/Generic/ResourceManager.h"
-#include "../../Object/player.h"
+#include "../../Object/Player/Player.h"
 #include "../../Manager/Generic/SceneManager.h"
 #include "../../Manager/Generic/Camera.h"
 #include "../../Manager/System/CollisionManager.h"

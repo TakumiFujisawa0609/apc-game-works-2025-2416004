@@ -79,12 +79,19 @@ void ResourceManager::ResourcePlayer(void)
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/bouningen.mv1");
 	resourcesMap_.emplace(SRC::MODEL_PLAYER, res);
 
+	// 剣のモデル
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/debugSowrd.mv1");
+	resourcesMap_.emplace(SRC::MODEL_SWORD, res);
+
 	// プレイヤーの歩くアニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_IDEL, res);
 
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Walking.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_WALK, res);
+
+	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Attack.mv1");
+	resourcesMap_.emplace(SRC::ANIM_PLAYER_ATTACK, res);
 }
 
 // 敵用リソース初期化

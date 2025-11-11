@@ -1,0 +1,9 @@
+﻿  Application.cpp
+     ライブラリ D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.lib とオブジェクト D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exp を作成中
+  コード生成しています。
+  6 of 3772 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    3 functions had inline decision re-evaluated but remain unchanged
+  コード生成が終了しました。
+EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB '' が 'EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj)' で、または '' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
+  AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exe

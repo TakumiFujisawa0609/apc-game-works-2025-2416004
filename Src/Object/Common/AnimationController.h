@@ -57,6 +57,9 @@ public:
 	//アニメーションの解放
 	void Release(void);
 
+	// アニメーションが再生中かチェック
+	bool IsPlaying(int type) const;
+
 private:
 
 	//アニメーションの追加

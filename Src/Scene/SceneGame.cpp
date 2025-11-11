@@ -9,7 +9,7 @@
 #include "../Manager/System/Collision.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Manager/System/CollisionManager.h"
-#include "../Object/Player.h"
+#include "../Object/Player/Player.h"
 #include "../Object/Manager/GroundManager.h"
 #include "../DrawUI/Font.h"
 #include "../Object/Common/AnimationController.h"
@@ -92,6 +92,10 @@ void SceneGame::Init()
 
 	//エネミーマネージャー初期化
 	enemyManager_->Init();
+
+	
+	// プレイヤーに自分自身の shared_ptr を設定
+	player_->SetSelfPtr(player_);
 
 	//プレイヤーの初期化
 	player_->Init();
@@ -181,24 +185,41 @@ void SceneGame::Release(void)
 	
 }
 
-// 衝突判定用のオブジェクトを登録
-void SceneGame::RegisterCollisions(void)
-{
-	auto camera = SceneManager::GetInstance().GetCamera();
+void SceneGame::RegisterCollisions(void)  
+{  
+   auto camera = SceneManager::GetInstance().GetCamera();  
 
-	// カメラの当たり判定再登録
-	camera->RegisterCollision();
+   // カメラの当たり判定再登録  
+   camera->RegisterCollision();  
 
-	// カメラ位置に近い地面タイルを登録
-	auto nearbyTiles = groundManager_->GetNearbyTiles(camera->GetPos(), 700.0f);
+   // カメラ位置に近い地面タイルを登録  
+   auto nearbyTiles = groundManager_->GetNearbyTiles(camera->GetPos(), 700.0f);  
 
-	for (const auto& tile : nearbyTiles)
-	{
-		CollisionManager::GetInstance().RegisterMeshTile(nullptr, tile.first, tile.second, GroundManager::TILE_SIZE);
-	}
+   for (const auto& tile : nearbyTiles)  
+   {  
+       CollisionManager::GetInstance().RegisterMeshTile(nullptr, tile.first, tile.second, GroundManager::TILE_SIZE);  
+   }  
 
-	// えねみーの当たり判定登録
-	enemyManager_->RegisterCollisions();
+   // プレイヤーの位置を一時変数に格納    
+   float halfHeight = 45.0f;
+   VECTOR capStart = VAdd(player_->GetPos(), VGet(0, -halfHeight, 0));
+   VECTOR capEnd = VAdd(player_->GetPos(), VGet(0, halfHeight, 0));
+
+   CollisionManager::GetInstance().RegistCapsule(
+	   player_,  // ← shared_ptr<Player> を渡す
+	   player_->GetTransform().GetPosPtr(),
+	   capStart,
+	   capEnd,
+	   player_->GetRadius(),
+	   CollisionManager::TAG_TYPE::PLAYER,
+	   true
+   );
+
+   player_->RegisterCollison();
+
+
+   // えねみーの当たり判定登録  
+   enemyManager_->RegisterCollisions();  
 }
 
 // 描画(デバック)

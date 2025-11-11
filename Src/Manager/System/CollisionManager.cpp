@@ -1,6 +1,8 @@
 #include "CollisionManager.h"
 #include "Collision.h"
 #include "../../Utility/Utility.h"
+#include "../../Object/Player/Player.h"
+#include "../../Object/Enemy/EnemyBase.h"
 
 // 静的インスタンス
 CollisionManager* CollisionManager::instance_ = nullptr;
@@ -199,6 +201,7 @@ void CollisionManager::Update(void)
 
 				if (Collision::GetInstance().IsHitSpheres(*pos1, obj1->radius, *pos2, obj2->radius))
 				{
+
 					if (obj1->pushEnabled && obj2->pushEnabled)
 					{
 						VECTOR diff = VSub(*pos2, *pos1);
@@ -227,6 +230,7 @@ void CollisionManager::Update(void)
 				// 衝突判定
 				if (Collision::GetInstance().IsHitSphereCapsule(*pos1, obj1->radius, obj2->capStart, obj2->capEnd, obj2->capRadius))
 				{
+
 					//押し出し処理
 					if (obj1->pushEnabled && obj2->pushEnabled)
 					{
@@ -272,6 +276,68 @@ void CollisionManager::Update(void)
 						}
 
 
+					}
+				}
+			}
+
+			if ((obj1->type == COLLISION_TYPE::CAPSULE || obj1->type == COLLISION_TYPE::CAPSULE_PUSH) &&
+				(obj2->type == COLLISION_TYPE::SPHERE || obj2->type == COLLISION_TYPE::SPHERE_PUSH))
+			{
+				if (!pos2) { continue; }
+
+				// 衝突判定
+				if (Collision::GetInstance().IsHitSphereCapsule(*pos2, obj2->radius, obj1->capStart, obj1->capEnd, obj1->capRadius))
+				{
+					// プレイヤーと敵の判定（obj1がプレイヤー、obj2が敵の場合）
+					if (obj1->tag == TAG_TYPE::PLAYER && obj2->tag == TAG_TYPE::ENEMY)
+					{
+						auto player = std::static_pointer_cast<Player>(obj1->owner);
+						player->TakeDamage(1);
+					}
+
+					if (obj1->tag == TAG_TYPE::SWORD && obj2->tag == TAG_TYPE::ENEMY)
+					{
+						auto enemy = std::static_pointer_cast<EnemyBase>(obj2->owner);
+						if (enemy)
+						{
+							enemy->TakeDamage(50.0f);  // ダメージ量は適宜調整
+						}
+					}
+
+					// 押し出し処理
+					if (obj1->pushEnabled && obj2->pushEnabled)
+					{
+						// カプセル線分上で球に最も近い点を求める
+						VECTOR capVac = VSub(obj1->capEnd, obj1->capStart);
+						VECTOR pVec = VSub(*pos2, obj1->capStart);
+						float t = VDot(pVec, VNorm(capVac));
+						float capLen = Utility::MagnitudeF(capVac);
+						float rate = t / capLen;
+
+						VECTOR nearest;
+						if (rate <= 0.0f)
+						{
+							nearest = obj1->capStart;
+						}
+						else if (rate >= 1.0f)
+						{
+							nearest = obj1->capEnd;
+						}
+						else
+						{
+							nearest = VAdd(obj1->capStart, VScale(VNorm(capVac), t));
+						}
+
+						VECTOR diff = VSub(*pos2, nearest);
+						float dist = Utility::MagnitudeF(diff);
+						float overlap = (obj1->capRadius + obj2->radius) - dist;
+
+						if (overlap > 0.0f && dist > 0.00001f)
+						{
+							VECTOR pushDir = VScale(diff, 1.0f / dist);
+							VECTOR pushVec = VScale(pushDir, overlap);
+							*pos2 = VAdd(*pos2, pushVec);
+						}
 					}
 				}
 			}
@@ -449,6 +515,18 @@ bool CollisionManager::CanCollide(TAG_TYPE tagA, TAG_TYPE tagB) const
 
 	// 敵同士は当たる
 	if (tagA == TAG_TYPE::ENEMY && tagB == TAG_TYPE::ENEMY)
+	{
+		return true;
+	}
+
+	if ((tagA == TAG_TYPE::ENEMY && tagB == TAG_TYPE::PLAYER) ||
+		(tagA == TAG_TYPE::PLAYER && tagB == TAG_TYPE::ENEMY))
+	{
+		return true;
+	}
+
+	if ((tagA == TAG_TYPE::ENEMY && tagB == TAG_TYPE::SWORD) ||
+		(tagA == TAG_TYPE::SWORD && tagB == TAG_TYPE::ENEMY))
 	{
 		return true;
 	}

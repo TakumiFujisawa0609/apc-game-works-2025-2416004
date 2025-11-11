@@ -1,13 +1,15 @@
 #include "Player.h"
-#include "../Utility/Utility.h"
-#include "../Manager/Generic/InputManager.h"
-#include "../Manager/Generic/ResourceManager.h"
-#include "../Manager/Generic/SceneManager.h"
-#include "../Manager/Generic/Camera.h"
-#include "../Application.h"
-#include "Common/AnimationController.h"
-#include "Common/Transform.h"
-#include "../DrawUI/Font.h"
+#include "../../Utility/Utility.h"
+#include "../../Manager/Generic/InputManager.h"
+#include "../../Manager/Generic/ResourceManager.h"
+#include "../../Manager/Generic/SceneManager.h"
+#include "../../Manager/Generic/Camera.h"
+#include "../../Application.h"
+#include "../Common/AnimationController.h"
+#include "../../Manager/System/CollisionManager.h"
+#include "../Common/Transform.h"
+#include "../../DrawUI/Font.h"
+#include "Sword.h"
 
 
 // コンストラクタ
@@ -45,6 +47,15 @@ Player::Player(void)
 
     // 遅延スピード
     hpDelaySpeed_ = DELAY_SPEED;
+
+    // 攻撃状態の初期化
+    isAttacking_ = false;
+
+    // 攻撃クールタイムの初期化
+    attackCoolTime_ = 0.0f;
+
+    // 剣の生成
+    sword_ = std::make_shared<Sword>();
 }
 
 // デストラクタ
@@ -113,6 +124,8 @@ void Player::Load(void)
     // モデル読み込み
     modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
     trans_.SetModel(modelId_);
+
+    sword_->Load();
 }
 
 // 初期化
@@ -140,12 +153,31 @@ void Player::Init(void)
     // ジャンプパワー
     jumpPower_ = param_.jumpPower;
 
+    radius_ = param_.collisionRadius;
+
     // アニメーションの初期化
     anim_ = std::make_unique<AnimationController>(modelId_);
 
     anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
     anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_WALK).handleId_, 30.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.Load(ResourceManager::SRC::ANIM_PLAYER_ATTACK).handleId_, 50.0f);
 
+    // ソードの初期化
+    if (sword_)
+    {
+        sword_->Init();
+        sword_->SetPlayer(selfPtr_);
+
+        // オフセット調整（必要に応じて）
+        sword_->SetPositionOffset(VGet(0.0f, 0.0f, 0.0f));
+        sword_->SetRotationOffset(VGet(DX_PI_F, 0.0f, 0.0f));
+    }
+
+}
+
+void Player::SetSelfPtr(std::shared_ptr<Player> ptr)
+{
+    selfPtr_ = ptr;
 }
 
 // 更新処理
@@ -156,6 +188,34 @@ void Player::Update(void)
 
     // 入力による移動制御
     ProcessMove();
+
+    // 攻撃入力チェック（移動処理の後）
+    auto& input = InputManager::GetInstance();
+    if (input.IsTrgMouseLeft() && attackCoolTime_ <= 0.0f && !isAttacking_)
+    {
+        Attack();
+    }
+
+    // 攻撃クールタイムの更新
+    if (attackCoolTime_ > 0.0f)
+    {
+        attackCoolTime_ -= 1.0f / 60.0f; // 60FPS想定
+        if (attackCoolTime_ < 0.0f)
+        {
+            attackCoolTime_ = 0.0f;
+        }
+    }
+
+    // 攻撃アニメーション終了チェック
+    if (isAttacking_ && anim_)
+    {
+        // アニメーションが終了したか確認
+        if (!anim_->IsPlaying(static_cast<int>(ANIM::ATTACK)))
+        {
+            isAttacking_ = false;
+            attackCoolTime_ = ATTACK_COOL_TIME_MAX;
+        }
+    }
 
     // Transform　更新
     trans_.Update();
@@ -177,6 +237,12 @@ void Player::Update(void)
     else
     {
         hpDisplay_ = param_.hp;
+    }
+
+    // ソードの更新
+    if (sword_)
+    {
+        sword_->Update();
     }
 }
 
@@ -202,9 +268,19 @@ void Player::Draw(void) const
 
     DrawHpBar();
 
+    // ソードの描画
+    if (sword_)
+    {
+        sword_->Draw();
+    }
+
     // デバック表示
 #ifdef _DEBUG
     DrawFormatString(0, 40, 0xffffff, "Player Pos:(%.2f, %.2f, %.2f)", trans_.pos.x, trans_.pos.y, trans_.pos.z);
+
+    DrawSphere3D(sword_->GetCapsuleStart(), sword_->GetCapsuleRadius(), 5, 0x00FF00, 0x00FF00, false);
+    DrawSphere3D(sword_->GetCapsuleEnd(), sword_->GetCapsuleRadius(), 5, 0x00FF00, 0x00FF00, false);
+    //DrawCollisionCapsuleDebug();
 #endif 
 
 }
@@ -216,6 +292,12 @@ void Player::Release(void)
     {
         anim_->Release();
         anim_.reset();
+    }
+
+    if (sword_)
+    {
+        sword_->Release();
+        sword_.reset();
     }
 }
 
@@ -267,13 +349,17 @@ void Player::DrawHpBar(void) const
     int dispHPWidth = (int)(barWidth * dispRate);
 
     // 枠
-    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(255, 255, 255), false);
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
+
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), true);
 
     // 遅延バー（赤）
     DrawBox(barX, barY, barX + dispHPWidth, barY + barHeight, GetColor(255, 60, 60), true);
 
     // 現在HPバー（緑）
     DrawBox(barX, barY, barX + curHPWidth, barY + barHeight, GetColor(0, 255, 0), true);
+
+    
 
     // 数値
     char hpStr[32];
@@ -288,9 +374,43 @@ void Player::DrawHpBar(void) const
 
 }
 
+void Player::RegisterCollison(void)
+{
+    // カプセルの高さ(例)
+    float halfHeight = 45.0f;
+    VECTOR capStart = VAdd(trans_.pos, VGet(0, -halfHeight, 0));
+    VECTOR capEnd = VAdd(trans_.pos, VGet(0, halfHeight, 0));
+
+    CollisionManager::GetInstance().RegistCapsule(selfPtr_, &trans_.pos, capStart, capEnd, radius_, CollisionManager::TAG_TYPE::PLAYER, true);
+
+    if (sword_->IsVisible())
+    {
+        CollisionManager::GetInstance().RegistCapsule(sword_, sword_->GetTransform().GetPosPtr(), sword_->GetCapsuleStart(), sword_->GetCapsuleEnd(), sword_->GetCapsuleRadius(), CollisionManager::TAG_TYPE::SWORD, true);
+    }
+}
+
+void Player::TakeDamage(int damage)
+{
+    param_.hp -= damage;
+    if (param_.hp < 0) param_.hp = 0;
+}
+
+VECTOR* Player::GetPosPtr(void)
+{
+    return &trans_.pos;
+}
+
+bool Player::IsAttacking(void) const
+{
+    return isAttacking_;
+}
+
 //入力による移動制御
 void Player::ProcessMove(void)
 {
+    // 攻撃中は移動できない
+    if (isAttacking_) return;
+
     if (!movementEnabled_) return;
 
     auto& input = InputManager::GetInstance();
@@ -465,4 +585,42 @@ void Player::ProcessMove(void)
     {
         trans_.pos.z = prePos_.z;
     }
+}
+
+// Playerのカプセルを描画
+void Player::DrawCollisionCapsuleDebug(void) const
+{
+    float halfHeight = 60.0f;
+
+    VECTOR start = VAdd(trans_.pos, VGet(0, -halfHeight, 0));
+    VECTOR end = VAdd(trans_.pos, VGet(0, halfHeight, 0));
+    float radius = radius_;
+
+    // 線で中心軸を描画
+    DrawLine3D(start, end, GetColor(255, 0, 0));
+
+    // 球で上下端を描画
+    DrawSphere3D(start, radius, 16, 16, GetColor(0, 255, 0), 0);
+    DrawSphere3D(end, radius, 16, 16, GetColor(0, 0, 255), 0);
+
+    // 任意でカプセルの軸を補助線で描画
+    VECTOR mid = VScale(VAdd(start, end), 0.5f);
+    DrawLine3D(trans_.pos, mid, GetColor(255, 255, 0));
+}
+
+
+// 攻撃処理の実装
+void Player::Attack(void)
+{
+    // 攻撃状態にする
+    isAttacking_ = true;
+
+    // 攻撃アニメーション再生
+    PlayAnim(ANIM::ATTACK, false, 0.1f); // ループなし、ブレンド時間0.1秒
+
+    // デバッグ出力
+    OutputDebugString("Player: Attack!\n");
+
+    // ここで攻撃判定やダメージ処理を追加できます
+    // 例：敵との当たり判定、ダメージ計算など
 }

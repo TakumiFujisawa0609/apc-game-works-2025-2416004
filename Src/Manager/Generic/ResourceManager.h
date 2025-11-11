@@ -21,6 +21,7 @@ public:
 		MODEL_PLAYER,			//プレイヤーモデル
 		MODEL_GROUND,			//ステージ地面のモデル
 		MODEL_SLIME,            //スライムモデル
+		MODEL_SWORD,            //剣モデル
 
 		// サウンド
 
@@ -28,7 +29,8 @@ public:
 
 		// アニメーション
 		ANIM_PLAYER_IDEL,       //プレイヤーの待機アニメーション
-		ANIM_PLAYER_WALK        //プレイヤーの歩きアニメーション
+		ANIM_PLAYER_WALK,       //プレイヤーの歩きアニメーション
+		ANIM_PLAYER_ATTACK,     //プレイヤーの攻撃アニメーション
 	};
 
 	//明示的にインスタンスを生成する

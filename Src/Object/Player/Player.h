@@ -1,6 +1,8 @@
 #pragma once
 
-#include "UnitBase.h"
+#include "../UnitBase.h"
+
+class Sword;
 
 class Player : public UnitBase
 {
@@ -44,6 +46,8 @@ public:
 	// 初期化
 	void Init(void) override;
 
+	void SetSelfPtr(std::shared_ptr<Player> ptr);
+
 	// 更新処理
 	void Update(void) override;
 
@@ -64,7 +68,27 @@ public:
 
 	// プレイヤーのhpバーの描画
 	void DrawHpBar(void) const;
+
+	// プレイヤーの最登録
+	void RegisterCollison(void);
+
+	// ダメージ処理
+	void TakeDamage(int damage);
+
+	VECTOR* GetPosPtr(void);
+
+	// 攻撃処理
+	void Attack(void);
+
+	// 攻撃中かどうか
+	bool IsAttacking(void) const;
+
+
 private:
+
+	std::shared_ptr<Player> selfPtr_;
+
+	std::shared_ptr<Sword> sword_;
 
 	// 重力加速度
 	static constexpr float GRAVITY = -1.0f;
@@ -92,6 +116,9 @@ private:
 
 	// 遅延スピード
 	static constexpr float DELAY_SPEED = 0.5f;
+
+	// 攻撃クールタイムの最大値
+	static constexpr float ATTACK_COOL_TIME_MAX = 0.5f;
 
 	// パラメータ
 	Param param_;
@@ -129,7 +156,15 @@ private:
 	// 追いつく速度
 	float hpDelaySpeed_;
 
+	// 攻撃状態
+	bool isAttacking_;
+
+	// 攻撃クールタイム
+	float attackCoolTime_;
+
 	// 移動入力
 	void ProcessMove(void);
+
+	void DrawCollisionCapsuleDebug(void) const;
 
 };

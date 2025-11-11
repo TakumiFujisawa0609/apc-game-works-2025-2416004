@@ -42,6 +42,8 @@ public:
 		CAMERA,      //ƒJƒƒ‰
 
 		GROUND,      //’n–Ê
+
+		SWORD,       //Œ•
 	};
 
 	// “–‚½‚è”»’èî•ñ

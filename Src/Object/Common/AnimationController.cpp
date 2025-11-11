@@ -244,3 +244,32 @@ void AnimationController::Release(void)
 	blendTimer_ = 0.0f;
 	blendTIme_ = 0.0f;
 }
+
+// アニメーションが再生中かチェック
+bool AnimationController::IsPlaying(int type) const
+{
+	// 現在再生中のアニメーションタイプと一致するかチェック
+	if (playType_ != type)
+	{
+		return false;
+	}
+
+	// アニメーションが終了しているかチェック
+	// ループアニメーションの場合は常にtrueを返す
+	if (isLoop_)
+	{
+		return true;
+	}
+
+	// アニメーションデータが存在するかチェック
+	auto it = animations_.find(type);
+	if (it == animations_.end())
+	{
+		return false;
+	}
+
+	const AnimData& anim = it->second;
+
+	// アニメーションの進行時間が総時間未満なら再生中
+	return anim.step < anim.totalTime;
+}
