@@ -49,11 +49,11 @@ public:
 	//自身のタイプを返す
 	const std::string& GetType(void) const;
 
-	// 当たり判定用の座標ポインタを取得
-	VECTOR* GetCollisionPosPtr(void);
+protected:
 
-	// 当たり判定のオフセット（派生クラスでオーバーライド可能）
-	virtual VECTOR GetCollisionOffset(void) const;
+	// 衝突判定の初期化
+	virtual void InitCollider(void);
+
 protected:
 
 	//体力
@@ -85,8 +85,5 @@ protected:
 
 	//タイプ
 	std::string type_;
-
-	// 当たり判定用位置
-	VECTOR collisionPos_;
 };
 

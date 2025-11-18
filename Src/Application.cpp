@@ -8,7 +8,7 @@
 #include "DrawUI/Font.h"
 #include "Fps/FpsController.h"
 #include "DrawUI/SceneUI/PauseMenu.h"
-#include "Scene/SceneTitle.h"
+#include "Manager/System/Loading.h"
 
 
 Application* Application::instance_ = nullptr;
@@ -184,7 +184,7 @@ void Application::Run(void)
 		// エフェクト描画
 		DrawEffekseer3D();
 
-		if (pauseMenu_->IsVisible())
+		if (pauseMenu_->IsVisible() && !Loading::GetInstance()->IsLoading())
 		{
 			pauseMenu_->Draw();  // ポーズメニュー前面に
 		}

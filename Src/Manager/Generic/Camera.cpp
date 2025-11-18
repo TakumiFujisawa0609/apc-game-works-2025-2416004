@@ -4,1069 +4,985 @@
 #include "SceneManager.h"
 #include "InputManager.h"
 #include "../../Object/Common/Transform.h"
-#include "../../Manager/System/CollisionManager.h"
+#include "../../Manager/System/CollisionController.h"
+#include "../../Collider/ColliderSphere.h"
 
+// コンストラクタ
 Camera::Camera(void)
 {
-	// モードの初期化  
-	mode_ = MODE::NONE;
+    // モードの初期化
+    mode_ = MODE::NONE;
+    currentMode_ = MODE::NONE;
 
-	// currentMode_ の初期化
-	currentMode_ = MODE::NONE;
+    // defaultPos_ の初期化
+    defaultPos_ = Utility::VECTOR_ZERO;
 
-	// 座標の初期化  
-	pos_ = Utility::VECTOR_ZERO;
+    // 追従対象の座標
+    targetPos_ = Utility::VECTOR_ZERO;
 
-	// defaultPos_ の初期化
-	defaultPos_ = Utility::VECTOR_ZERO;
+    // ロックオン対象
+    lockonTarget_ = nullptr;
 
-	// 追従対象の座標  
-	targetPos_ = Utility::VECTOR_ZERO;
+    // 回転
+    rot_ = Quaternion::Identity();
 
-	// ロックオン対象
-	lockonTarget_ = nullptr;
+    // 追従対象
+    followTransform_ = nullptr;
 
-	// 回転  
-	rot_ = Quaternion::Identity();
+    // 左右回転
+    yaw_ = CAMERA_YAW;
 
-	// 追従対象
-	followTransform_ = nullptr;
+    // 上下回転
+    pitch_ = CAMERA_PITCH;
 
-	// 左右回転  
-	yaw_ = CAMERA_YAW;
+    // 対象との距離
+    distance_ = CAMERA_DISTANCE;
 
-	// 上下回転  
-	pitch_ = CAMERA_PITCH;
+    // カメラの上方向
+    cameraUp_ = { 0.0f, 1.0f, 0.0f };
 
-	// 対象との距離  
-	distance_ = CAMERA_DISTANCE;
+    // 移動関連の初期化
+    moveDIr_ = Utility::VECTOR_ZERO;
+    moveSpeed_ = 0.0f;
 
-	// カメラの上方向  
-	cameraUp_ = { 0.0f, 1.0f, 0.0f };
+    // カメラ揺らし関連の初期化
+    shakeDir_ = Utility::VECTOR_ZERO;
+    stepShake_ = 0.0f;
 
-	// 移動関連の初期化  
-	moveDIr_ = Utility::VECTOR_ZERO;
+    // ライト関連の初期化
+    spotLight_ = -1;
 
-	// moveSpeed_ の初期化 
-	moveSpeed_ = 0.0f;
+    // 速度の初期化
+    velocity_ = Utility::VECTOR_ZERO;
 
-	// カメラ揺らし関連の初期化  
-	shakeDir_ = Utility::VECTOR_ZERO;
+    // マウス感度
+    sensitivity_ = DEFAULT_SENSITIVITY;
 
-	// stepShake_ の初期化 
-	stepShake_ = 0.0f;
+    // x中央
+    centerX_ = Application::SCREEN_SIZE_X / 2;
 
-	// ライト関連の初期化  
-	spotLight_ = -1;
+    // y中央
+    centerY_ = Application::SCREEN_SIZE_Y / 2;
 
-	// 速度の初期化  
-	velocity_ = Utility::VECTOR_ZERO;
+    // xの移動量
+    deltaX_ = 0;
 
-	// マウス感度
-	sensitivity_ = DEFAULT_SENSITIVITY;
+    // yの移動量
+    deltaY_ = 0;
 
-	// x中央
-	centerX_ = Application::SCREEN_SIZE_X / 2;
+    // 位置
+    offset_ = Utility::VECTOR_ZERO;
 
-	// y中央
-	centerY_ = Application::SCREEN_SIZE_Y / 2;
+    // ロックオン
+    lockonFlag_ = false;
 
-	// xの移動量
-	deltaX_ = 0;
+    // 追従停止しているか
+    freezeFollow_ = false;
 
-	// yの移動量
-	deltaY_ = 0;
+    // 固定された注視点
+    frozenTargetPos_ = Utility::VECTOR_ZERO;
 
-	// 位置
-	offset_ = Utility::VECTOR_ZERO;
+    // 固定されたカメラ位置
+    frozenCameraPos_ = Utility::VECTOR_ZERO;
 
-	// ロックオン
-	lockonFlag_ = false;
+    // 凍結開始時のyaw角度
+    initialYaw_ = 0.0f;
 
-	// 追従停止しているか
-	freezeFollow_ = false;
+    // 凍結開始時のカメラとプレイヤーの距離
+    initialDistance_ = 0.0f;
 
-	// 固定された注視点
-	frozenTargetPos_ = Utility::VECTOR_ZERO;
+    // キー入力による回転速度
+    keyRotateSpeed_ = 0.0f;
 
-	// 固定されたカメラ位置
-	frozenCameraPos_ = Utility::VECTOR_ZERO;
-
-	// 凍結開始時のyaw角度
-	initialYaw_ = 0.0f;
-
-	// 凍結開始時のカメラとプレイヤーの距離
-	initialDistance_ = 0.0f;
-
-	// キー入力による回転速度
-	keyRotateSpeed_ = 0.0f;
-
-	// 凍結開始時のY軸オフセット
-	initialHeightOffset_ = 0.0f;
-
-	// カメラ用当たり半径
-	radius_ = 0.0f;
-
-	// 押し出し前の座標保存用
-	prevPos_ = Utility::VECTOR_ZERO;
+    // 凍結開始時のY軸オフセット
+    initialHeightOffset_ = 0.0f;
 }
 
 Camera::~Camera(void)
 {
-
 }
 
 // 初期化処理
 void Camera::Init(void)
 {
-	// 関数ポインタの設定
+    // 関数ポインタの設定
+    setBeforeDrawMode_.emplace(MODE::NONE, std::bind(&Camera::SetBeforeDrawFollow, this));
+    setBeforeDrawMode_.emplace(MODE::FIXED_POINT, std::bind(&Camera::SetBeforeDrawFixedPoint, this));
+    setBeforeDrawMode_.emplace(MODE::FREE, std::bind(&Camera::SetBeforeDrawFree, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW, std::bind(&Camera::SetBeforeDrawFollow, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
+    setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
+    setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
+    setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
+    setBeforeDrawMode_.emplace(MODE::VERSATILITY_LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
 
-	// 何もない
-	setBeforeDrawMode_.emplace(MODE::NONE, std::bind(&Camera::SetBeforeDrawFollow, this));
+    // カメラの初期設定
+    SetDefault();
 
-	// 定点カメラ
-	setBeforeDrawMode_.emplace(MODE::FIXED_POINT, std::bind(&Camera::SetBeforeDrawFixedPoint, this));
+    // カメラのライト設定
+    SetLighting();
 
-	// フリーカメラ
-	setBeforeDrawMode_.emplace(MODE::FREE, std::bind(&Camera::SetBeforeDrawFree, this));
+    // 半径の設定
+    radius_ = COLLISION_RADIUS;
 
-	// 追従カメラ
-	setBeforeDrawMode_.emplace(MODE::FOLLOW, std::bind(&Camera::SetBeforeDrawFollow, this));
+    // 衝突判定の初期化
+    InitCollider();
 
-	// ばね付きカメラ
-	setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
-
-	// 追従対象カメラ
-	setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
-
-	// カメラ揺らし
-	setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
-
-	// マウス操作自由カメラ
-	setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
-
-	// TPS用マウスカメラ
-	setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
-
-	// 汎用ロックオンカメラ
-	setBeforeDrawMode_.emplace(MODE::VERSATILITY_LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
-
-	// カメラの初期設定
-	SetDefault();
-
-	// カメラのライト設定
-	SetLighting();
-
-	// カメラの当たり判定設定
-	collisionPos_ = std::make_shared<VECTOR>(pos_);
-
-	// 当たり半径
-	radius_ = 35.0f;
-
-	// 当たり判定登録
-	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
 }
 
+// 衝突判定の初期化
+void Camera::InitCollider(void)
+{
+    // 球体コライダの作成
+    ColliderSphere* colSphere = new ColliderSphere(
+        ColliderBase::TAG::CAMERA,
+        &trans_,
+        Utility::VECTOR_ZERO,  // ローカル座標（中心）
+        COLLISION_RADIUS
+    );
+
+    ownColliders_.emplace(
+        static_cast<int>(COLLIDER_TYPE::SPHERE),
+        colSphere
+    );
+}
+
+// 衝突判定のコールバック（Update()メソッドの後あたりに追加）
+void Camera::OnCollisionStay(const CollisionInfo& info)
+{
+    // 地面との衝突の場合
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::GROUND)
+    {
+        // 押し出しベクトルを計算
+        VECTOR pushVec = VSub(trans_.pos, prePos_);
+
+        // Y方向に押し出された = 地面接触
+        bool isGroundHit = (pushVec.y > 0.01f);
+
+        if (isGroundHit)
+        {
+            // 地面接触時の処理（必要に応じて）
+#ifdef _DEBUG
+            // printfDx("カメラが地面に接触\n");
+#endif
+        }
+    }
+}
 // 更新処理（衝突判定前）
 void Camera::UpdateBeforeCollision(void)
 {
-	// 押し出し前の座標を保存
-	prevPos_ = pos_;
- 
-    CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
-
-	// 当たり判定の座標を更新（衝突前）
-	if (collisionPos_)
-	{
-		*collisionPos_ = pos_;
-	}
+    // 押し出し前の座標を保存
+    prePos_ = trans_.pos;
 }
 
-// 更新処理（衝突判定後）
+// 更新処理
 void Camera::Update(void)
 {
-	// 押し出された座標を反映（衝突後）
-	if (collisionPos_)
-	{
-		pos_ = *collisionPos_;
-	}
+    // 基底クラスの更新（衝突判定を実行）
+    UnitBase::Update();
 
-	// ライトの移動
-	SetLightPositionHandle(spotLight_, pos_);
+    // ライトの移動
+    SetLightPositionHandle(spotLight_, trans_.pos);
 
-	// ライトの向き更新
-	SetLightDirectionHandle(spotLight_, rot_.ToEuler());
+    // ライトの向き更新
+    SetLightDirectionHandle(spotLight_, rot_.ToEuler());
 }
 
+// 描画前処理
 void Camera::SetBeforeDraw(void)
 {
-	// クリップ距離を設定する(SetDrawScreenでリセットされる)
-	SetCameraNearFar(CAMERA_NEAR, CAMERA_FAR);
+    // クリップ距離を設定する(SetDrawScreenでリセットされる)
+    SetCameraNearFar(CAMERA_NEAR, CAMERA_FAR);
 
-	// モードによる設定切り替え
-	setBeforeDrawMode_[mode_]();
+    // モードによる設定切り替え
+    setBeforeDrawMode_[mode_]();
 
-	// カメラの設定(位置と注視点による制御)
-	SetCameraPositionAndTargetAndUpVec
-	(
-		pos_,
-		targetPos_,
-		cameraUp_
-	);
+    // カメラの設定(位置と注視点による制御)
+    SetCameraPositionAndTargetAndUpVec(
+        trans_.pos,  // pos_ → trans_.pos
+        targetPos_,
+        cameraUp_
+    );
 
-	// DXライブラリのカメラとEffekseerのカメラを同期する
-	Effekseer_Sync3DSetting();
+    // DXライブラリのカメラとEffekseerのカメラを同期する
+    Effekseer_Sync3DSetting();
 }
 
 // 定点カメラ
 void Camera::SetBeforeDrawFixedPoint(void)
 {
-
 }
 
 // フリーカメラ
 void Camera::SetBeforeDrawFree(void)
 {
-	auto& ins = InputManager::GetInstance();
+    auto& ins = InputManager::GetInstance();
 
-	// 移動操作
-	ProcessMove();
+    // 移動操作
+    ProcessMove();
 
-	// 減速
-	Decelerate(MOVE_DEC);
+    // 減速
+    Decelerate(MOVE_DEC);
 
-	// 移動
-	Move();
+    // 移動
+    Move();
 }
 
 // 追従カメラ
 void Camera::SetBeforeDrawFollow(void)
 {
-	if (!followTransform_) return;
+    if (!followTransform_) return;
 
-	// 追従対象の位置
-	VECTOR followPos = followTransform_->pos;
+    // 追従対象の位置
+    VECTOR followPos = followTransform_->pos;
 
-	// 追従対象の向き
-	Quaternion followRot = followTransform_->quaRot;
+    // 追従対象の向き
+    Quaternion followRot = followTransform_->quaRot;
 
-	// 追従対象からカメラまでの相対座標
-	VECTOR relativeCPos = followRot.PosAxis(RELATIVE_F2C_POS_FOLLOW);
+    // 追従対象からカメラまでの相対座標
+    VECTOR relativeCPos = followRot.PosAxis(RELATIVE_F2C_POS_FOLLOW);
 
-	// カメラの位置の更新
-	pos_ = VAdd(followPos, relativeCPos);
+    // カメラの位置の更新
+    trans_.pos = VAdd(followPos, relativeCPos);  // pos_ → trans_.pos
 
-	// カメラ位置から注視点までの相対座標
-	VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS);
+    // カメラ位置から注視点までの相対座標
+    VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS);
 
-	// 注視点の更新
-	targetPos_ = VAdd(pos_, relativeTPos);
+    // 注視点の更新
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ → trans_.pos
 
-	// カメラの上方向
-	cameraUp_ = followRot.PosAxis(rot_.GetUp());
+    // カメラの上方向
+    cameraUp_ = followRot.PosAxis(rot_.GetUp());
 }
 
 // ばね付き追従カメラ
 void Camera::SetBeforeDrawFollowSpring(void)
 {
-	if (!followTransform_) return;
-	auto& ins = InputManager::GetInstance();
+    if (!followTransform_) return;
+    auto& ins = InputManager::GetInstance();
 
-	// Cキー押下でカメラを揺らす
-	if (ins.IsTrgDown(KEY_INPUT_C))
-	{
-		currentMode_ = mode_;
-		ChangeMode(MODE::SHAKE);
-	}
+    // Cキー押下でカメラを揺らす
+    if (ins.IsTrgDown(KEY_INPUT_C))
+    {
+        currentMode_ = mode_;
+        ChangeMode(MODE::SHAKE);
+    }
 
-	// ばね定数(ばねの強さ)
-	float POW_SPRING = 50.0f;
+    // ばね定数(ばねの強さ)
+    float POW_SPRING = 50.0f;
 
-	// ばね定数(ばねの抵抗)
-	float dampening = 2.0f * sqrt(POW_SPRING);
+    // ばね定数(ばねの抵抗)
+    float dampening = 2.0f * sqrt(POW_SPRING);
 
-	// デルタタイム
-	float delta = SceneManager::GetInstance().GetDeltaTime();
+    // デルタタイム
+    float delta = SceneManager::GetInstance().GetDeltaTime();
 
-	// 3D酔いする人用
-	// delta = 1.0f / 60.0f;
+    // 追従対象の位置
+    VECTOR followPos = followTransform_->pos;
 
-	// 追従対象の位置
-	VECTOR followPos = followTransform_->pos;
+    // 追従対象の向き
+    Quaternion followRot = followTransform_->quaRot;
+    VECTOR zero = { 0.0f, 0.0f, 0.0f };
 
-	// 追従対象の向き
-	Quaternion followRot = followTransform_->quaRot;
-	VECTOR zero = { 0.0f, 0.0f, 0.0f };
+    // カメラの方向を固定する用
+    Quaternion forward = Quaternion::Euler(zero);
 
-	// カメラの方向を固定する用
-	Quaternion forward = Quaternion::Euler(zero);
+    // 追従対象からカメラまでの相対座標
+    VECTOR relativeCPos = forward.PosAxis(RELATIVE_F2C_POS_FOLLOW);
 
-	// 追従対象からカメラまでの相対座標
-	VECTOR relativeCPos = forward.PosAxis(RELATIVE_F2C_POS_FOLLOW);
+    // 理想位置
+    VECTOR idealPos = VAdd(followPos, relativeCPos);
 
-	// 理想位置
-	VECTOR idealPos = VAdd(followPos, relativeCPos);
+    // 実際と理想の差
+    VECTOR diff = VSub(trans_.pos, idealPos);  // pos_ → trans_.pos
 
-	// 実際と理想の差
-	VECTOR diff = VSub(pos_, idealPos);
+    // 力 =- ばねの強さ × ばねの伸び - 抵抗 × カメラ速度
+    VECTOR force = VScale(diff, -POW_SPRING);
+    force = VSub(force, VScale(velocity_, dampening));
 
-	// 力 =- ばねの強さ × ばねの伸び - 抵抗 × カメラ速度
-	VECTOR force = VScale(diff, -POW_SPRING);
-	force = VSub(force, VScale(velocity_, dampening));
+    // 速度の更新
+    velocity_ = VAdd(trans_.pos, VScale(velocity_, delta));  // pos_ → trans_.pos
 
-	// 速度の更新
-	velocity_ = VAdd(pos_, VScale(velocity_, delta));
+    // カメラ位置の更新
+    trans_.pos = VAdd(trans_.pos, VScale(velocity_, delta));  // pos_ → trans_.pos
 
-	// カメラ位置の更新
-	pos_ = VAdd(pos_, VScale(velocity_, delta));
+    // カメラ位置から注視点までの相対座標
+    VECTOR relativeTPos = forward.PosAxis(RELATIVE_C2T_POS);
 
-	// カメラ位置から注視点までの相対座標
-	VECTOR relativeTPos = forward.PosAxis(RELATIVE_C2T_POS);
+    // 注視点の更新
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ → trans_.pos
 
-	// 注視点の更新
-	targetPos_ = VAdd(pos_, relativeTPos);
-
-	// カメラの上方向
-	cameraUp_ = forward.PosAxis(rot_.GetUp());
+    // カメラの上方向
+    cameraUp_ = forward.PosAxis(rot_.GetUp());
 }
 
 // 追従対象視点カメラ
 void Camera::SetBeforeDrawFollowPerspective(void)
 {
-	// 追従対象の位置
-	VECTOR followPos = followTransform_->pos;
+    // 追従対象の位置
+    VECTOR followPos = followTransform_->pos;
 
-	// 追従対象の向き
-	Quaternion followRot = followTransform_->quaRot;
+    // 追従対象の向き
+    Quaternion followRot = followTransform_->quaRot;
 
-	// カメラ位置から注視点までの相対座標
-	VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE);
+    // カメラ位置から注視点までの相対座標
+    VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE);
 
-	// 注視点の更新
-	targetPos_ = VAdd(pos_, relativeTPos);
+    // 注視点の更新
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ → trans_.pos
 
-	// カメラの上方向
-	cameraUp_ = followRot.PosAxis(rot_.GetUp());
+    // カメラの上方向
+    cameraUp_ = followRot.PosAxis(rot_.GetUp());
 }
 
 // カメラ揺らし
 void Camera::SetBeforeDrawShake(void)
 {
-	// 一定時間カメラを揺らす
-	stepShake_ -= SceneManager::GetInstance().GetDeltaTime();
+    // 一定時間カメラを揺らす
+    stepShake_ -= SceneManager::GetInstance().GetDeltaTime();
 
-	if (stepShake_ < 0.0f)
-	{
-		pos_ = defaultPos_;
+    if (stepShake_ < 0.0f)
+    {
+        trans_.pos = defaultPos_;  // pos_ → trans_.pos
 
-		ChangeMode(MODE::FOLLOW_SPRING);
-		return;
-	}
+        ChangeMode(MODE::FOLLOW_SPRING);
+        return;
+    }
 
-	// -1.0f～1.0f
-	float f = sinf(stepShake_ * SPEED_SHAKE);
+    // -1.0f～1.0f
+    float f = sinf(stepShake_ * SPEED_SHAKE);
 
-	// -1000.0f～1000.0f
-	f *= 1000.0f;
+    // -1000.0f～1000.0f
+    f *= 1000.0f;
 
-	// -1000 or 1000
-	int d = static_cast<int>(f);
+    // -1000 or 1000
+    int d = static_cast<int>(f);
 
-	// 0 or 1
-	int shake = d % 2;
+    // 0 or 1
+    int shake = d % 2;
 
-	// 0 or 2
-	shake *= 2;
+    // 0 or 2
+    shake *= 2;
 
-	// -1 or 1
-	shake -= 1;
+    // -1 or 1
+    shake -= 1;
 
-	// 移動量
-	VECTOR velocity = VScale(shakeDir_, (float)(shake)*WIDTH_SHAKE);
+    // 移動量
+    VECTOR velocity = VScale(shakeDir_, (float)(shake)*WIDTH_SHAKE);
 
-	// 移動先座標
-	pos_ = VAdd(defaultPos_, velocity);
+    // 移動先座標
+    trans_.pos = VAdd(defaultPos_, velocity);  // pos_ → trans_.pos
 }
 
 // マウス自由操作カメラ
 void Camera::SetBeforeDrawFreeMouse(void)
 {
-	auto& ins = InputManager::GetInstance();
-	// マウス座標を取得
-	Vector2 mousePos = ins.GetMousePos();
+    auto& ins = InputManager::GetInstance();
+    // マウス座標を取得
+    Vector2 mousePos = ins.GetMousePos();
 
-	// 移動量
-	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
-	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
+    // 移動量
+    deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+    deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	// 水平回転を適用
-	Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX_ * sensitivity_), Utility::AXIS_Y);
+    // 水平回転を適用
+    Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX_ * sensitivity_), Utility::AXIS_Y);
 
-	// 垂直回転を適用
-	Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY_ * sensitivity_), Utility::AXIS_X);
+    // 垂直回転を適用
+    Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY_ * sensitivity_), Utility::AXIS_X);
 
-	// 回転を適用
-	rot_ = yaw.Mult(rot_);
+    // 回転を適用
+    rot_ = yaw.Mult(rot_);
+    rot_ = pitch.Mult(rot_);
 
-	rot_ = pitch.Mult(rot_);
+    // 注視点更新
+    VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
+    targetPos_ = VAdd(trans_.pos, rotLocalPos);  // pos_ → trans_.pos
 
-	// 注視点更新
-	VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
-	targetPos_ = VAdd(pos_, rotLocalPos);
+    // 上ベクトル更新
+    cameraUp_ = rot_.GetUp();
 
-	// 上ベクトル更新
-	cameraUp_ = rot_.GetUp();
-
-	// マウスを中央に戻す
-	SetMousePoint(centerX_, centerY_);
+    // マウスを中央に戻す
+    SetMousePoint(centerX_, centerY_);
 }
 
+// TPS用カメラ
 void Camera::SetBeforeDrawTPSMouse(void)
 {
-	if (!followTransform_) return;
+    if (!followTransform_) return;
 
-	auto& ins = InputManager::GetInstance();
+    auto& ins = InputManager::GetInstance();
 
-	// 押し出しが発生したかチェック（Y方向のみ）
-	VECTOR pushVec = VSub(pos_, prevPos_);
-	bool isGroundHit = (pushVec.y > 0.01f); // Y方向に押し出された = 地面接触
+    // 押し出しが発生したかチェック（Y方向のみ）
+    VECTOR pushVec = VSub(trans_.pos, prePos_);  // pos_ → trans_.pos
+    bool isGroundHit = (pushVec.y > 0.01f);
 
-	// 地面接触の持続時間を管理（一瞬の貫通を無視）
-	static float groundContactTime = 0.0f;
-	static bool wasGroundContact = false;
-	static float fixedGroundY = 0.0f; // 固定する地面のY座標
-	static bool isGroundFixed = false; // 地面Y座標が固定されているか
+    // 地面接触の持続時間を管理（一瞬の貫通を無視）
+    static float groundContactTime = 0.0f;
+    static bool wasGroundContact = false;
+    static float fixedGroundY = 0.0f;
+    static bool isGroundFixed = false;
 
-	if (isGroundHit)
-	{
-		// 地面接触中は時間を加算
-		groundContactTime += SceneManager::GetInstance().GetDeltaTime();
-		wasGroundContact = true;
+    if (isGroundHit)
+    {
+        groundContactTime += SceneManager::GetInstance().GetDeltaTime();
+        wasGroundContact = true;
 
-		// 初めて接触した時、地面のY座標を固定
-		if (!isGroundFixed)
-		{
-			fixedGroundY = pos_.y - 15.0f; // 現在位置から15下を地面として記録
-			isGroundFixed = true;
-		}
-	}
-	else if (wasGroundContact)
-	{
-		// 接触が途切れたら時間を減算（猶予時間）
-		groundContactTime -= SceneManager::GetInstance().GetDeltaTime() * 5.0f; // 5倍速に変更（より速く解除）
-		if (groundContactTime < 0.0f)
-		{
-			groundContactTime = 0.0f;
-			wasGroundContact = false;
-			isGroundFixed = false; 
-		}
-	}
+        if (!isGroundFixed)
+        {
+            fixedGroundY = trans_.pos.y - 15.0f;  // pos_ → trans_.pos
+            isGroundFixed = true;
+        }
+    }
+    else if (wasGroundContact)
+    {
+        groundContactTime -= SceneManager::GetInstance().GetDeltaTime() * 5.0f;
+        if (groundContactTime < 0.0f)
+        {
+            groundContactTime = 0.0f;
+            wasGroundContact = false;
+            isGroundFixed = false;
+        }
+    }
 
-	// 接触判定：0.1秒以上接触していれば地面に接触していると判定
-	bool isStableGroundContact = (groundContactTime > 0.1f);
+    bool isStableGroundContact = (groundContactTime > 0.1f);
 
-	// マウス座標を取得
-	Vector2 mousePos = ins.GetMousePos();
+    // マウス座標を取得
+    Vector2 mousePos = ins.GetMousePos();
 
-	// 移動量
-	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
-	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
+    // 移動量
+    deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+    deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	// Yaw（左右回転）は常に更新
-	yaw_ += deltaX_ * sensitivity_;
+    // Yaw（左右回転）は常に更新
+    yaw_ += deltaX_ * sensitivity_;
 
-	// Pitch（上下回転）の処理
-	float pitchDelta = -(deltaY_ * sensitivity_);
+    // Pitch（上下回転）の処理
+    float pitchDelta = -(deltaY_ * sensitivity_);
 
-	// 上を向く動作をしたら接触判定を即座に解除
-	if (isStableGroundContact && pitchDelta > 0.0f)
-	{
-		// 上を向いた = 地面から離れようとしている
-		groundContactTime = 0.0f;
-		wasGroundContact = false;
-		isGroundFixed = false;
-	}
+    // 上を向く動作をしたら接触判定を即座に解除
+    if (isStableGroundContact && pitchDelta > 0.0f)
+    {
+        groundContactTime = 0.0f;
+        wasGroundContact = false;
+        isGroundFixed = false;
+    }
 
-	// 接触判定を再計算（上向きで解除された場合に反映）
-	isStableGroundContact = (groundContactTime > 0.1f);
+    isStableGroundContact = (groundContactTime > 0.1f);
 
-	// 地面固定中で下を向こうとしている場合のみ距離を縮める
-	if (isStableGroundContact && pitchDelta < 0.0f)
-	{
-		// → 距離を縮める（ピッチは変更しない）
-		distance_ -= 20.0f;
+    // 地面固定中で下を向こうとしている場合のみ距離を縮める
+    if (isStableGroundContact && pitchDelta < 0.0f)
+    {
+        distance_ -= 20.0f;
 
-		// 最小距離を0に（プレイヤーと同じ位置まで）
-		const float MIN_DISTANCE = 0.0f;
-		if (distance_ < MIN_DISTANCE)
-		{
-			distance_ = MIN_DISTANCE;
-		}
+        const float MIN_DISTANCE = 0.0f;
+        if (distance_ < MIN_DISTANCE)
+        {
+            distance_ = MIN_DISTANCE;
+        }
+    }
+    else
+    {
+        pitch_ += pitchDelta;
+    }
 
-	}
-	else
-	{
-		// 地面接触していない、または上を向いている時は通常のピッチ更新
-		pitch_ += pitchDelta;
-	}
+    // 安定した地面接触がない時のみ距離を元に戻す
+    if (!isStableGroundContact && distance_ < CAMERA_DISTANCE)
+    {
+        distance_ += 20.0f;
+        if (distance_ > CAMERA_DISTANCE)
+        {
+            distance_ = CAMERA_DISTANCE;
+        }
+    }
 
-	// 安定した地面接触がない時のみ距離を元に戻す
-	if (!isStableGroundContact && distance_ < CAMERA_DISTANCE)
-	{
-		distance_ += 20.0f; // 戻す速度
-		if (distance_ > CAMERA_DISTANCE)
-		{
-			distance_ = CAMERA_DISTANCE;
-		}
-	}
+    // キー入力による回転を適用（凍結中のみ）
+    if (freezeFollow_)
+    {
+        yaw_ += keyRotateSpeed_;
+    }
 
-	// キー入力による回転を適用（凍結中のみ）
-	if (freezeFollow_)
-	{
-		yaw_ += keyRotateSpeed_;
-	}
+    // ピッチ制限（通常の上下限）
+    if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
+    if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
 
-	// ピッチ制限（通常の上下限）
-	if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
-	if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
+    // 地面固定中はピッチを0度以上に制限
+    if (isStableGroundContact)
+    {
+        const float MIN_PITCH_ON_GROUND = 0.0f;
+        if (pitch_ < MIN_PITCH_ON_GROUND)
+        {
+            pitch_ = MIN_PITCH_ON_GROUND;
+        }
+    }
 
-	// 地面固定中はピッチを0度以上に制限（マイナスにさせない）
-	if (isStableGroundContact)
-	{
-		const float MIN_PITCH_ON_GROUND = 0.0f;
-		if (pitch_ < MIN_PITCH_ON_GROUND)
-		{
-			pitch_ = MIN_PITCH_ON_GROUND;
-		}
-	}
+    const float TARGET_HEIGHT_OFFSET = 100.0f;
+    const float GROUND_OFFSET = 15.0f;
 
-	// 注視点の高さオフセット（プレイヤーの胸の高さ）
-	const float TARGET_HEIGHT_OFFSET = 100.0f;
+    // 追従が凍結されていない場合の通常処理
+    if (!freezeFollow_)
+    {
+        VECTOR followPos = followTransform_->pos;
 
-	// 地面からのオフセット（めり込み防止）
-	const float GROUND_OFFSET = 15.0f;
+        // 球面座標でカメラのオフセットを計算
+        offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+        offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+        offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
-	// 追従が凍結されていない場合の通常処理
-	if (!freezeFollow_)
-	{
-		VECTOR followPos = followTransform_->pos;
+        VECTOR idealPos = VAdd(followPos, offset_);
 
-		// 球面座標でカメラのオフセットを計算
-		offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-		offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
-		offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+        const float MIN_CAMERA_HEIGHT = 50.0f;
+        if (distance_ < 100.0f && idealPos.y < followPos.y + MIN_CAMERA_HEIGHT)
+        {
+            idealPos.y = followPos.y + MIN_CAMERA_HEIGHT;
+        }
 
-		// 理想的なカメラ位置を計算
-		VECTOR idealPos = VAdd(followPos, offset_);
+        VECTOR toCamera = VSub(trans_.pos, followPos);  // pos_ → trans_.pos
+        float currentDistXZ = sqrtf(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
 
-		// 距離が非常に近い場合、Y座標を地面より上に補正
-		const float MIN_CAMERA_HEIGHT = 50.0f;
-		if (distance_ < 100.0f && idealPos.y < followPos.y + MIN_CAMERA_HEIGHT)
-		{
-			idealPos.y = followPos.y + MIN_CAMERA_HEIGHT;
-		}
+        VECTOR toIdeal = VSub(idealPos, followPos);
+        float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
 
-		// プレイヤーからカメラへの距離（XZ平面のみ）
-		VECTOR toCamera = VSub(pos_, followPos);
-		float currentDistXZ = sqrtf(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
+        if (isGroundFixed && isStableGroundContact)
+        {
+            float lerpRate = 0.3f;
 
-		VECTOR toIdeal = VSub(idealPos, followPos);
-		float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
+            if (idealDistXZ < 1.0f)
+            {
+                trans_.pos.x = followPos.x;  // pos_ → trans_.pos
+                trans_.pos.z = followPos.z;  // pos_ → trans_.pos
+            }
+            else
+            {
+                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;  // pos_ → trans_.pos
+                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;  // pos_ → trans_.pos
+            }
 
-		// 地面固定中は常にY座標を固定
-		if (isGroundFixed && isStableGroundContact)
-		{
-			// XZ平面のみ更新
-			float lerpRate = 0.3f;
+            trans_.pos.y = fixedGroundY + GROUND_OFFSET;  // pos_ → trans_.pos
+        }
+        else
+        {
+            if (idealDistXZ < 1.0f)
+            {
+                trans_.pos.x = followPos.x;  // pos_ → trans_.pos
+                trans_.pos.z = followPos.z;  // pos_ → trans_.pos
+                trans_.pos.y = idealPos.y;   // pos_ → trans_.pos
+            }
+            else
+            {
+                trans_.pos = idealPos;  // pos_ → trans_.pos
+            }
+        }
 
-			if (idealDistXZ < 1.0f)
-			{
-				pos_.x = followPos.x;
-				pos_.z = followPos.z;
-			}
-			else
-			{
-				pos_.x += (idealPos.x - pos_.x) * lerpRate;
-				pos_.z += (idealPos.z - pos_.z) * lerpRate;
-			}
+        targetPos_ = VGet(followPos.x, followPos.y + TARGET_HEIGHT_OFFSET, followPos.z);
+    }
+    else
+    {
+        // 凍結中の処理
+        VECTOR playerPos = followTransform_->pos;
 
-			// Y座標は固定された地面+15に固定（補間なし）
-			pos_.y = fixedGroundY + GROUND_OFFSET;
-		}
-		else
-		{
-			// 通常時の処理
-			if (idealDistXZ < 1.0f)
-			{
-				pos_.x = followPos.x;
-				pos_.z = followPos.z;
-				pos_.y = idealPos.y;
-			}
-			else
-			{
-				pos_ = idealPos;
-			}
-		}
+        float xzDistance = sqrtf(initialDistance_ * initialDistance_ - initialHeightOffset_ * initialHeightOffset_);
 
-		// 注視点（プレイヤーの胸の高さを見る）
-		targetPos_ = VGet(followPos.x, followPos.y + TARGET_HEIGHT_OFFSET, followPos.z);
-	}
-	else
-	{
-		// 凍結中の処理
-		VECTOR playerPos = followTransform_->pos;
+        VECTOR cameraOffset;
+        cameraOffset.x = xzDistance * sinf(Utility::Deg2RadF(yaw_));
+        cameraOffset.y = initialHeightOffset_;
+        cameraOffset.z = xzDistance * cosf(Utility::Deg2RadF(yaw_));
 
-		float xzDistance = sqrtf(initialDistance_ * initialDistance_ - initialHeightOffset_ * initialHeightOffset_);
+        VECTOR idealPos = VAdd(playerPos, cameraOffset);
 
-		VECTOR cameraOffset;
-		cameraOffset.x = xzDistance * sinf(Utility::Deg2RadF(yaw_));
-		cameraOffset.y = initialHeightOffset_;
-		cameraOffset.z = xzDistance * cosf(Utility::Deg2RadF(yaw_));
+        if (isGroundFixed && isStableGroundContact)
+        {
+            float lerpRate = 0.3f;
 
-		VECTOR idealPos = VAdd(playerPos, cameraOffset);
+            VECTOR toIdeal = VSub(idealPos, playerPos);
+            float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
 
-		// 地面固定中
-		if (isGroundFixed && isStableGroundContact)
-		{
-			float lerpRate = 0.3f;
+            if (idealDistXZ < 1.0f)
+            {
+                trans_.pos.x = playerPos.x;  // pos_ → trans_.pos
+                trans_.pos.z = playerPos.z;  // pos_ → trans_.pos
+            }
+            else
+            {
+                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;  // pos_ → trans_.pos
+                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;  // pos_ → trans_.pos
+            }
 
-			VECTOR toIdeal = VSub(idealPos, playerPos);
-			float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
+            trans_.pos.y = fixedGroundY + GROUND_OFFSET;  // pos_ → trans_.pos
+        }
+        else
+        {
+            trans_.pos = idealPos;  // pos_ → trans_.pos
+        }
 
-			if (idealDistXZ < 1.0f)
-			{
-				pos_.x = playerPos.x;
-				pos_.z = playerPos.z;
-			}
-			else
-			{
-				pos_.x += (idealPos.x - pos_.x) * lerpRate;
-				pos_.z += (idealPos.z - pos_.z) * lerpRate;
-			}
+        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
+    }
 
-			// Y座標は固定
-			pos_.y = fixedGroundY + GROUND_OFFSET;
-		}
-		else
-		{
-			pos_ = idealPos;
-		}
+    cameraUp_ = VGet(0, 1, 0);
 
-		// 注視点（プレイヤーの胸の高さを見る）
-		targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
-	}
-
-	// 上方向は固定
-	cameraUp_ = VGet(0, 1, 0);
-
-	// マウスを中央に戻す
-	SetMousePoint(centerX_, centerY_);
+    SetMousePoint(centerX_, centerY_);
 }
 
+// ロックオンカメラ
 void Camera::SetBeforeDrawLockon(void)
 {
-	if (!followTransform_) return;
-	VECTOR playerPos = followTransform_->pos;
+    if (!followTransform_) return;
+    VECTOR playerPos = followTransform_->pos;
 
-	auto& ins = InputManager::GetInstance();
-	bool mouseMoved = ins.GetMousePos().x != centerX_ || ins.GetMousePos().y != centerY_;
+    auto& ins = InputManager::GetInstance();
+    bool mouseMoved = ins.GetMousePos().x != centerX_ || ins.GetMousePos().y != centerY_;
 
-	if (lockonFlag_ && lockonTarget_)
-	{
-		// --- ロックオン時 ---
-		VECTOR enemyPos = lockonTarget_->pos;
+    if (lockonFlag_ && lockonTarget_)
+    {
+        VECTOR enemyPos = lockonTarget_->pos;
 
-		// プレイヤー後ろ基本オフセット
-		VECTOR localBackOffset = { 0.0f, 200.0f, -400.0f };
+        VECTOR localBackOffset = { 0.0f, 200.0f, -400.0f };
 
-		// プレイヤーのローカル回転を取得
-		Quaternion playerRot = followTransform_->quaRot.Mult(followTransform_->quaRotLocal);
+        Quaternion playerRot = followTransform_->quaRot.Mult(followTransform_->quaRotLocal);
 
-		// ローカルオフセットを回転
-		VECTOR rotatedOffset = playerRot.PosAxis(localBackOffset);
+        VECTOR rotatedOffset = playerRot.PosAxis(localBackOffset);
 
-		VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
+        VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
 
-		// 横座標補正（ロックオン補正）
-		float deltaX = pos_.x - playerPos.x;
-		if (deltaX > 50.0f)
-		{
-			desiredPos.x = playerPos.x + 150.0f;
-			desiredPos.y = playerPos.y + 250.0f;
-			desiredPos.z = playerPos.z - 300.0f;
-		}
-		else if (deltaX < -50.0f)
-		{
-			desiredPos.x = playerPos.x - 150.0f;
-			desiredPos.y = playerPos.y + 250.0f;
-			desiredPos.z = playerPos.z - 300.0f;
-		}
-		else
-		{
-			desiredPos.x = playerPos.x;
-			desiredPos.y = playerPos.y + 300.0f;
-			desiredPos.z = playerPos.z - 400.0f;
-		}
+        float deltaX = trans_.pos.x - playerPos.x;  // pos_ → trans_.pos
+        if (deltaX > 50.0f)
+        {
+            desiredPos.x = playerPos.x + 150.0f;
+            desiredPos.y = playerPos.y + 250.0f;
+            desiredPos.z = playerPos.z - 300.0f;
+        }
+        else if (deltaX < -50.0f)
+        {
+            desiredPos.x = playerPos.x - 150.0f;
+            desiredPos.y = playerPos.y + 250.0f;
+            desiredPos.z = playerPos.z - 300.0f;
+        }
+        else
+        {
+            desiredPos.x = playerPos.x;
+            desiredPos.y = playerPos.y + 300.0f;
+            desiredPos.z = playerPos.z - 400.0f;
+        }
 
-		pos_ = desiredPos;
-		targetPos_ = VScale(VAdd(playerPos, enemyPos), 0.5f);
-		cameraUp_ = VGet(0, 1, 0);
-	}
-	else if (mouseMoved)
-	{
-		// --- マウス操作優先 ---
-		SetBeforeDrawTPSMouse();
-	}
-	else
-	{
-		// --- ワールド座標でスムーズ追従 ---
-		VECTOR worldBackOffset = { 0.0f, 200.0f, -400.0f };
-		VECTOR targetCamPos = VAdd(playerPos, worldBackOffset);
+        trans_.pos = desiredPos;  // pos_ → trans_.pos
+        targetPos_ = VScale(VAdd(playerPos, enemyPos), 0.5f);
+        cameraUp_ = VGet(0, 1, 0);
+    }
+    else if (mouseMoved)
+    {
+        SetBeforeDrawTPSMouse();
+    }
+    else
+    {
+        VECTOR worldBackOffset = { 0.0f, 200.0f, -400.0f };
+        VECTOR targetCamPos = VAdd(playerPos, worldBackOffset);
 
-		float lerpRate = 0.05f; // スムーズ追従率（0.0～1.0）
-		pos_.x += (targetCamPos.x - pos_.x) * lerpRate;
-		pos_.y += (targetCamPos.y - pos_.y) * lerpRate;
-		pos_.z += (targetCamPos.z - pos_.z) * lerpRate;
+        float lerpRate = 0.05f;
+        trans_.pos.x += (targetCamPos.x - trans_.pos.x) * lerpRate;  // pos_ → trans_.pos
+        trans_.pos.y += (targetCamPos.y - trans_.pos.y) * lerpRate;  // pos_ → trans_.pos
+        trans_.pos.z += (targetCamPos.z - trans_.pos.z) * lerpRate;  // pos_ → trans_.pos
 
-		targetPos_ = playerPos;
-		cameraUp_ = VGet(0, 1, 0);
-	}
+        targetPos_ = playerPos;
+        cameraUp_ = VGet(0, 1, 0);
+    }
 
-	// マウスを中央に戻す
-	SetMousePoint(centerX_, centerY_);
+    SetMousePoint(centerX_, centerY_);
 }
 
-void Camera::Draw(void)
+void Camera::Draw(void) const
 {
-	// DrawFormatString(0, 0, 0xffffff,"カメラ座標 = { %.2f, %.2f, %.2f}",pos_.x, pos_.y, pos_.z);
+#ifdef _DEBUG
+    // 基底クラスのコライダ描画
+    UnitBase::Draw();
+#endif
 }
 
 void Camera::Release(void)
 {
-	// ライト無効化
-	SetLightEnableHandle(spotLight_, false);
+    // CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
 
-	// ライトハンドル削除
-	DeleteLightHandle(spotLight_);
+    // ライト無効化
+    SetLightEnableHandle(spotLight_, false);
+
+    // ライトハンドル削除
+    DeleteLightHandle(spotLight_);
+
+    // 基底クラスの解放
+    UnitBase::Release();
 }
 
 VECTOR Camera::GetPos(void) const
 {
-	return pos_;
+    return trans_.pos;  // pos_ → trans_.pos
 }
 
 void Camera::ChangeMode(MODE mode)
 {
-	// カメラの初期設定
-	// SetDefault();
+    mode_ = mode;
 
-	// カメラモードの変更
-	mode_ = mode;
+    switch (mode_)
+    {
+    case Camera::MODE::FIXED_POINT:
+        break;
 
-	// 変更時の初期化処理
-	switch (mode_)
-	{
-	case Camera::MODE::FIXED_POINT:
-		break;
+    case Camera::MODE::FREE:
+        break;
 
-	case Camera::MODE::FREE:
-		break;
+    case Camera::MODE::FOLLOW:
+        break;
 
-	case Camera::MODE::FOLLOW:
-		break;
+    case Camera::MODE::FOLLOW_SPRING:
+        break;
 
-	case Camera::MODE::FOLLOW_SPRING:
-		break;
-
-	case Camera::MODE::SHAKE:
-		stepShake_ = TIME_SHAKE;
-		shakeDir_ = VNorm({ 0.7f, 0.7f, 0.0f });
-		defaultPos_ = pos_;
-		break;
-	}
+    case Camera::MODE::SHAKE:
+        stepShake_ = TIME_SHAKE;
+        shakeDir_ = VNorm({ 0.7f, 0.7f, 0.0f });
+        defaultPos_ = trans_.pos;  // pos_ → trans_.pos
+        break;
+    }
 }
 
-// 座標の取得
 const void Camera::SetFollow(const Transform* follow)
 {
-	followTransform_ = follow;
+    followTransform_ = follow;
 }
 
-// 座標の設定
 void Camera::SetPos(const VECTOR& pos, const VECTOR& target)
 {
-	pos_ = pos;
-	targetPos_ = target;
+    trans_.pos = pos;  // pos_ → trans_.pos
+    targetPos_ = target;
 }
 
 VECTOR Camera::GetFrontVec(void) const
 {
-	// pos_ → targetPos_ の方向ベクトルを正規化
-	VECTOR front = VSub(targetPos_, pos_);
-	float length = sqrtf(front.x * front.x + front.y * front.y + front.z * front.z);
-	if (length > 0.0001f)
-	{
-		front.x /= length;
-		front.y /= length;
-		front.z /= length;
-	}
-	return front;
+    VECTOR front = VSub(targetPos_, trans_.pos);  // pos_ → trans_.pos
+    float length = sqrtf(front.x * front.x + front.y * front.y + front.z * front.z);
+    if (length > 0.0001f)
+    {
+        front.x /= length;
+        front.y /= length;
+        front.z /= length;
+    }
+    return front;
 }
 
 VECTOR Camera::GetRightVec(void) const
 {
-	// 上方向ベクトルは固定（Y軸）
-	VECTOR up = { 0.0f, 1.0f, 0.0f };
-
-	// 前方向を取得
-	VECTOR front = GetFrontVec();
-
-	// 右方向 = 前方向 × 上方向
-	VECTOR right = VCross(front, up);
-
-	// 水平方向だけにする
-	right.y = 0.0f;
-
-	// 正規化
-	right = VNorm(right);
-
-	return right;
+    VECTOR up = { 0.0f, 1.0f, 0.0f };
+    VECTOR front = GetFrontVec();
+    VECTOR right = VCross(front, up);
+    right.y = 0.0f;
+    right = VNorm(right);
+    return right;
 }
 
 Camera::MODE Camera::GetMode(void) const
 {
-	return mode_;
+    return mode_;
 }
 
 void Camera::SetLockon(bool loc)
 {
-	lockonFlag_ = loc;
+    lockonFlag_ = loc;
 }
 
 bool Camera::IsLockon(void) const
 {
-	return lockonFlag_;
+    return lockonFlag_;
 }
 
 void Camera::SetFreezeFollow(bool freeze)
 {
-	freezeFollow_ = freeze;
+    freezeFollow_ = freeze;
 
-	// 凍結開始時に現在の状態を保存
-	if (freeze && followTransform_)
-	{
-		frozenTargetPos_ = followTransform_->pos;
-		frozenCameraPos_ = pos_;
-		initialYaw_ = yaw_;
+    if (freeze && followTransform_)
+    {
+        frozenTargetPos_ = followTransform_->pos;
+        frozenCameraPos_ = trans_.pos;  // pos_ → trans_.pos
+        initialYaw_ = yaw_;
 
-		// カメラとプレイヤーの距離を計算（XZ平面の距離も保存）
-		VECTOR diff = VSub(pos_, followTransform_->pos);
-		initialDistance_ = VSize(diff);
+        VECTOR diff = VSub(trans_.pos, followTransform_->pos);  // pos_ → trans_.pos
+        initialDistance_ = VSize(diff);
 
-		// Y軸のオフセットも保存
-		initialHeightOffset_ = diff.y;
-	}
-	else
-	{
-		// 凍結解除時はキー入力による回転をリセット
-		keyRotateSpeed_ = 0.0f;
-	}
+        initialHeightOffset_ = diff.y;
+    }
+    else
+    {
+        keyRotateSpeed_ = 0.0f;
+    }
 }
 
 VECTOR Camera::GetOrbitPosition(void) const
 {
-	if (!freezeFollow_)
-	{
-		return Utility::VECTOR_ZERO;
-	}
+    if (!freezeFollow_)
+    {
+        return Utility::VECTOR_ZERO;
+    }
 
-	// yawの変化量を計算
-	float deltaYaw = yaw_ - initialYaw_;
+    float deltaYaw = yaw_ - initialYaw_;
 
-	// 注視点を固定カメラ位置から見た方向で計算
-	VECTOR direction;
-	direction.x = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-	direction.y = initialDistance_ * sinf(Utility::Deg2RadF(pitch_));
-	direction.z = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+    VECTOR direction;
+    direction.x = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+    direction.y = initialDistance_ * sinf(Utility::Deg2RadF(pitch_));
+    direction.z = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
-	// プレイヤーの新しい位置（カメラ位置 + 方向ベクトル）
-	return VAdd(frozenCameraPos_, direction);
+    return VAdd(frozenCameraPos_, direction);
 }
 
 void Camera::SetKeyRotation(float rotSpeed)
 {
-	keyRotateSpeed_ = rotSpeed;
-}
-
-// 当たり判定の再登録
-void Camera::RegisterCollision(void)
-{
-	if (!collisionPos_)
-	{
-		collisionPos_ = std::make_shared<VECTOR>(pos_);
-		radius_ = 30.0f;
-	}
-
-	// 最新の座標で更新
-	*collisionPos_ = pos_;
-
-	// 毎フレーム登録（Clearされるため）
-	CollisionManager::GetInstance().RegisterSphere(nullptr, collisionPos_.get(), radius_, CollisionManager::TAG_TYPE::CAMERA, true);
+    keyRotateSpeed_ = rotSpeed;
 }
 
 void Camera::SetLockonTarget(const Transform* target)
 {
-	lockonTarget_ = target;
+    lockonTarget_ = target;
 }
 
-// カメラの初期設定
 void Camera::SetDefault(void)
 {
-	// カメラの初期設定
-	pos_ = DEFAULT_CAMERA_POS;
+    trans_.pos = DEFAULT_CAMERA_POS;  // pos_ → trans_.pos
 
-	// 注視点
-	targetPos_ = VAdd(pos_, RELATIVE_C2T_POS);
+    targetPos_ = VAdd(trans_.pos, RELATIVE_C2T_POS);  // pos_ → trans_.pos
 
-	// カメラ上方向
-	cameraUp_ = { 0.0f, 1.0f, 0.0f };
+    cameraUp_ = { 0.0f, 1.0f, 0.0f };
 
-	// カメラはX軸に傾いているが
-	// この傾いた状態を角度ゼロ、傾きなしとする
-	rot_ = Quaternion::Identity();
+    rot_ = Quaternion::Identity();
 
-	velocity_ = Utility::VECTOR_ZERO;
+    velocity_ = Utility::VECTOR_ZERO;
 }
 
-// ライトの設定
 void Camera::SetLighting(void)
 {
-	// ライトハンドルを作成
-	spotLight_ = CreateSpotLightHandle(
-		pos_,
-		VGet(0.0f, -1.0f, 0.0f),
-		DX_PI_F / 2.0f,
-		DX_PI_F / 4.0f,
-		2000.0f,
-		0.0f,
-		0.002f,
-		0.0f
-	);
+    spotLight_ = CreateSpotLightHandle(
+        trans_.pos,  // pos_ → trans_.pos
+        VGet(0.0f, -1.0f, 0.0f),
+        DX_PI_F / 2.0f,
+        DX_PI_F / 4.0f,
+        2000.0f,
+        0.0f,
+        0.002f,
+        0.0f
+    );
 
-	// ライト有効化
-	SetLightEnableHandle(spotLight_, true);
+    // ライト有効化
+    SetLightEnableHandle(spotLight_, true);
 }
 
 // 移動操作
 void Camera::ProcessMove(void)
 {
-	auto& ins = InputManager::GetInstance();
+    auto& ins = InputManager::GetInstance();
 
-	// 移動
-	if (ins.IsNew(KEY_INPUT_W)) { moveDIr_ = Utility::DIR_F; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_S)) { moveDIr_ = Utility::DIR_B; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_A)) { moveDIr_ = Utility::DIR_L; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_D)) { moveDIr_ = Utility::DIR_R; Acceleration(MOVE_ACC); }
+    // 移動
+    if (ins.IsNew(KEY_INPUT_W)) { moveDIr_ = Utility::DIR_F; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_S)) { moveDIr_ = Utility::DIR_B; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_A)) { moveDIr_ = Utility::DIR_L; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_D)) { moveDIr_ = Utility::DIR_R; Acceleration(MOVE_ACC); }
 
-	// 回転軸と量を決める
-	const float ROT_POW = 1.0f;
-	VECTOR axisDeg = Utility::VECTOR_ZERO;
-	if (ins.IsNew(KEY_INPUT_UP)) { axisDeg.x = -1.0f; }
-	if (ins.IsNew(KEY_INPUT_DOWN)) { axisDeg.x = 1.0f; }
-	if (ins.IsNew(KEY_INPUT_LEFT)) { axisDeg.y = -1.0f; }
-	if (ins.IsNew(KEY_INPUT_RIGHT)) { axisDeg.y = 1.0f; }
+    // 回転軸と量を決める
+    const float ROT_POW = 1.0f;
+    VECTOR axisDeg = Utility::VECTOR_ZERO;
+    if (ins.IsNew(KEY_INPUT_UP)) { axisDeg.x = -1.0f; }
+    if (ins.IsNew(KEY_INPUT_DOWN)) { axisDeg.x = 1.0f; }
+    if (ins.IsNew(KEY_INPUT_LEFT)) { axisDeg.y = -1.0f; }
+    if (ins.IsNew(KEY_INPUT_RIGHT)) { axisDeg.y = 1.0f; }
 
-	// カメラ座標を中心として、注視点を回転させる
-	if (!Utility::EqualsVZero(axisDeg))
-	{
-		// 今回の回転量を合成
-		Quaternion rotPow;
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.z), Utility::AXIS_Z));
+    // カメラ座標を中心として、注視点を回転させる
+    if (!Utility::EqualsVZero(axisDeg))
+    {
+        // 今回の回転量を合成
+        Quaternion rotPow;
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.z), Utility::AXIS_Z));
 
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.x), Utility::AXIS_X));
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.x), Utility::AXIS_X));
 
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.y), Utility::AXIS_Y));
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.y), Utility::AXIS_Y));
 
-		// カメラの回転の今回の回転量を加える(合成)
-		rot_ = rot_.Mult(rotPow);
+        // カメラの回転の今回の回転量を加える(合成)
+        rot_ = rot_.Mult(rotPow);
 
-		// 注視点の相対座標を回転させる
-		VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
+        // 注視点の相対座標を回転させる
+        VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
 
-		// 注視点更新
-		targetPos_ = VAdd(pos_, rotLocalPos);
+        // 注視点更新
+        targetPos_ = VAdd(trans_.pos, rotLocalPos);  // pos_ → trans_.pos
 
-		// カメラの上方向
-		cameraUp_ = rot_.GetUp();
-	}
+        // カメラの上方向
+        cameraUp_ = rot_.GetUp();
+    }
 }
 
 // 移動
 void Camera::Move(void)
 {
-	// 移動処理
-	if (Utility::EqualsVZero(moveDIr_))
-	{
-		// 移動 = 座標 * 移動量
-		// 移動量 =  方向 * スピード
+    // 移動処理
+    if (!Utility::EqualsVZero(moveDIr_))  // 修正: 条件を反転
+    {
+        // 移動 = 座標 * 移動量
+        // 移動量 =  方向 * スピード
 
-		// 入力された方向をカメラの回転情報を使って、
-		// カメラの進行方向に変換する
-		VECTOR direction = rot_.PosAxis(moveDIr_);
+        // 入力された方向をカメラの回転情報を使って、
+        // カメラの進行方向に変換する
+        VECTOR direction = rot_.PosAxis(moveDIr_);
 
-		// 移動量
-		VECTOR movePow = VScale(direction, moveSpeed_);
+        // 移動量
+        VECTOR movePow = VScale(direction, moveSpeed_);
 
-		// 移動処理
-		pos_ = VAdd(pos_, movePow);
+        // 移動処理
+        trans_.pos = VAdd(trans_.pos, movePow);  // pos_ → trans_.pos
 
-		targetPos_ = VAdd(targetPos_, movePow);
-	}
+        targetPos_ = VAdd(targetPos_, movePow);
+    }
 }
 
 // 加速
 void Camera::Acceleration(float speed)
 {
-	moveSpeed_ += speed;
+    moveSpeed_ += speed;
 
-	// 速度制限(右方向)
-	if (moveSpeed_ > MAX_MOVE_SPEED)
-	{
-		moveSpeed_ = MAX_MOVE_SPEED;
-	}
+    // 速度制限(右方向)
+    if (moveSpeed_ > MAX_MOVE_SPEED)
+    {
+        moveSpeed_ = MAX_MOVE_SPEED;
+    }
 
-	// 速度制限(左方向)
-	if (moveSpeed_ < -MAX_MOVE_SPEED)
-	{
-		moveSpeed_ = -MAX_MOVE_SPEED;
-	}
+    // 速度制限(左方向)
+    if (moveSpeed_ < -MAX_MOVE_SPEED)
+    {
+        moveSpeed_ = -MAX_MOVE_SPEED;
+    }
 }
 
 // 減速
 void Camera::Decelerate(float speed)
 {
-	// 右方向の移動を減速させる
-	if (moveSpeed_ > 0.0f)
-	{
-		moveSpeed_ -= speed;
+    // 右方向の移動を減速させる
+    if (moveSpeed_ > 0.0f)
+    {
+        moveSpeed_ -= speed;
 
-		if (moveSpeed_ < 0.0f)
-		{
-			moveSpeed_ = 0.0f;
-		}
-	}
+        if (moveSpeed_ < 0.0f)
+        {
+            moveSpeed_ = 0.0f;
+        }
+    }
 
-	// 左方向の移動を減速させる
-	if (moveSpeed_ < 0.0f)
-	{
-		moveSpeed_ += speed;
+    // 左方向の移動を減速させる
+    if (moveSpeed_ < 0.0f)
+    {
+        moveSpeed_ += speed;
 
-		if (moveSpeed_ > 0.0f)
-		{
-			moveSpeed_ = speed;
-		}
-	}
+        if (moveSpeed_ > 0.0f)
+        {
+            moveSpeed_ = 0.0f;  // 修正: speed → 0.0f
+        }
+    }
 }

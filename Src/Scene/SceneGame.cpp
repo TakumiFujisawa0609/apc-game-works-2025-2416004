@@ -1,18 +1,12 @@
 #include "SceneGame.h"
-#include "../Common/Easing.h"
 #include "../Manager/Generic/Camera.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
-#include"../Manager/Generic/Resource.h"
 #include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Decoration/SoundManager.h"
-#include "../Manager/System/Collision.h"
 #include "../Manager/System/TimeManager.h"
-#include "../Manager/System/CollisionManager.h"
 #include "../Object/Player/Player.h"
 #include "../Object/Manager/GroundManager.h"
-#include "../DrawUI/Font.h"
-#include "../Object/Common/AnimationController.h"
 #include "../Object/Enemy/EnemyData.h"
 #include "../Scene/SceneScore.h"
 #include "../Manager/System/Loading.h"
@@ -50,24 +44,29 @@ void SceneGame::Load()
 
 	//プレイヤーの読み込み
 	player_->Load();
+	Loading::GetInstance()->SetProgress(25.0f);
 
 	//ステージの読み込み
 	groundManager_->Load();
+	Loading::GetInstance()->SetProgress(40.0f);
 
 	//エネミーの読み込み
 	enemyManager_->Load();
 
 	//エネミーデータ読み込み
 	enemyData_->LoadCSV(Application::PATH_CSV + "EnemyData.csv");
+
+	Loading::GetInstance()->SetProgress(60.0f);
 	
 	// サウンドの読み込み
 
-
+	Loading::GetInstance()->SetProgress(80.0f);
+	
 	//時間カウントリセット
 	TimeManager::GetInstance().Reset();
 
-	//ロード完了
-	EndLoad();
+	Loading::GetInstance()->SetProgress(100.0f);
+
 }
 
 // 読み込み終了
@@ -100,8 +99,6 @@ void SceneGame::Init()
 	//プレイヤーの初期化
 	player_->Init();
 	camera->SetFollow(&player_->GetTransform());
-
-
 
 	//敵のランダム生成(初期スポーン)
 	for (int i = 0; i < 250; ++i)
@@ -144,6 +141,12 @@ void SceneGame::Update(void)
 
 		return;
 	}
+
+	// プレイヤーの位置を取得
+	groundManager_->SetPlayerPos(player_->GetPos());
+
+	// えねみーの位置を取得
+	groundManager_->SetEnemyPos(enemyManager_->GetEnemyPos());
 }
 
 // 描画処理
@@ -183,43 +186,6 @@ void SceneGame::Release(void)
 	enemyManager_.reset();
 
 	
-}
-
-void SceneGame::RegisterCollisions(void)  
-{  
-   auto camera = SceneManager::GetInstance().GetCamera();  
-
-   // カメラの当たり判定再登録  
-   camera->RegisterCollision();  
-
-   // カメラ位置に近い地面タイルを登録  
-   auto nearbyTiles = groundManager_->GetNearbyTiles(camera->GetPos(), 700.0f);  
-
-   for (const auto& tile : nearbyTiles)  
-   {  
-       CollisionManager::GetInstance().RegisterMeshTile(nullptr, tile.first, tile.second, GroundManager::TILE_SIZE);  
-   }  
-
-   // プレイヤーの位置を一時変数に格納    
-   float halfHeight = 45.0f;
-   VECTOR capStart = VAdd(player_->GetPos(), VGet(0, -halfHeight, 0));
-   VECTOR capEnd = VAdd(player_->GetPos(), VGet(0, halfHeight, 0));
-
-   CollisionManager::GetInstance().RegistCapsule(
-	   player_,  // ← shared_ptr<Player> を渡す
-	   player_->GetTransform().GetPosPtr(),
-	   capStart,
-	   capEnd,
-	   player_->GetRadius(),
-	   CollisionManager::TAG_TYPE::PLAYER,
-	   true
-   );
-
-   player_->RegisterCollison();
-
-
-   // えねみーの当たり判定登録  
-   enemyManager_->RegisterCollisions();  
 }
 
 // 描画(デバック)

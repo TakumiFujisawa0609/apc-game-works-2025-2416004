@@ -31,9 +31,6 @@ public:
 	// 全パラメータを適用
 	void ApplyData(const EnemyInfo& info) override;
 
-	// 当たり判定のオフセット（スライムの中心高さ）
-	VECTOR GetCollisionOffset(void) const override;
-
 private:
 	// 最大視野
 	static constexpr float VIEW_RANGE = 600.0f;

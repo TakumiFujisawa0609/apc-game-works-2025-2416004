@@ -1,311 +1,286 @@
 #pragma once
-
 #include "../../Common/Quaternion.h"
+#include "../../Object/UnitBase.h"
 
 class Transform;
 
-class Camera
+class Camera : public UnitBase
 {
 public:
+    // カメラモード
+    enum class MODE
+    {
+        NONE,
+        FIXED_POINT,
+        FOLLOW,
+        FOLLOW_SPRING,
+        FOLLOW_PERSPECTIVE,
+        FREE,
+        SHAKE,
+        FREE_MOUSE,
+        TPS_MOUSE,
+        VERSATILITY_LOCKON,
+    };
 
-	//カメラモード
-	enum class MODE
-	{
-		NONE,
-		FIXED_POINT,		//定点カメラ
-		FREE,				//フリーモード
-		FOLLOW,				//追従モード
-		FOLLOW_SPRING,		//ばね付き追従モード
-		FOLLOW_PERSPECTIVE,	//追従対象視点モード
-		SHAKE,				//カメラ揺らし
-		FREE_MOUSE,			//マウス自由カメラ
-		TPS_MOUSE,          //TPS用マウスカメラ
-		VERSATILITY_LOCKON  //汎用ロックオンカメラ
-	};
+    // コンストラクタ
+    Camera(void);
 
-	//カメラの描画域(Near.Far)関連の定数
+    // デストラクタ
+    ~Camera(void) override;
 
-	static constexpr float SPEED = 10.0f;			//カメラスピード : NEAR
+    // 初期化処理
+    void Init(void) override;
 
-	static constexpr float CAMERA_NEAR = 40.0f;		//カメラクリップ : NEAR
+    // リソース読み込み（使用しない）
+    void Load(void) override {}
 
-	static constexpr float CAMERA_FAR = 15000.0f;	//カメラクリップ : NEAR
+    // 更新処理（衝突判定前）
+    void UpdateBeforeCollision(void);
 
-	//カメラの座標関数関連の定数
-	
-	static constexpr VECTOR DEFAULT_CAMERA_POS = { 0.0f, 400.0f, -500.0f };						//カメラの初期座標
+    // 更新処理
+    void Update(void) override;
 
-	static constexpr VECTOR RELATIVE_C2T_POS = { 0.0f, -400.0f, 500.0f };						//カメラ位置から注視点までの相対座標
-	
-	static constexpr VECTOR RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE = { 0.0f, 0.0f, 200.0f };		//カメラの位置から注視点までの相対座標(追従対象視点)
+    // 描画前処理
+    void SetBeforeDraw(void);
 
-	static constexpr VECTOR RELATIVE_F2C_POS_FOLLOW = { 0.0f, 300.0f, -300.0f };				//追従対象からカメラの位置までの相対座標(完全追従)
+    // 描画処理
+    void Draw(void) const override;
 
-	//static constexpr VECTOR RELATIVE_F2C_POS_SPRING = { 0.0f, 40.0f, 150.0f };				//追従対象からカメラ位置までの相対座標(ばね付き)
+    // 解放処理
+    void Release(void) override;
 
-	//カメラの移動関連の定数
+    // 座標の取得
+    VECTOR GetPos(void) const;
 
-	static constexpr float MAX_MOVE_SPEED = 5.0f;	//移動速度の最大値
+    // モードの変更
+    void ChangeMode(MODE mode);
 
-	static constexpr float MOVE_ACC = 0.5f;			//加速
+    // 追従対象の設定
+    const void SetFollow(const Transform* follow);
 
-	static constexpr float MOVE_DEC = 0.5;			//減速
+    // 座標の設定
+    void SetPos(const VECTOR& pos, const VECTOR& target);
 
-	//カメラ揺らし関連の定数
+    // 前方向ベクトルを取得
+    VECTOR GetFrontVec(void) const;
 
-	static constexpr float TIME_SHAKE = 0.5f;		//時間
+    // 右方向ベクトルを取得
+    VECTOR GetRightVec(void) const;
 
-	static constexpr float WIDTH_SHAKE = 5.0f;		//幅
+    // モードの取得
+    MODE GetMode(void) const;
 
-	static constexpr float SPEED_SHAKE = 40.0f;		//スピード
+    // ロックオンフラグ設定
+    void SetLockon(bool loc);
 
-	//マウスTPSカメラ関連定数
+    // ロックオン中か
+    bool IsLockon(void) const;
 
-	static constexpr float CAMERA_YAW = 0.0f;					//左右回転
+    // 追従凍結の設定
+    void SetFreezeFollow(bool freeze);
 
-	static constexpr float CAMERA_PITCH = 15.0f;				//上下回転
+    // 軌道位置を取得
+    VECTOR GetOrbitPosition(void) const;
 
-	static constexpr float CAMERA_DISTANCE = 600.0f;			//ターゲットからの距離
+    // キー入力による回転を設定
+    void SetKeyRotation(float rotSpeed);
 
-	//マウス感度
-	static constexpr float DEFAULT_SENSITIVITY = 0.2f;
+    // ロックオン対象の設定
+    void SetLockonTarget(const Transform* target);
 
-	//ピッチ制限
+protected:
+    // 衝突判定の初期化
+    void InitCollider(void) override;
 
-	static constexpr float PITCH_UP = 80.0f;	//ピッチ最大上限
-
-	static constexpr float PITCH_DWON = -80.0f;	//ピッチ最低上限
-
-	//XZ平面の制限
-	static constexpr float MAX_DIST_XZ = 500.0f;
-
-	// 注視点（プレイヤーの少し上を見る）
-	static constexpr float TARGET_HEIGHT_OFFSET = 100.0f;
-
-	//コンストラクタ
-	Camera(void);
-
-	//デストラクタ
-	~Camera(void);
-
-	//初期化処理
-	void Init(void);
-
-	// 更新処理（衝突判定前）
-	void UpdateBeforeCollision(void);
-
-	//更新処理
-	void Update(void);
-
-	//カメラの描画モード関連
-	void SetBeforeDraw(void);
-
-	//描画処理
-	void Draw(void);
-
-	//解放処理
-	void Release(void);
-
-	//座標取得
-	VECTOR GetPos(void) const;
-
-	//カメラモードの変更
-	void ChangeMode(MODE mode);
-
-	//追従対象の設定
-	const void SetFollow(const Transform* follow);
-
-	//座標の設定
-	void SetPos(const VECTOR& pos, const VECTOR& target);
-
-	//ロックオン対象の設定
-	void SetLockonTarget(const Transform* target);
-
-	//カメラの前方向を取得
-	VECTOR GetFrontVec(void) const;
-
-	//カメラの右方向を取得
-	VECTOR GetRightVec(void) const;
-
-	//カメラモードの取得
-	MODE GetMode(void) const;
-
-	//ロックオンの設定
-	void SetLockon(bool loc);
-
-	//ロックオンの取得
-	bool IsLockon(void) const;
-
-	//固定された注視点
-	void SetFreezeFollow(bool freeze);
-
-	// 公転位置を取得
-	VECTOR GetOrbitPosition(void) const;
-
-	// 自動回転を追加
-	void SetKeyRotation(float rotSpeed);
-
-	// 当たり判定の再登録
-	void RegisterCollision(void);
+    // 衝突判定のコールバック
+    void OnCollisionStay(const CollisionInfo& info) override;
 
 private:
+    // カメラの初期設定
+    static constexpr VECTOR DEFAULT_CAMERA_POS = { 0.0f, 100.0f, -500.0f };
 
-	//追従対象
-	const Transform* followTransform_;
+    // カメラのクリップ距離
+    static constexpr float CAMERA_NEAR = 10.0f;
+    static constexpr float CAMERA_FAR = 30000.0f;
 
-	//対象カメラ
-	const Transform* lockonTarget_;
+    // カメラの初期角度
+    static constexpr float CAMERA_YAW = 0.0f;
+    static constexpr float CAMERA_PITCH = 30.0f;
+    static constexpr float CAMERA_DISTANCE = 400.0f;
 
-	//カメラモード
-	MODE mode_;
+    // カメラから注視点までの相対座標
+    static constexpr VECTOR RELATIVE_C2T_POS = { 0.0f, 0.0f, 50.0f };
 
-	//カメラ揺らしする際に現在のモード保存
-	MODE currentMode_;
+    // 追従対象からカメラまでの相対座標
+    static constexpr VECTOR RELATIVE_F2C_POS_FOLLOW = { 0.0f, 300.0f, -600.0f };
 
-	//カメラの描画モード
-	std::map<MODE, std::function<void(void)>> setBeforeDrawMode_;
+    // 追従対象視点カメラ
+    static constexpr VECTOR RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE = { 0.0f, 0.0f, 20.0f };
 
-	//カメラの当たり判定用
-	std::shared_ptr<VECTOR> collisionPos_;
+    // カメラ揺れ
+    static constexpr float TIME_SHAKE = 0.7f;
+    static constexpr float WIDTH_SHAKE = 20.0f;
+    static constexpr float SPEED_SHAKE = 150.0f;
 
-	//カメラの当たり判定用半径
-	float radius_;
+    // 移動スピード
+    static constexpr float MOVE_ACC = 3.0f;
+    static constexpr float MOVE_DEC = 3.0f;
+    static constexpr float MAX_MOVE_SPEED = 7.0f;
 
-	//カメラの位置
-	VECTOR pos_;
+    // マウス感度
+    static constexpr float DEFAULT_SENSITIVITY = 0.2f;
 
-	//カメラの注視点
-	VECTOR targetPos_;
+    // ピッチ制限
+    static constexpr float PITCH_UP = 89.0f;
+    static constexpr float PITCH_DWON = -89.0f;
 
-	//カメラの上方向
-	VECTOR cameraUp_;
+    // カメラ用当たり半径
+    static constexpr float COLLISION_RADIUS = 35.0f;
 
-	//カメラの回転
-	Quaternion rot_;
+    // モード
+    MODE mode_;
 
-	//カメラの速度(移動量)
-	VECTOR velocity_;
+    // 現在のモード
+    MODE currentMode_;
 
-	// 押し出し前の座標
-	VECTOR prevPos_;  
+    // カメラの座標(自機から追従)
+    // VECTOR pos_; // UnitBase::trans_.posを使用
 
-	//移動量
-	float moveSpeed_;
+    // カメラのデフォルト座標
+    VECTOR defaultPos_;
 
-	//向き
-	VECTOR moveDIr_;
+    // 注視点
+    VECTOR targetPos_;
 
-	//画面揺らし用
-	float stepShake_;
+    // ロックオン対象
+    const Transform* lockonTarget_;
 
-	VECTOR defaultPos_;
+    // カメラの回転
+    Quaternion rot_;
 
-	VECTOR shakeDir_;
+    // 追従対象
+    const Transform* followTransform_;
 
-	VECTOR offset_;
+    // 左右回転
+    float yaw_;
 
-	//ライト
-	int spotLight_;
+    // 上下回転
+    float pitch_;
 
-	//左右回転
-	float yaw_;
+    // 対象との距離
+    float distance_;
 
-	//上下回転
-	float pitch_;
+    // カメラの上方向
+    VECTOR cameraUp_;
 
-	//ターゲットからの距離
-	float distance_;
+    // 移動方向
+    VECTOR moveDIr_;
 
-	//マウス感度
-	float sensitivity_;
+    // 移動スピード
+    float moveSpeed_;
 
-	//中央サイズX
-	int centerX_;
+    // カメラ揺らし方向
+    VECTOR shakeDir_;
 
-	//中央サイズY
-	int centerY_;
+    // カメラ揺らしステップ
+    float stepShake_;
 
-	//Xの移動量
-	int deltaX_;
+    // ライトハンドル
+    int spotLight_;
 
-	//Yの移動量
-	int deltaY_;
+    // 速度
+    VECTOR velocity_;
 
-	//ロックオンフラグ
-	bool lockonFlag_;
+    // マウス感度
+    float sensitivity_;
 
-	// 追従を一時停止するフラグ
-	bool freezeFollow_;
+    // 画面中央のX座標
+    int centerX_;
 
-	// 固定された注視点
-	VECTOR frozenTargetPos_;
+    // 画面中央のY座標
+    int centerY_;
 
-	// 固定されたカメラ位置
-	VECTOR frozenCameraPos_;
+    // マウスのX移動量
+    int deltaX_;
 
-	// 凍結開始時のyaw角度
-	float initialYaw_;
+    // マウスのY移動量
+    int deltaY_;
 
-	// 凍結開始時のカメラとプレイヤーの距離
-	float initialDistance_;
+    // カメラオフセット
+    VECTOR offset_;
 
-	// キー入力による回転速度
-	float keyRotateSpeed_;
+    // ロックオンフラグ
+    bool lockonFlag_;
 
-	// 凍結開始時のY軸オフセット
-	float initialHeightOffset_;
+    // 追従停止フラグ
+    bool freezeFollow_;
 
-	//カメラを初期位置に戻す
-	void SetDefault(void);
+    // 凍結時の注視点
+    VECTOR frozenTargetPos_;
 
-	//ライト設定
-	void SetLighting(void);
+    // 凍結時のカメラ位置
+    VECTOR frozenCameraPos_;
 
-	//カメラの描画モード関連
+    // 凍結開始時のyaw角度
+    float initialYaw_;
 
-	//定点カメラ
-	void SetBeforeDrawFixedPoint(void);				
-	
-	//フリーカメラ
-	void SetBeforeDrawFree(void);					
-	
-	//追従カメラ
-	void SetBeforeDrawFollow(void);					
-	
-	//ばね追従カメラ
-	void SetBeforeDrawFollowSpring(void);			
+    // 凍結開始時の距離
+    float initialDistance_;
 
-	//追従対象視点カメラ
-	void SetBeforeDrawFollowPerspective(void);		
+    // キー入力による回転速度
+    float keyRotateSpeed_;
 
-	//カメラ揺らし
-	void SetBeforeDrawShake(void);					
+    // 凍結開始時のY軸オフセット
+    float initialHeightOffset_;
 
-	//マウス自由に操作カメラ
-	void SetBeforeDrawFreeMouse(void);
+    // 押し出し前の座標
+    VECTOR prevPos_;
 
-	//TPS用マウス操作カメラ
-	void SetBeforeDrawTPSMouse(void);
+    // カメラモード別更新処理
+    std::map<MODE, std::function<void(void)>> setBeforeDrawMode_;
 
-	//汎用ロックオンカメラ
-	void SetBeforeDrawLockon(void);
+    // 定点カメラ
+    void SetBeforeDrawFixedPoint(void);
 
-	//カメラ揺らし
-	void Shake(void);
+    // フリーカメラ
+    void SetBeforeDrawFree(void);
 
-	//カメラ揺らしさせるための準備
-	void SetShake(float intensity, float duretion);
+    // 追従カメラ
+    void SetBeforeDrawFollow(void);
 
-	//移動操作
-	void ProcessMove(void);
+    // ねじり追従カメラ
+    void SetBeforeDrawFollowSpring(void);
 
-	//移動
-	void Move(void);
+    // 追従対象視点カメラ
+    void SetBeforeDrawFollowPerspective(void);
 
-	//加速
-	void Acceleration(float speed);
+    // カメラ揺らし
+    void SetBeforeDrawShake(void);
 
-	//減速
-	void Decelerate(float speed);
+    // マウス自由操作カメラ
+    void SetBeforeDrawFreeMouse(void);
 
+    // TPS用カメラ
+    void SetBeforeDrawTPSMouse(void);
+
+    // ロックオンカメラ
+    void SetBeforeDrawLockon(void);
+
+    // カメラの初期設定
+    void SetDefault(void);
+
+    // ライトの設定
+    void SetLighting(void);
+
+    // 移動操作
+    void ProcessMove(void);
+
+    // 移動
+    void Move(void);
+
+    // 加速
+    void Acceleration(float speed);
+
+    // 減速
+    void Decelerate(float speed);
 };

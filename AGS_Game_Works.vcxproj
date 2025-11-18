@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -159,6 +159,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Manager\System\CollisionController.h" />
+    <ClInclude Include="Src\Collider\ColliderModel.h" />
+    <ClInclude Include="Src\Collider\ColliderCapsule.h" />
+    <ClInclude Include="Src\Collider\ColliderSphere.h" />
+    <ClInclude Include="Src\Collider\ColliderLine.h" />
+    <ClInclude Include="Src\Collider\ColliderBase.h" />
     <ClInclude Include="Src\pch.h" />
     <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Manager\System\CollisionManager.h" />
@@ -201,6 +207,12 @@
     <ClInclude Include="Src\Object\Player\Sword.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Manager\System\CollisionController.cpp" />
+    <ClCompile Include="Src\Collider\ColliderModel.cpp" />
+    <ClCompile Include="Src\Collider\ColliderCapsule.cpp" />
+    <ClCompile Include="Src\Collider\ColliderSphere.cpp" />
+    <ClCompile Include="Src\Collider\ColliderLine.cpp" />
+    <ClCompile Include="Src\Collider\ColliderBase.cpp" />
     <ClCompile Include="Src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

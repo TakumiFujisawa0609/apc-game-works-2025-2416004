@@ -114,8 +114,3 @@ void EnemySlime::ApplyData(const EnemyInfo& info)
 {
 	EnemyBase::ApplyData(info);
 }
-
-VECTOR EnemySlime::GetCollisionOffset(void) const
-{
-	return VGet(0.0f, COLLISION_HEIGHT_OFFSET, 0.0f);
-}

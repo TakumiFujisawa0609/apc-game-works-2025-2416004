@@ -41,6 +41,9 @@ public:
     // i’»—¦‚ğæ“¾‚·‚é
     int GetProgress(void) const;
 
+    // i’»—¦‚ğİ’è‚·‚é
+    void SetProgress(float progress);
+
 private:
 
 

@@ -1,34 +1,24 @@
 #pragma once
-
 #include "../UnitBase.h"
 
 class Sword;
+struct CollisionInfo;
 
 class Player : public UnitBase
 {
 public:
-
 	// プレイヤー
 	struct Param
 	{
 		int attack = 0;                // 攻撃力
-
 		int defensse = 0;              // 防御力
-
 		int hp = 0;                    // 現在の体力
-
 		int maxHp = 0;                 // 最大体力
-
 		int stamina = 0;               // スタミナ
-
 		float collisionRadius = 1.0f;  // 当たり判定
-
 		int level = 1;                 // 現在のレベル
-
 		int maxLevel = 1;              // 最大レベル
-
 		float jumpPower = 0.0f;        // ジャンプ力
-
 	};
 
 	// コンストラクタ
@@ -69,29 +59,30 @@ public:
 	// プレイヤーのhpバーの描画
 	void DrawHpBar(void) const;
 
-	// プレイヤーの最登録
-	void RegisterCollison(void);
-
 	// ダメージ処理
 	void TakeDamage(int damage);
 
 	VECTOR* GetPosPtr(void);
 
-	// 攻撃処理
-	void Attack(void);
-
 	// 攻撃中かどうか
 	bool IsAttacking(void) const;
 
 
+
+	// 衝突時のコールバック
+	void OnCollisionEnter(const CollisionInfo& info) override;
+	void OnCollisionStay(const CollisionInfo& info) override;
+
+protected:
+	// コライダ初期化（必須実装）
+	void InitCollider(void) override;
+
 private:
-
 	std::shared_ptr<Player> selfPtr_;
-
 	std::shared_ptr<Sword> sword_;
 
-	// 重力加速度
-	static constexpr float GRAVITY = -1.0f;
+	// 重力加速度（削除：UnitBaseで管理）
+	// static constexpr float GRAVITY = -1.0f;
 
 	// プレイヤーの大きさ
 	static constexpr VECTOR PLAYER_SCL = { 2.5f, 2.5f, 2.5f };
@@ -120,29 +111,35 @@ private:
 	// 攻撃クールタイムの最大値
 	static constexpr float ATTACK_COOL_TIME_MAX = 0.5f;
 
+	// ========== コライダ設定 ==========
+
+	// 衝突判定用線分開始（地面判定用）
+	static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 100.0f, 0.0f };
+
+	// 衝突判定用線分終了
+	static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };
+
+	// 本体の球体コライダ（ローカル位置）
+	static constexpr VECTOR COL_SPHERE_LOCAL_POS = { 0.0f, 50.0f, 0.0f };
+
+	// 無敵時間
+	float invincibleTime_;
+	static constexpr float INVINCIBLE_DURATION = 1.0f;
+
 	// パラメータ
 	Param param_;
 
 	// モデルハンドル
 	int modelId_;
 
-	// 移動制限x
+	// 移動制限x（削除予定：新システムでは不要）
 	int blockedDirX_;
 
-	// 移動制限z
+	// 移動制限z（削除予定：新システムでは不要）
 	int blockedDirZ_;
 
 	// 移動可能か
 	bool movementEnabled_;
-
-	// ジャンプ力
-	float jumpPower_;
-
-	// 重力加速
-	float gravity_;
-
-	// 現在のY方向速度
-	float velocityY_;
 
 	// 地面にいるかどうか
 	bool isGround_;
@@ -165,6 +162,8 @@ private:
 	// 移動入力
 	void ProcessMove(void);
 
-	void DrawCollisionCapsuleDebug(void) const;
+	// 攻撃処理
+	void Attack(void);
 
+	void DrawCollisionCapsuleDebug(void) const;
 };

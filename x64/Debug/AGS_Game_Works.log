@@ -1,0 +1,14 @@
+﻿  Application.cpp
+  Font.cpp
+  SceneUi.cpp
+  SceneGame.cpp
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(63,19): warning C4244: '初期化中': 'LONGLONG' から 'int' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/DrawUI/Font.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(180,40): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/DrawUI/Font.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(180,37): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/DrawUI/Font.cpp' をコンパイルしています)
+  
+  AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

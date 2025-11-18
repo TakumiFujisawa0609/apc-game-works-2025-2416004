@@ -6,11 +6,12 @@
 #include "../../Manager/Generic/Camera.h"
 #include "../../Application.h"
 #include "../Common/AnimationController.h"
-#include "../../Manager/System/CollisionManager.h"
+#include "../../Manager/System/CollisionController.h"
 #include "../Common/Transform.h"
 #include "../../DrawUI/Font.h"
 #include "Sword.h"
-
+#include "../../Collider/ColliderLine.h"
+#include "../../Collider/ColliderSphere.h"
 
 // コンストラクタ
 Player::Player(void)
@@ -23,15 +24,6 @@ Player::Player(void)
 
     // 移動制限zの初期化
     blockedDirZ_ = 0;
-
-    // ジャンプ力の初期化
-    jumpPower_ = 0;
-
-    // 重力加速度
-    gravity_ = GRAVITY;
-
-    // 現在のY方向速度
-    velocityY_ = 0.0f;
 
     // 地面にいるかどうか
     isGround_ = true;
@@ -54,6 +46,9 @@ Player::Player(void)
     // 攻撃クールタイムの初期化
     attackCoolTime_ = 0.0f;
 
+    // 無敵時間の初期化
+    invincibleTime_ = 0.0f;
+
     // 剣の生成
     sword_ = std::make_shared<Sword>();
 }
@@ -61,7 +56,6 @@ Player::Player(void)
 // デストラクタ
 Player::~Player(void)
 {
-
 }
 
 // CSV読み込み
@@ -79,7 +73,6 @@ void Player::LoadParamCSV(const std::string& path)
     if (std::getline(file, line))
     {
         std::stringstream ss(line);
-
         std::string value;
 
         // 名前
@@ -101,7 +94,7 @@ void Player::LoadParamCSV(const std::string& path)
         std::getline(ss, value, ','); param_.stamina = std::stoi(value);
 
         // 当たり判定(球体)
-        std::getline(ss, value, ','); param_.collisionRadius = std::stoi(value);;
+        std::getline(ss, value, ','); param_.collisionRadius = std::stof(value);
 
         // レベル
         std::getline(ss, value, ','); param_.level = std::stoi(value);
@@ -110,7 +103,7 @@ void Player::LoadParamCSV(const std::string& path)
         std::getline(ss, value, ','); param_.maxLevel = std::stoi(value);
 
         // ジャンプ力
-        std::getline(ss, value, ','); param_.jumpPower = std::stoi(value);
+        std::getline(ss, value, ','); param_.jumpPower = std::stof(value);
     }
 
     file.close();
@@ -126,6 +119,12 @@ void Player::Load(void)
     trans_.SetModel(modelId_);
 
     sword_->Load();
+
+    // アニメーションの読み込み
+    anim_ = std::make_unique<AnimationController>(modelId_);
+    anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_WALK).handleId_, 30.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.Load(ResourceManager::SRC::ANIM_PLAYER_ATTACK).handleId_, 50.0f);
 }
 
 // 初期化
@@ -136,43 +135,63 @@ void Player::Init(void)
     // 初期化座標
     trans_.pos = Utility::VECTOR_ZERO;
 
+    // 前座標の初期化
+    prePos_ = trans_.pos;
+
     // 回転の初期化
     trans_.rot = VGet(0, 0, 0);
 
     // ローカル回転の初期化
     trans_.quaRotLocal = Quaternion::Identity();
 
-   
-
     // スケールの初期化
     trans_.scl = PLAYER_SCL;
 
-    // 当たり判定
+    // 当たり判定（球体コライダの半径）
     radius_ = param_.collisionRadius;
 
-    // ジャンプパワー
-    jumpPower_ = param_.jumpPower;
+    // 移動量の初期化
+    movePow_ = Utility::VECTOR_ZERO;
 
-    radius_ = param_.collisionRadius;
+    // ジャンプ量の初期化
+    jumpPow_ = Utility::VECTOR_ZERO;
 
-    // アニメーションの初期化
-    anim_ = std::make_unique<AnimationController>(modelId_);
+    // コライダ初期化
+    InitCollider();
 
-    anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.Load(ResourceManager::SRC::ANIM_PLAYER_WALK).handleId_, 30.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.Load(ResourceManager::SRC::ANIM_PLAYER_ATTACK).handleId_, 50.0f);
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
 
     // ソードの初期化
     if (sword_)
     {
         sword_->Init();
         sword_->SetPlayer(selfPtr_);
-
-        // オフセット調整（必要に応じて）
         sword_->SetPositionOffset(VGet(0.0f, 0.0f, 0.0f));
         sword_->SetRotationOffset(VGet(DX_PI_F, 0.0f, 0.0f));
     }
+}
 
+// コライダ初期化
+void Player::InitCollider(void)
+{
+    // 地面判定用の線分コライダ
+    ColliderLine* colLine = new ColliderLine(
+        ColliderBase::TAG::PLAYER,
+        &trans_,
+        COL_LINE_START_LOCAL_POS,
+        COL_LINE_END_LOCAL_POS
+    );
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::LINE), colLine);
+
+    // 本体の球体コライダ（敵との衝突・押し出し用）
+    ColliderSphere* colSphere = new ColliderSphere(
+        ColliderBase::TAG::PLAYER,
+        &trans_,
+        COL_SPHERE_LOCAL_POS,
+        param_.collisionRadius
+    );
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::SPHERE), colSphere);
 }
 
 void Player::SetSelfPtr(std::shared_ptr<Player> ptr)
@@ -183,8 +202,11 @@ void Player::SetSelfPtr(std::shared_ptr<Player> ptr)
 // 更新処理
 void Player::Update(void)
 {
-    // 前座標の保存
-    prePos_ = trans_.pos;
+    // 無敵時間の更新
+    if (invincibleTime_ > 0.0f)
+    {
+        invincibleTime_ -= SceneManager::GetInstance().GetDeltaTime();
+    }
 
     // 入力による移動制御
     ProcessMove();
@@ -199,7 +221,7 @@ void Player::Update(void)
     // 攻撃クールタイムの更新
     if (attackCoolTime_ > 0.0f)
     {
-        attackCoolTime_ -= 1.0f / 60.0f; // 60FPS想定
+        attackCoolTime_ -= SceneManager::GetInstance().GetDeltaTime();
         if (attackCoolTime_ < 0.0f)
         {
             attackCoolTime_ = 0.0f;
@@ -209,7 +231,6 @@ void Player::Update(void)
     // 攻撃アニメーション終了チェック
     if (isAttacking_ && anim_)
     {
-        // アニメーションが終了したか確認
         if (!anim_->IsPlaying(static_cast<int>(ANIM::ATTACK)))
         {
             isAttacking_ = false;
@@ -217,18 +238,17 @@ void Player::Update(void)
         }
     }
 
-    // Transform　更新
-    trans_.Update();
+    // UnitBaseの更新（重力計算・衝突判定を含む）
+    UnitBase::Update();
 
-    // アニメーションの更新
-    if (anim_) anim_->Update();
+    // 地面判定の更新
+    // ジャンプ量がゼロで地面に接触している = 地面にいる
+    isGround_ = (Utility::EqualsVZero(jumpPow_) || jumpPow_.y >= -0.1f);
 
     // HPバーの遅延表示
     if (hpDisplay_ > param_.hp)
     {
-        // ダメージを受けた
         hpDisplay_ -= hpDelaySpeed_;
-
         if (hpDisplay_ < param_.hp)
         {
             hpDisplay_ = param_.hp;
@@ -249,22 +269,8 @@ void Player::Update(void)
 // 描画処理
 void Player::Draw(void) const
 {
-
-    // モデルの描画
-    if (trans_.modelId != -1)
-    {
-
-        // 座標の設定
-        MV1SetPosition(trans_.modelId, trans_.pos);
-
-        // 大きさの設定
-        MV1SetScale(trans_.modelId, trans_.scl);
-
-        // 回転の設定
-        MV1SetRotationXYZ(trans_.modelId, trans_.rot);
-
-        MV1DrawModel(trans_.modelId);
-    }
+    // UnitBaseの描画（モデル＋コライダ）
+    UnitBase::Draw();
 
     DrawHpBar();
 
@@ -275,19 +281,42 @@ void Player::Draw(void) const
     }
 
     // デバック表示
+   // デバック表示
 #ifdef _DEBUG
     DrawFormatString(0, 40, 0xffffff, "Player Pos:(%.2f, %.2f, %.2f)", trans_.pos.x, trans_.pos.y, trans_.pos.z);
+    DrawFormatString(0, 60, 0xffffff, "IsGround: %s", isGround_ ? "TRUE" : "FALSE");
+    DrawFormatString(0, 80, 0xffffff, "JumpPow: (%.2f, %.2f, %.2f)", jumpPow_.x, jumpPow_.y, jumpPow_.z);
+    DrawFormatString(0, 100, 0xffffff, "Invincible: %.2f", invincibleTime_);
 
-    DrawSphere3D(sword_->GetCapsuleStart(), sword_->GetCapsuleRadius(), 5, 0x00FF00, 0x00FF00, false);
-    DrawSphere3D(sword_->GetCapsuleEnd(), sword_->GetCapsuleRadius(), 5, 0x00FF00, 0x00FF00, false);
-    //DrawCollisionCapsuleDebug();
+    // ★キャラクターの向きを矢印で表示
+    VECTOR forward = trans_.quaRot.GetForward();
+    VECTOR arrowStart = VAdd(trans_.pos, VGet(0, 50, 0)); // 腰の高さ
+    VECTOR arrowEnd = VAdd(arrowStart, VScale(forward, 100.0f)); // 100単位の矢印
+
+    // 赤い矢印で正面方向を表示
+    DrawLine3D(arrowStart, arrowEnd, GetColor(255, 0, 0));
+    DrawSphere3D(arrowEnd, 10.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
+
+    // 移動方向を緑の矢印で表示
+    if (!Utility::EqualsVZero(movePow_))
+    {
+        VECTOR moveDir = VNorm(movePow_);
+        VECTOR moveArrowEnd = VAdd(arrowStart, VScale(moveDir, 80.0f));
+        DrawLine3D(arrowStart, moveArrowEnd, GetColor(0, 255, 0));
+        DrawSphere3D(moveArrowEnd, 8.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
+    }
 #endif 
-
 }
 
-//解放処理
+// 解放処理
 void Player::Release(void)
 {
+    // CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
+
+    // UnitBaseの解放（コライダも含む）
+    UnitBase::Release();
+
     if (anim_)
     {
         anim_->Release();
@@ -301,13 +330,13 @@ void Player::Release(void)
     }
 }
 
-//移動可能かを設定
+// 移動可能かを設定
 void Player::SetMovementEndbled(bool enabled)
 {
     movementEnabled_ = enabled;
 }
 
-//移動かのかを取得
+// 移動かのかを取得
 bool Player::IsMovementEndbled(void) const
 {
     return movementEnabled_;
@@ -324,25 +353,15 @@ void Player::DrawHpBar(void) const
 {
     auto& font = Font::GetInstance();
 
-    // hpバーの長さ
     int barWidth = HP_BAR_WIDTH;
-
-    // hpバーの高さ
     int barHeight = HP_BAR_HEIGHT;
-
-    // 画面中央
     int barX = (Application::SCREEN_SIZE_X - barWidth) / 2;
-
-    // 画面中央下
     int barY = Application::SCREEN_SIZE_Y - BAR_Y;
 
-    // 結合
     float hpRate = (float)param_.hp / param_.maxHp;
-
     float dispRate = hpDisplay_ / param_.maxHp;
 
     hpRate = std::clamp(hpRate, 0.0f, 1.0f);
-
     dispRate = std::clamp(dispRate, 0.0f, 1.0f);
 
     int curHPWidth = (int)(barWidth * hpRate);
@@ -350,7 +369,6 @@ void Player::DrawHpBar(void) const
 
     // 枠
     DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
-
     DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), true);
 
     // 遅延バー（赤）
@@ -358,8 +376,6 @@ void Player::DrawHpBar(void) const
 
     // 現在HPバー（緑）
     DrawBox(barX, barY, barX + curHPWidth, barY + barHeight, GetColor(0, 255, 0), true);
-
-    
 
     // 数値
     char hpStr[32];
@@ -370,29 +386,18 @@ void Player::DrawHpBar(void) const
     int textY = barY + (barHeight / 2) - 8;
 
     font.DrawDefaultText(textX, textY, hpStr, GetColor(255, 255, 255), 18);
-
-
-}
-
-void Player::RegisterCollison(void)
-{
-    // カプセルの高さ(例)
-    float halfHeight = 45.0f;
-    VECTOR capStart = VAdd(trans_.pos, VGet(0, -halfHeight, 0));
-    VECTOR capEnd = VAdd(trans_.pos, VGet(0, halfHeight, 0));
-
-    CollisionManager::GetInstance().RegistCapsule(selfPtr_, &trans_.pos, capStart, capEnd, radius_, CollisionManager::TAG_TYPE::PLAYER, true);
-
-    if (sword_->IsVisible())
-    {
-        CollisionManager::GetInstance().RegistCapsule(sword_, sword_->GetTransform().GetPosPtr(), sword_->GetCapsuleStart(), sword_->GetCapsuleEnd(), sword_->GetCapsuleRadius(), CollisionManager::TAG_TYPE::SWORD, true);
-    }
 }
 
 void Player::TakeDamage(int damage)
 {
+    // 無敵時間中はダメージを受けない
+    if (invincibleTime_ > 0.0f) return;
+
     param_.hp -= damage;
     if (param_.hp < 0) param_.hp = 0;
+
+    // 無敵時間設定
+    invincibleTime_ = INVINCIBLE_DURATION;
 }
 
 VECTOR* Player::GetPosPtr(void)
@@ -405,145 +410,134 @@ bool Player::IsAttacking(void) const
     return isAttacking_;
 }
 
-//入力による移動制御
+
+// 入力による移動制御
 void Player::ProcessMove(void)
 {
     // 攻撃中は移動できない
     if (isAttacking_) return;
-
+   
     if (!movementEnabled_) return;
-
+    
     auto& input = InputManager::GetInstance();
+    
     auto camera = SceneManager::GetInstance().GetCamera();
-
-    // 前回位置保存
-    prePos_ = trans_.pos;
-
+    
     float forwardInput = 0.0f;
+    
     float rightInput = 0.0f;
-
-    //前
+   
+    // 前
     if (input.IsNew(KEY_INPUT_W)) { forwardInput += 1.0f; }
-
-    //後ろ
+   
+    // 後ろ
     if (input.IsNew(KEY_INPUT_S)) { forwardInput -= 1.0f; }
-
-    //左
+   
+    // 左
     if (input.IsNew(KEY_INPUT_A)) { rightInput -= 1.0f; }
-
-    //右
+  
+    // 右
     if (input.IsNew(KEY_INPUT_D)) { rightInput += 1.0f; }
-
     isMoving_ = false;
-
-    //左右移動
-    if (rightInput != 0.0f && forwardInput == 0.0f)
+   
+    // 移動量をリセット
+    movePow_ = Utility::VECTOR_ZERO;
+   
+    // 何か入力がある場合
+    if (forwardInput != 0.0f || rightInput != 0.0f)
     {
-        //カメラを停止
-        camera->SetFreezeFollow(true);
-
-
-        // 回転速度
-        float keyRotSpeed = rightInput * 1.5f;
-
-        // カメラにキー入力による回転速度を設定
-        camera->SetKeyRotation(keyRotSpeed);
-
-        // カメラの位置を取得
-        VECTOR camPos = camera->GetPos();
-
-        // カメラからプレイヤーへのベクトル（XZ平面のみ）
-        VECTOR toPlayer = VSub(trans_.pos, camPos);
-
-        // Y座標は保持
-        float currentHeight = toPlayer.y;
-
-        toPlayer.y = 0.0f;
-
-        // 現在の距離を保存
-        float radius = VSize(toPlayer);
-
-        // 現在の角度を計算
-        float currentAngle = atan2f(toPlayer.x, toPlayer.z);
-
-        // 新しい角度（キー入力による回転を加える）
-        float newAngle = currentAngle + Utility::Deg2RadF(keyRotSpeed);
-
-        // 新しい位置を計算（極座標→直交座標）
-        VECTOR newOffset;
-        newOffset.x = radius * sinf(newAngle);
-        newOffset.y = currentHeight;
-        newOffset.z = radius * cosf(newAngle);
-
-        // カメラ位置を基準に新しい位置を設定
-        trans_.pos = VAdd(camPos, newOffset);
-
-        isMoving_ = true;
-
-        VECTOR tangent;
-
-        if (rightInput > 0)
+        // カメラの前方向と右方向を取得（Y成分を0にして水平面のみ）
+        VECTOR camForward = camera->GetFrontVec();
+       
+        camForward.y = 0.0f;
+       
+        if (VSize(camForward) > 0.0001f)
         {
-            tangent.x = -toPlayer.z;
-
-            tangent.z = toPlayer.x;
+            camForward = VNorm(camForward);
         }
         else
         {
-            tangent.x = toPlayer.z;
-            tangent.z = -toPlayer.x;
+            camForward = VGet(0.0f, 0.0f, 1.0f);
         }
-
-        tangent.y = 0.0f;
         
-        tangent = VNorm(tangent);
+        VECTOR camRight = camera->GetRightVec();
+       
+        camRight.y = 0.0f;
+        
+        if (VSize(camRight) > 0.0001f)
+        {
+            camRight = VNorm(camRight);
+        }
+        else
+        {
+            camRight = VGet(1.0f, 0.0f, 0.0f);
+        }
+       
+        // 入力に基づいて移動方向を計算
+        VECTOR moveDir = Utility::VECTOR_ZERO;
+       
+        // W/S: カメラの前後方向
+        moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
+       
+        // A/D: カメラの左右方向
+        moveDir = VAdd(moveDir, VScale(camRight, rightInput));
+       
+        moveDir.y = 0.0f;
+        
+        // 移動方向が有効な場合
+        if (VSize(moveDir) > 0.0001f)
+        {
+        
+            moveDir = VNorm(moveDir);
+        
+            // 移動量を設定
+            movePow_ = VScale(moveDir, 10.5f);
+        
+            isMoving_ = true;
+            
+            //モデルが反対を向いている場合は180度足す
+            float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI_F;
 
-        Quaternion targetLocalRot = Quaternion::LookRotation(tangent);
-
-        trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
+            // 現在の回転角度を取得
+            VECTOR currentEuler = trans_.quaRot.ToEuler();
+            
+            float currentAngle = currentEuler.y;
+           
+            // 角度差を計算（-π～πの範囲に正規化）
+            float angleDiff = targetAngle - currentAngle;
+           
+            const float TWO_PI = DX_PI_F * 2.0f;
+          
+            while (angleDiff > DX_PI_F) angleDiff -= TWO_PI;
+           
+            while (angleDiff < -DX_PI_F) angleDiff += TWO_PI;
+           
+            // スムーズに回転（最大回転速度を制限）
+            float maxRotSpeed = Utility::Deg2RadF(20.0f);
+            
+            if (fabs(angleDiff) > maxRotSpeed)
+            {
+                angleDiff = (angleDiff > 0) ? maxRotSpeed : -maxRotSpeed;
+            }
+           
+            // 新しい角度を計算
+            float newAngle = currentAngle + angleDiff;
+           
+            // Y軸回転のクォータニオンを作成
+            trans_.quaRot = Quaternion::AngleAxis(newAngle, Utility::AXIS_Y);
+          
+            // ローカル回転はリセット
+            trans_.quaRotLocal = Quaternion::Identity();
+        }
     }
     else
     {
-        // 左右移動していない時はカメラの追従を再開
+        // 入力がない場合、カメラ追従は解除
         camera->SetFreezeFollow(false);
-
-        //前後左右入力がある場合
-        if (forwardInput != 0.0f || rightInput != 0.0f)
-        {
-            // カメラの前方向
-            VECTOR camForward = camera->GetFrontVec();
-            camForward.y = 0.0f;
-            camForward = VNorm(camForward);
-
-            // カメラの右方向
-            VECTOR camRight = camera->GetRightVec();
-            camRight.y = 0.0f;
-            camRight = VNorm(camRight);
-
-            // 移動方向を合成
-            VECTOR moveDir = Utility::VECTOR_ZERO;
-            moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
-            moveDir = VAdd(moveDir, VScale(camRight, -rightInput));
-            moveDir.y = 0.0f;
-
-            // 移動方向を正規化
-            if (VSize(moveDir) > 0.0001f)
-            {
-                moveDir = VNorm(moveDir);
-
-                // 移動量を適用
-                VECTOR movement = VScale(moveDir, 10.5f);
-                trans_.pos = VAdd(trans_.pos, movement);
-
-                isMoving_ = true;
-
-                // 移動方向に向く
-                Quaternion targetLocalRot = Quaternion::LookRotation(VScale(moveDir, -1.0f));
-                trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
-            }
-        }
+        
+        camera->SetKeyRotation(0.0f);
     }
-
+   
     // アニメーション制御
     if (isMoving_)
     {
@@ -553,74 +547,91 @@ void Player::ProcessMove(void)
     {
         PlayAnim(ANIM::IDEL, true, 0.2f);
     }
-
+   
     // ジャンプ処理
     if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
     {
-        velocityY_ = jumpPower_;
+        jumpPow_ = VGet(0, param_.jumpPower, 0);
         isGround_ = false;
-    }
-
-    // 重力処理
-    if (!isGround_)
-    {
-        velocityY_ += gravity_;
-        trans_.pos.y += velocityY_;
-        if (trans_.pos.y <= 0.0f)
-        {
-            trans_.pos.y = 0.0f;
-            velocityY_ = 0.0f;
-            isGround_ = true;
-        }
-    }
-
-    // 移動制限（壁など）
-    VECTOR moveDir = VSub(trans_.pos, prePos_);
-    if ((blockedDirX_ == 1 && moveDir.x < 0) || (blockedDirX_ == -1 && moveDir.x > 0))
-    {
-        trans_.pos.x = prePos_.x;
-    }
-
-    if ((blockedDirZ_ == 1 && moveDir.z < 0) || (blockedDirZ_ == -1 && moveDir.z > 0))
-    {
-        trans_.pos.z = prePos_.z;
     }
 }
 
 // Playerのカプセルを描画
 void Player::DrawCollisionCapsuleDebug(void) const
 {
-    float halfHeight = 60.0f;
+    // 球体コライダの可視化
+    if (ownColliders_.count(static_cast<int>(COLLIDER_TYPE::SPHERE)) > 0)
+    {
+        const ColliderSphere* sphere =
+            dynamic_cast<const ColliderSphere*>(
+                ownColliders_.at(static_cast<int>(COLLIDER_TYPE::SPHERE))
+                );
 
-    VECTOR start = VAdd(trans_.pos, VGet(0, -halfHeight, 0));
-    VECTOR end = VAdd(trans_.pos, VGet(0, halfHeight, 0));
-    float radius = radius_;
-
-    // 線で中心軸を描画
-    DrawLine3D(start, end, GetColor(255, 0, 0));
-
-    // 球で上下端を描画
-    DrawSphere3D(start, radius, 16, 16, GetColor(0, 255, 0), 0);
-    DrawSphere3D(end, radius, 16, 16, GetColor(0, 0, 255), 0);
-
-    // 任意でカプセルの軸を補助線で描画
-    VECTOR mid = VScale(VAdd(start, end), 0.5f);
-    DrawLine3D(trans_.pos, mid, GetColor(255, 255, 0));
+        if (sphere)
+        {
+            VECTOR pos = sphere->GetPos();
+            float r = sphere->GetRadius();
+            DrawSphere3D(pos, r, 16, GetColor(0, 255, 0), GetColor(0, 255, 0), false);
+        }
+    }
 }
-
 
 // 攻撃処理の実装
 void Player::Attack(void)
 {
-    // 攻撃状態にする
     isAttacking_ = true;
+    PlayAnim(ANIM::ATTACK, false, 0.1f);
+}
 
-    // 攻撃アニメーション再生
-    PlayAnim(ANIM::ATTACK, false, 0.1f); // ループなし、ブレンド時間0.1秒
 
-    // デバッグ出力
-    OutputDebugString("Player: Attack!\n");
+void Player::OnCollisionEnter(const CollisionInfo& info)
+{
+    // 敵との衝突
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::ENEMY)
+    {
+        // 球体コライダでの衝突の場合
+        if (info.myCollider->GetShape() == ColliderBase::SHAPE::SPHERE)
+        {
+            // 無敵時間中はダメージを受けない
+            if (invincibleTime_ <= 0.0f)
+            {
+                TakeDamage(10);
 
-    // ここで攻撃判定やダメージ処理を追加できます
-    // 例：敵との当たり判定、ダメージ計算など
+#ifdef _DEBUG
+                printfDx("プレイヤーが敵からダメージを受けた！\n");
+#endif
+
+                // ノックバック
+                VECTOR knockback = VScale(info.hitNormal, -50.0f);
+                knockback.y = 0.0f; // Y方向のノックバックは無し
+                movePow_ = VAdd(movePow_, knockback);
+            }
+        }
+    }
+}
+
+void Player::OnCollisionStay(const CollisionInfo& info)
+{
+    // 地面との衝突
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::GROUND)
+    {
+        // 線分コライダでの衝突の場合
+        if (info.myCollider->GetShape() == ColliderBase::SHAPE::LINE)
+        {
+            // 上昇中は地面との衝突を無視（木へのめり込み防止）
+            if (jumpPow_.y > 0.1f)
+            {
+                return;
+            }
+
+            // 地面に接地している
+            trans_.pos = VAdd(info.hitPosition, VScale(Utility::DIR_U, 2.0f));
+
+            // ジャンプ量をリセット
+            jumpPow_ = Utility::VECTOR_ZERO;
+
+            // 着地状態にする
+            isGround_ = true;
+        }
+    }
 }

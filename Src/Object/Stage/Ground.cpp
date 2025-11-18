@@ -1,62 +1,141 @@
 #include "Ground.h"
-
 #include "../../Manager/Generic/ResourceManager.h"
+#include "../../Manager/System/CollisionController.h"
+#include "../../Collider/ColliderModel.h"
 #include "../../Utility/Utility.h"
 
-//コンストラクタ
+// コンストラクタ
 Ground::Ground(void)
+    : isRegistered_(false)  // 追加
 {
-	//モデルの初期化
-	modelId_ = -1;
-
-	//座標の初期化
-	pos_ = Utility::VECTOR_ZERO;
-	
 }
 
-//デストラクタ
+// デストラクタ
 Ground::~Ground(void)
 {
-
 }
 
-//初期化
+// 初期化
 void Ground::Init(const VECTOR& pos, int modelId)
 {
-	//座標を初期化
-	pos_ = pos;
+    // 座標を設定
+    trans_.pos = pos;
 
-	//モデル読み込み
-  	modelId_ = modelId;
+    // モデルIDを設定
+    trans_.modelId = modelId;
 
-	MV1SetScale(modelId_, VGet(2.0f, 1.0f, 2.0f));
+    // スケールを設定
+    trans_.scl = VGet(TILE_SCALE, 1.0f, TILE_SCALE);
 
-	// モデル位置設定
-	if (modelId_ != -1)
-	{
-		MV1SetPosition(modelId_, pos_);
-	}
+    // 回転を初期化
+    trans_.rot = Utility::VECTOR_ZERO;
 
+    // モデル位置設定
+    if (trans_.modelId != -1)
+    {
+        MV1SetPosition(trans_.modelId, trans_.pos);
+        MV1SetScale(trans_.modelId, trans_.scl);
+
+        // コリジョン情報を構築
+        MV1SetupCollInfo(trans_.modelId, -1);
+    }
+
+    // 衝突判定の初期化
+    InitCollider();
+
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
+    isRegistered_ = true;
 }
 
-//描画処理
-void Ground::Draw(void)
+// 初期化（CollisionController登録なし）
+void Ground::InitWithoutRegister(const VECTOR& pos, int modelId)
 {
-	if (modelId_ == -1) return;
+    // 座標を設定
+    trans_.pos = pos;
 
-	MV1SetPosition(modelId_, pos_);
+    // モデルIDを設定
+    trans_.modelId = modelId;
 
-	MV1DrawModel(modelId_);
+    // スケールを設定
+    trans_.scl = VGet(TILE_SCALE, 1.0f, TILE_SCALE);
+
+    // 回転を初期化
+    trans_.rot = Utility::VECTOR_ZERO;
+
+    // モデル位置設定
+    if (trans_.modelId != -1)
+    {
+        MV1SetPosition(trans_.modelId, trans_.pos);
+        MV1SetScale(trans_.modelId, trans_.scl);
+
+        // コリジョン情報を構築
+        MV1SetupCollInfo(trans_.modelId, -1);
+    }
+
+    // 衝突判定の初期化
+    InitCollider();
+
+    // CollisionControllerには登録しない
+    isRegistered_ = false;
 }
 
-//モデルIDを取得
-int Ground::GetModelId(void) const
+// 衝突判定の初期化
+void Ground::InitCollider(void)
 {
-	return modelId_;
+    if (trans_.modelId == -1) return;
+
+    // モデルコライダの作成
+    ColliderModel* colModel = new ColliderModel(
+        ColliderBase::TAG::GROUND,
+        &trans_
+    );
+
+    ownColliders_.emplace(
+        static_cast<int>(COLLIDER_TYPE::MODEL),
+        colModel
+    );
 }
 
-//座標を取得
-VECTOR Ground::GetPos(void) const
+// 更新処理（地面は動かないので空実装）
+void Ground::Update(void)
 {
-	return pos_;
+    // 地面は動かないので何もしない
+}
+
+// 描画処理
+void Ground::Draw(void) const
+{
+    if (trans_.modelId == -1) return;
+
+    // モデルの描画
+    MV1SetPosition(trans_.modelId, trans_.pos);
+    MV1SetScale(trans_.modelId, trans_.scl);
+    MV1DrawModel(trans_.modelId);
+
+    // デバッグ表示
+#ifdef _DEBUG
+    // 基底クラスのコライダ描画（重いのでコメントアウト推奨）
+    // UnitBase::Draw();
+#endif
+}
+
+// 解放
+void Ground::Release(void)
+{
+    // CollisionControllerから登録解除
+    if (isRegistered_)
+    {
+        CollisionController::GetInstance().UnregisterUnit(this);
+        isRegistered_ = false;
+    }
+
+    // 基底クラスの解放（コライダの削除）
+    UnitBase::Release();
+}
+
+// タイルサイズを取得
+float Ground::GetTileSize(void) const
+{
+    return BASE_TILE_SIZE * TILE_SCALE;
 }

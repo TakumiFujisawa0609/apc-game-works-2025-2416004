@@ -1,7 +1,9 @@
 #include "Sword.h"
 #include "Player.h"
 #include "../../Manager/Generic/ResourceManager.h"
-#include "../../Manager/System/CollisionManager.h"
+#include "../../Manager/System/CollisionController.h"
+#include "../../Collider/ColliderCapsule.h"
+#include "../../Object/Enemy/EnemyBase.h"
 #include "../../Utility/Utility.h"
 
 // コンストラクタ
@@ -10,9 +12,8 @@ Sword::Sword(void)
     , positionOffset_(Utility::VECTOR_ZERO)
     , rotationOffset_(Utility::VECTOR_ZERO)
     , isVisible_(true)
-    , capsuleRadius_(10.0f)
-    , capsuleStart_(Utility::VECTOR_ZERO)
-    , capsuleEnd_({0.0f, 1.0f, 0.0f})
+    , localCapsuleStart_(Utility::VECTOR_ZERO)
+    , localCapsuleEnd_(VGet(0.0f, SWORD_LENGTH, 0.0f))
 {
 }
 
@@ -27,8 +28,6 @@ void Sword::Load(void)
     auto& res = ResourceManager::GetInstance();
 
     // ソードモデルの読み込み
-    // ResourceManager::SRC::MODEL_SWORD が定義されていると仮定
-    // 未定義の場合は適切なリソースIDに変更してください
     trans_.modelId = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_SWORD);
     trans_.SetModel(trans_.modelId);
 }
@@ -48,6 +47,34 @@ void Sword::Init(void)
     // デフォルトのオフセット設定（必要に応じて調整）
     positionOffset_ = VGet(0.0f, 0.0f, 0.0f);
     rotationOffset_ = VGet(0.0f, 0.0f, 0.0f);
+
+    // ローカル座標でのカプセル設定
+    localCapsuleStart_ = Utility::VECTOR_ZERO;  // 柄の位置
+    localCapsuleEnd_ = VGet(0.0f, SWORD_LENGTH, 0.0f);  // 先端の位置
+
+    // 衝突判定の初期化
+    InitCollider();
+
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
+}
+
+// 衝突判定の初期化
+void Sword::InitCollider(void)
+{
+    // カプセルコライダの作成
+    ColliderCapsule* colCapsule = new ColliderCapsule(
+        ColliderBase::TAG::PLAYER,  // または専用のTAG::SWORDを追加
+        &trans_,
+        localCapsuleStart_,  // ローカル座標（柄）
+        localCapsuleEnd_,    // ローカル座標（先端）
+        CAPSULE_RADIUS
+    );
+
+    ownColliders_.emplace(
+        static_cast<int>(COLLIDER_TYPE::CAPSULE),
+        colCapsule
+    );
 }
 
 // 更新
@@ -56,8 +83,49 @@ void Sword::Update(void)
     // プレイヤーのフレームに追従
     FollowPlayerFrame();
 
+    // カプセルコライダの位置を更新
+    UpdateCollider();
+
     // 基底クラスの更新
     UnitBase::Update();
+}
+
+// カプセルコライダの位置を更新
+void Sword::UpdateCollider(void)
+{
+    // カプセルコライダを取得
+    int capsuleType = static_cast<int>(COLLIDER_TYPE::CAPSULE);
+
+    if (ownColliders_.count(capsuleType) == 0) return;
+
+    ColliderCapsule* colCapsule =
+        dynamic_cast<ColliderCapsule*>(ownColliders_.at(capsuleType));
+
+    if (!colCapsule) return;
+
+    // プレイヤーが有効かチェック
+    auto player = player_.lock();
+    if (!player) return;
+
+    // プレイヤーのモデルハンドルを取得
+    int playerModelHandle = player->GetTransform().modelId;
+
+    if (playerModelHandle == -1) return;
+
+    // フレームのワールド座標行列を取得
+    MATRIX frameMatrix = MV1GetFrameLocalWorldMatrix(playerModelHandle, attachFrameIndex_);
+
+    // 剣の forward 方向（行列のZ軸）
+    VECTOR forward = VGet(frameMatrix.m[2][0], frameMatrix.m[2][1], frameMatrix.m[2][2]);
+    forward = VNorm(forward);
+
+    // カプセルの開始位置と終了位置をローカル座標で更新
+    localCapsuleStart_ = Utility::VECTOR_ZERO;  // 柄の位置（剣の基点）
+    localCapsuleEnd_ = VScale(forward, SWORD_LENGTH);  // 先端の位置
+
+    // コライダに反映
+    colCapsule->SetLocalPosStart(localCapsuleStart_);
+    colCapsule->SetLocalPosEnd(localCapsuleEnd_);
 }
 
 // 描画
@@ -75,6 +143,9 @@ void Sword::Draw(void) const
 // 解放
 void Sword::Release(void)
 {
+    // CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
+
     // 基底クラスの解放
     UnitBase::Release();
 }
@@ -115,22 +186,21 @@ void Sword::SetRotationOffset(const VECTOR& offset)
     rotationOffset_ = offset;
 }
 
-// 当たり半径
-float Sword::GetCapsuleRadius(void)
+// 衝突判定のコールバック
+void Sword::OnCollisionEnter(const CollisionInfo& info)
 {
-    return capsuleRadius_;
-}
+    // 敵との衝突の場合
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::ENEMY)
+    {
+        // 敵にダメージを与える処理
+        // 注意: EnemyBaseへのアクセスが必要な場合は、
+        // CollisionInfoに追加情報を持たせるか、別の方法で取得する必要があります
 
-// カプセル開始地点
-VECTOR Sword::GetCapsuleStart(void)
-{
-    return capsuleStart_;
-}
-
-// カプセル終了地点
-VECTOR Sword::GetCapsuleEnd(void)
-{
-    return capsuleEnd_;
+        // 例: デバッグ出力
+#ifdef _DEBUG
+        printfDx("剣が敵に当たった！\n");
+#endif
+    }
 }
 
 // プレイヤーのフレームに追従
@@ -178,17 +248,4 @@ void Sword::FollowPlayerFrame(void)
     trans_.rot.x = rotX + rotationOffset_.x;
     trans_.rot.y = rotY + rotationOffset_.y;
     trans_.rot.z = rotZ + rotationOffset_.z;
-
-    // 剣の forward 方向（行列のZ軸）
-    VECTOR forward = VGet(frameMatrix.m[2][0], frameMatrix.m[2][1], frameMatrix.m[2][2]);
-    forward = VNorm(forward);
-
-    // 剣の長さ（モデルの大きさによって調整）
-    float swordLength = 55.0f; // ← 必要なら調整してOK
-
-    // カプセル開始地点（柄付近）
-    capsuleStart_ = trans_.pos;
-
-    // カプセル終了地点（先端）
-    capsuleEnd_ = VAdd(trans_.pos, VScale(forward, swordLength));
 }

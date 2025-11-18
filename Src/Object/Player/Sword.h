@@ -1,7 +1,6 @@
 #pragma once
 #include "../UnitBase.h"
 
-
 class Player;
 
 class Sword : public UnitBase
@@ -46,14 +45,12 @@ public:
     // 回転の微調整
     void SetRotationOffset(const VECTOR& offset);
 
-    // 当たり半径
-    float GetCapsuleRadius(void);
+protected:
+    // 衝突判定の初期化
+    void InitCollider(void) override;
 
-    // カプセル開始地点
-    VECTOR GetCapsuleStart(void);
-
-    // カプセル終了地点
-    VECTOR GetCapsuleEnd(void);
+    // 衝突判定のコールバック
+    void OnCollisionEnter(const CollisionInfo& info) override;
 
 private:
     // プレイヤーへの参照
@@ -71,15 +68,21 @@ private:
     // 表示フラグ
     bool isVisible_;
 
-    // 当たり半径
-    float capsuleRadius_;
+    // カプセルの半径
+    static constexpr float CAPSULE_RADIUS = 10.0f;
 
-    // カプセル開始地点
-    VECTOR capsuleStart_;
+    // 剣の長さ
+    static constexpr float SWORD_LENGTH = 55.0f;
 
-    // カプセル終了地点
-    VECTOR capsuleEnd_;
+    // カプセルの開始位置（ローカル座標）
+    VECTOR localCapsuleStart_;
+
+    // カプセルの終了位置（ローカル座標）
+    VECTOR localCapsuleEnd_;
 
     // プレイヤーのフレームに追従
     void FollowPlayerFrame(void);
+
+    // カプセルコライダの位置を更新
+    void UpdateCollider(void);
 };

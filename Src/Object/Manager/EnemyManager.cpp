@@ -2,7 +2,7 @@
 #include "../../Utility/Utility.h"
 #include "../../Manager/Generic/ResourceManager.h"
 #include "../Enemy/EnemySlime.h"
-#include "../../Manager/System/CollisionManager.h"
+
 
 // コンストラクタ
 EnemyManager::EnemyManager(void)
@@ -37,7 +37,6 @@ void EnemyManager::Init(void)
 // ランダム生成
 void EnemyManager::RandomSpawn(const std::string& type, const EnemyData& data)
 {
-	auto& col = CollisionManager::GetInstance();
 
 	// 上限をチェック
 	if (curSpawns_[type] >= maxSpawns_[type]) { return; }
@@ -123,32 +122,14 @@ void EnemyManager::Draw(void)
 	}
 
 #ifdef _DEBUG
-	for (auto& enemy : enemies_)
-	{
-		// 当たり判定の位置（緑）
-		VECTOR colPos = *enemy->GetCollisionPosPtr();
-		DrawSphere3D(colPos, enemy->GetRadius(), 5, 0x00FF00, 0x00FF00, false);
-	}
 
 #endif
 }
 
 // 解放処理
 void EnemyManager::Release(void)
-{
-	for (auto& [type, handle] : modelIds_)
-	{
-		if (handle >= 0)
-		{
-			MV1DeleteModel(handle);
-		}
-	}
-	
-	modelIds_.clear();
-	
+{	
 	enemies_.clear();
-	
-	curSpawns_.clear();
 }
 
 //追従対象の設定
@@ -157,16 +138,15 @@ void EnemyManager::SetTargetPos(const VECTOR& pos)
 	targetPos_ = pos;
 }
 
-// 衝突用の再登録
-void EnemyManager::RegisterCollisions(void)
+// 敵の座標を取得
+VECTOR EnemyManager::GetEnemyPos(void) const
 {
-	auto& col = CollisionManager::GetInstance();
-
 	for (auto& enemy : enemies_)
 	{
-		VECTOR* posPtr = enemy->GetTransform().GetPosPtr();
-		col.RegisterSphere(enemy, posPtr, enemy->GetRadius(),CollisionManager::TAG_TYPE::ENEMY, true);
+	 return	enemy->GetPos();
 	}
+
+	return Utility::VECTOR_ZERO;
 }
 
 //敵の生成

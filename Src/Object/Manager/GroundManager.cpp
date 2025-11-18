@@ -1,17 +1,18 @@
 #include "GroundManager.h"
-
 #include "../../Manager/Generic/ResourceManager.h"
-#include "../../Object/Player/Player.h"
 #include "../../Manager/Generic/SceneManager.h"
 #include "../../Manager/Generic/Camera.h"
-#include "../../Manager/System/CollisionManager.h"
+#include "../../Manager/System/CollisionController.h"
 #include "../../Utility/Utility.h"
 
 // コンストラクタ
 GroundManager::GroundManager(void)
+    : baseModelId_(-1)
+    , isLoaded_(false)
+    , grounds_()
+    , enemyPos_(Utility::VECTOR_ZERO)
+    , playerPos_(Utility::VECTOR_ZERO)
 {
-	baseModelId_ = -1;
-	isLoaded_ = false;
 }
 
 // デストラクタ
@@ -22,136 +23,234 @@ GroundManager::~GroundManager(void)
 // 読み込み
 void GroundManager::Load(void)
 {
-	if (isLoaded_) return;
+    if (isLoaded_) return;
 
-	auto& res = ResourceManager::GetInstance();
+    auto& res = ResourceManager::GetInstance();
+    baseModelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_GROUND);
 
-	baseModelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_GROUND);
+    if (baseModelId_ == -1)
+    {
+        printfDx("モデル読み込み失敗\n");
+        return;
+    }
 
-	if (baseModelId_ == -1)
-	{
-		printfDx("モデル読み込み失敗\n");
-		return;
-	}
-
-	isLoaded_ = true;
+    isLoaded_ = true;
 }
 
 // 初期化
 void GroundManager::Init(void)
 {
-	if (!isLoaded_)
-	{
-		printfDx("ステージロード失敗\n");
-		return;
-	}
+    if (!isLoaded_)
+    {
+        printfDx("ステージロード失敗\n");
+        return;
+    }
 
-	grounds_.reserve(TILE_COUNT * TILE_COUNT);
+    grounds_.reserve(TILE_COUNT * TILE_COUNT);
 
-	float halfSize = (TILE_COUNT * TILE_SIZE) * 0.5f;
+    float halfSize = (TILE_COUNT * TILE_SIZE) * 0.5f;
 
-	for (int z = 0; z < TILE_COUNT; z++)
-	{
-		for (int x = 0; x < TILE_COUNT; x++)
-		{
-			float worldX = (x * TILE_SIZE) - halfSize;
-			float worldZ = (z * TILE_SIZE) - halfSize;
-			VECTOR pos = VGet(worldX, 0.0f, worldZ);
+    for (int z = 0; z < TILE_COUNT; z++)
+    {
+        for (int x = 0; x < TILE_COUNT; x++)
+        {
+            float worldX = (x * TILE_SIZE) - halfSize;
+            float worldZ = (z * TILE_SIZE) - halfSize;
+            VECTOR pos = VGet(worldX, 0.0f, worldZ);
 
-			Ground g;
-			g.Init(pos, MV1DuplicateModel(baseModelId_));
-			grounds_.push_back(std::move(g));
-		}
-	}
+            // Groundをshared_ptrで生成
+            auto ground = std::make_shared<Ground>();
 
-	// 各タイルにコリジョン情報を構築（最適化）
-	for (auto& g : grounds_)
-	{
-		int modelId = g.GetModelId();
+            // モデルを複製
+            int modelId = MV1DuplicateModel(baseModelId_);
 
-		MV1SetPosition(modelId, g.GetPos());
+            // CollisionController登録なしで初期化
+            ground->InitWithoutRegister(pos, modelId);
 
-		MV1SetupCollInfo(modelId, -1);
-	}
+            grounds_.push_back(ground);
+        }
+    }
 
-	
+    // 周辺の地面のみ登録
+    RegisterNearbyGrounds();
+}
+
+// 周辺の地面を登録
+void GroundManager::RegisterNearbyGrounds(void)
+{
+    // すでに登録済みの地面を解除
+    for (auto& g : registeredGrounds_)
+    {
+        if (g)
+        {
+            CollisionController::GetInstance().UnregisterUnit(g.get());
+        }
+    }
+    registeredGrounds_.clear();
+
+    // カメラ位置を取得
+    auto camera = SceneManager::GetInstance().GetCamera();
+    if (!camera) return;
+
+    VECTOR centerPos = camera->GetPos();
+
+    for (auto& g : grounds_)
+    {
+        // カメラ
+        VECTOR diff = VSub(g->GetPos(), centerPos);
+        diff.y = 0.0f;
+        float distSq = VSquareSize(diff);
+
+        // プレイヤー
+        VECTOR playerDiff = VSub(g->GetPos(), playerPos_);
+        playerDiff.y = 0.0f;
+        float playerDostSq = VSquareSize(playerDiff);
+
+        // エネミー
+        VECTOR enemyDiff = VSub(g->GetPos(), enemyPos_);
+        enemyDiff.y = 0.0f;
+        float enemyDostSq = VSquareSize(enemyDiff);
+
+        if (distSq <= REGISTER_RANGE_SQ)
+        {
+            // 範囲内の地面のみ登録
+            CollisionController::GetInstance().RegisterUnit(g.get());
+            registeredGrounds_.push_back(g);
+        }
+
+        if (playerDostSq <= REGISTER_RANGE_SQ)
+        {
+            // 範囲内の地面のみ登録
+            CollisionController::GetInstance().RegisterUnit(g.get());
+            registeredGrounds_.push_back(g);
+        }
+
+        if (enemyDostSq <= REGISTER_RANGE_SQ)
+        {
+            // 範囲内の地面のみ登録
+            CollisionController::GetInstance().RegisterUnit(g.get());
+            registeredGrounds_.push_back(g);
+        }
+    }
+
+#ifdef _DEBUG
+    //printfDx("登録された地面の数: %d / %d\n", registeredGrounds_.size(), grounds_.size());
+#endif
 }
 
 // カメラ位置に近いタイルのモデルIDと位置を取得
 std::vector<std::pair<int, VECTOR>> GroundManager::GetNearbyTiles(const VECTOR& cameraPos, float range) const
 {
-	std::vector<std::pair<int, VECTOR>> nearbyTiles;
-	nearbyTiles.reserve(9); // 最大9タイル程度を想定
+    std::vector<std::pair<int, VECTOR>> nearbyTiles;
+    nearbyTiles.reserve(9);
 
-	float rangeSq = range * range;
+    float rangeSq = range * range;
 
-	for (const auto& g : grounds_)
-	{
-		VECTOR diff = VSub(g.GetPos(), cameraPos);
-		diff.y = 0.0f; // Y軸は無視（水平距離のみ）
-		float distSq = VSquareSize(diff);
+    for (const auto& g : grounds_)
+    {
+        VECTOR diff = VSub(g->GetPos(), cameraPos);
+        diff.y = 0.0f;
+        float distSq = VSquareSize(diff);
 
-		if (distSq <= rangeSq)
-		{
-			nearbyTiles.push_back({ g.GetModelId(), g.GetPos() });
-		}
-	}
+        if (distSq <= rangeSq)
+        {
+            nearbyTiles.push_back({ g->GetTransform().modelId, g->GetPos() });
+        }
+    }
 
-	return nearbyTiles;
+    return nearbyTiles;
 }
 
 // 更新処理
 void GroundManager::Update(void)
 {
-	
+    // 一定間隔で周辺の地面を再登録
+    static float updateTimer = 0.0f;
+    updateTimer += SceneManager::GetInstance().GetDeltaTime();
+
+    if (updateTimer >= 0.2f) // 1秒ごと
+    {
+        updateTimer = 0.0f;
+        RegisterNearbyGrounds();
+    }
 }
 
 // 描画処理
 void GroundManager::Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const VECTOR& cameraDir)
 {
-	// プレイヤーからの描画距離制限
-	const float cullDistance = 1500.0f;   
-	
-	// 視野80度
-	const float viewAngleCos = cosf(Utility::Deg2RadF(80.0f)); 
+    // プレイヤーからの描画距離制限
+    const float cullDistance = 10000.0f;
 
-	for (auto& g : grounds_)
-	{
-		VECTOR toGround = VSub(g.GetPos(), centerPos);
-		
-		float distSq = VSquareSize(toGround);
+    // 視野80度
+    const float viewAngleCos = cosf(Utility::Deg2RadF(80.0f));
 
-		// 一定距離外なら描画しない
-		if (distSq > cullDistance * cullDistance) continue;
+    for (auto& g : grounds_)
+    {
+        VECTOR toGround = VSub(g->GetPos(), centerPos);
 
-		// 視野外（カメラ後方）なら描画しない
-		VECTOR toGroundCam = VNorm(VSub(g.GetPos(), cameraPos));
-		
-		float dot = VDot(cameraDir, toGroundCam);
-		
-		if (dot < viewAngleCos) continue;
+        float distSq = VSquareSize(toGround);
 
-		// 表示
-		g.Draw();
-	}
+        // 一定距離外なら描画しない
+        if (distSq > cullDistance * cullDistance) continue;
+
+        // 視野外（カメラ後方）なら描画しない
+        VECTOR toGroundCam = VNorm(VSub(g->GetPos(), cameraPos));
+
+        float dot = VDot(cameraDir, toGroundCam);
+
+        if (dot < viewAngleCos) continue;
+
+        // 表示
+        g->Draw();
+    }
 }
 
 // 解放処理
 void GroundManager::Release(void)
 {
-	for (auto& g : grounds_)
-	{
-		MV1DeleteModel(g.GetModelId());
-	}
-	
-	grounds_.clear();
+    // 登録済みの地面を解除
+    for (auto& g : registeredGrounds_)
+    {
+        if (g)
+        {
+            CollisionController::GetInstance().UnregisterUnit(g.get());
+        }
+    }
+    registeredGrounds_.clear();
 
-	if (baseModelId_ != -1)
-	{
-		MV1DeleteModel(baseModelId_);
-		
-		baseModelId_ = -1;
-	}
+    // 各タイルの解放
+    for (auto& g : grounds_)
+    {
+        if (g)
+        {
+            // モデルを削除
+            if (g->GetTransform().modelId != -1)
+            {
+                MV1DeleteModel(g->GetTransform().modelId);
+            }
 
-	isLoaded_ = false;
+            // Groundの解放
+            g->Release();
+        }
+    }
+
+    grounds_.clear();
+
+    if (baseModelId_ != -1)
+    {
+        MV1DeleteModel(baseModelId_);
+        baseModelId_ = -1;
+    }
+
+    isLoaded_ = false;
+}
+
+void GroundManager::SetPlayerPos(const VECTOR& pos)
+{
+    playerPos_ = pos;
+}
+
+void GroundManager::SetEnemyPos(const VECTOR& pos)
+{
+    enemyPos_ = pos;
 }

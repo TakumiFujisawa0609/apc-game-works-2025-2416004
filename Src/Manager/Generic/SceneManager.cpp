@@ -1,9 +1,8 @@
 #include "SceneManager.h"
 #include "../../Scene/SceneBase.h"
 #include "../../Scene/SceneTitle.h"
-#include "ResourceManager.h"
 #include "../System/Collision.h"
-#include "../System/CollisionManager.h"
+#include "../System/CollisionController.h" 
 #include "../Decoration/SoundManager.h"
 #include "../System/TimeManager.h"
 #include "Camera.h"
@@ -63,7 +62,7 @@ void SceneManager::Init(void)
     SoundManager::CreateInstance();
     TimeManager::CreateInstance();
     Loading::CreateInstance();
-    CollisionManager::CreateInstance();
+    CollisionController::CreateInstance();
 
     // カメラを初期化する
     camera_->Init();
@@ -108,6 +107,9 @@ void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
         s->Release();
     scenes_.clear();
 
+    // CollisionControllerをクリア
+    CollisionController::GetInstance().Clear();
+
     // 新しいシーンを設定
     scenes_.push_back(scene);
     isSceneChanging_ = true;
@@ -143,6 +145,10 @@ void SceneManager::PopScene()
 void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
 {
     scenes_.clear();
+
+    // CollisionControllerをクリア
+    CollisionController::GetInstance().Clear();
+
     isSceneChanging_ = true;
     scenes_.push_back(scene);
 
@@ -185,22 +191,17 @@ void SceneManager::Update(void)
             current->Init();
             isSceneChanging_ = false;
         }
+        return;
     }
     else
     {
-        // 前フレームの衝突判定をクリアする
-        CollisionManager::GetInstance().Clear();
-
-        // 衝突判定用のオブジェクトを登録
-        if (current) { current->RegisterCollisions(); }
-
-        if (camera_) { camera_->UpdateBeforeCollision(); }
-
         // シーンを更新する
         if (current) { current->Update(); }
 
-        // 衝突を更新する
-        CollisionManager::GetInstance().Update();
+        if (camera_) { camera_->UpdateBeforeCollision(); }
+
+        // 衝突判定を実行（CollisionControllerが自動で全ユニット間の判定を行う）
+        CollisionController::GetInstance().Update();
 
         // カメラを更新する
         if (camera_) camera_->Update();
@@ -222,16 +223,15 @@ void SceneManager::Draw(void)
     // 描画先をバックバッファに設定する
     SetDrawScreen(DX_SCREEN_BACK);
 
-    // バックバッファをクリアする
-    ClearDrawScreen();
-
-    // 非同期ロード中は進捗バーを描画する
-    if (Loading::GetInstance()->IsLoading())
+    // 非同期ロード中は進捗バーのみ描画する
+    if (Loading::GetInstance()->IsLoading() || isSceneChanging_)
     {
         Loading::GetInstance()->Draw();
-        ScreenFlip();
         return;
     }
+
+    // バックバッファをクリアする
+    ClearDrawScreen();
 
     // カメラの設定を行う
     if (camera_) camera_->SetBeforeDraw();
@@ -273,7 +273,7 @@ void SceneManager::Release(void)
     SoundManager::GetInstance().Destroy();
     TimeManager::GetInstance().Destroy();
     Loading::GetInstance()->DestroyInstance();
-    CollisionManager::GetInstance().Destroy();
+    CollisionController::Destroy();
 }
 
 // ゲームを終了させる

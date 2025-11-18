@@ -37,9 +37,6 @@ public:
 	//解放処理
 	void Release(void)override;
 
-	// 衝突判定用のオブジェクトを登録
-	void RegisterCollisions(void) override;
-
 	//ロード
 	void Load(void) override;
 

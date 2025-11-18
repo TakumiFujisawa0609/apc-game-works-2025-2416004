@@ -1,6 +1,8 @@
 #include "EnemyBase.h"
 
 #include "../../Utility/Utility.h"
+#include "../../Collider/ColliderSphere.h"
+#include "../../Manager/System/CollisionController.h"
 
 
 //コンストラクタ
@@ -41,17 +43,32 @@ void EnemyBase::Init(const VECTOR& startPos)
 
 	currentAnim_ = ANIM::NONE;
 
-	// 当たり判定用座標の初期化
-	collisionPos_ = VAdd(trans_.pos, GetCollisionOffset());
+	InitCollider();
+
+	// CollisionControllerに登録
+	CollisionController::GetInstance().RegisterUnit(this);
+}
+
+void EnemyBase::InitCollider(void)
+{
+	// 球体コライダの作成
+	ColliderSphere* colSphere = new ColliderSphere(
+		ColliderBase::TAG::ENEMY,
+		&trans_,
+		Utility::VECTOR_ZERO,  // ローカル座標（中心）
+		radius_
+	);
+
+	ownColliders_.emplace(
+		static_cast<int>(UnitBase::COLLIDER_TYPE::SPHERE),
+		colSphere
+	);
 }
 
 //更新処理
 void EnemyBase::Update(void)
 {
 	UnitBase::Update();
-
-	// 当たり判定用の座標を更新
-	collisionPos_ = VAdd(trans_.pos, GetCollisionOffset());
 }
 
 //描画処理
@@ -114,16 +131,4 @@ void EnemyBase::TakeDamage(float damage)
 const std::string& EnemyBase::GetType(void) const
 {
 	return type_;
-}
-
-// 当たり判定用の座標ポインタを取得
-VECTOR* EnemyBase::GetCollisionPosPtr(void)
-{
-	return &collisionPos_;
-}
-
-// 当たり判定のオフセット
-VECTOR EnemyBase::GetCollisionOffset(void) const
-{
-	return Utility::VECTOR_ZERO;
 }

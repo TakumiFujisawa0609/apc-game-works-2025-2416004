@@ -11,7 +11,6 @@ Font::Font() : defaultFont_(""){}
 Font::~Font(void)
 {
 	//全てのフォントハンドルを解放
-	// 全てのフォントハンドルを解放
 	for (auto& outerPair : fontHandles_)
 	{
 		for (auto& innerPair : outerPair.second)

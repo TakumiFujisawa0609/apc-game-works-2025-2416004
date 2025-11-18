@@ -1,6 +1,4 @@
 ﻿#include "SceneTitle.h"
-#include "../Manager/Generic/Resource.h"
-#include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Decoration/SoundManager.h"
@@ -9,8 +7,8 @@
 #include "../Object/Grid.h"
 #include "../Application.h"
 #include "../DrawUI/Font.h"
-#include "../Manager/System/Loading.h"
 #include "../Manager/System/TimeManager.h"
+#include "../Manager/System/Loading.h"
 
 SceneTitle::SceneTitle(void)
 {
@@ -39,16 +37,20 @@ void SceneTitle::Load(void)
     SceneBase::Load(); 
 
     // BGM・SEロード
-    
+    Loading::GetInstance()->SetProgress(20.0f);
 
     // 音量調整
+    Loading::GetInstance()->SetProgress(30.0f);
 
     // ロゴ・操作説明・再生用画像ロード
+    Loading::GetInstance()->SetProgress(60.0f);
 
     // その他画像
-
+    Loading::GetInstance()->SetProgress(80.0f);
+    
     // 動画ロード
-   
+    Loading::GetInstance()->SetProgress(90.0f);
+    
     // UI 初期化
     uiMain_ = std::make_unique<SceneUi>();
     uiMain_->AddCharctor("開始");
@@ -65,8 +67,13 @@ void SceneTitle::Load(void)
     uiHowToPlay_->AddCharctor("戻る");
     uiHowToPlay_->SetCurrentIndex(0);
 
+    Loading::GetInstance()->SetProgress(95.0f);
+
     //時間カウントリセット
     TimeManager::GetInstance().Reset();
+
+
+    Loading::GetInstance()->SetProgress(100.0f);
 }
 
 void SceneTitle::EndLoad(void)

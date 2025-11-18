@@ -1,3 +1,9 @@
+D:\AGSdeta\AGS_Game_Works\Src\Manager\System\CollisionController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\CollisionController.obj
+D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderModel.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderModel.obj
+D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderCapsule.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderCapsule.obj
+D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderSphere.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderSphere.obj
+D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderLine.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderLine.obj
+D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderBase.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderBase.obj
 D:\AGSdeta\AGS_Game_Works\Src\pch.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\pch.obj
 D:\AGSdeta\AGS_Game_Works\Src\Fps\FpsController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\FpsController.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\CollisionManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\CollisionManager.obj

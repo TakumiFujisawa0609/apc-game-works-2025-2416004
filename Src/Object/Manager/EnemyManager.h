@@ -40,8 +40,8 @@ public:
 	// ’Ç]‘ÎÛ‚Ìİ’è
 	void SetTargetPos(const VECTOR& pos);
 
-	// Õ“Ë”»’è—p‚ÌÄ“o˜^
-	void RegisterCollisions(void);
+	// “G‚ÌÀ•W‚ğæ“¾
+	VECTOR GetEnemyPos(void) const;
 
 private:
 
