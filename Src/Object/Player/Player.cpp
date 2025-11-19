@@ -414,130 +414,134 @@ bool Player::IsAttacking(void) const
 // 入力による移動制御
 void Player::ProcessMove(void)
 {
-    // 攻撃中は移動できない
-    if (isAttacking_) return;
-   
     if (!movementEnabled_) return;
-    
-    auto& input = InputManager::GetInstance();
-    
-    auto camera = SceneManager::GetInstance().GetCamera();
-    
-    float forwardInput = 0.0f;
-    
-    float rightInput = 0.0f;
-   
-    // 前
-    if (input.IsNew(KEY_INPUT_W)) { forwardInput += 1.0f; }
-   
-    // 後ろ
-    if (input.IsNew(KEY_INPUT_S)) { forwardInput -= 1.0f; }
-   
-    // 左
-    if (input.IsNew(KEY_INPUT_A)) { rightInput -= 1.0f; }
-  
-    // 右
-    if (input.IsNew(KEY_INPUT_D)) { rightInput += 1.0f; }
-    isMoving_ = false;
-   
-    // 移動量をリセット
-    movePow_ = Utility::VECTOR_ZERO;
-   
-    // 何か入力がある場合
-    if (forwardInput != 0.0f || rightInput != 0.0f)
-    {
-        // カメラの前方向と右方向を取得（Y成分を0にして水平面のみ）
-        VECTOR camForward = camera->GetFrontVec();
-       
-        camForward.y = 0.0f;
-       
-        if (VSize(camForward) > 0.0001f)
-        {
-            camForward = VNorm(camForward);
-        }
-        else
-        {
-            camForward = VGet(0.0f, 0.0f, 1.0f);
-        }
-        
-        VECTOR camRight = camera->GetRightVec();
-       
-        camRight.y = 0.0f;
-        
-        if (VSize(camRight) > 0.0001f)
-        {
-            camRight = VNorm(camRight);
-        }
-        else
-        {
-            camRight = VGet(1.0f, 0.0f, 0.0f);
-        }
-       
-        // 入力に基づいて移動方向を計算
-        VECTOR moveDir = Utility::VECTOR_ZERO;
-       
-        // W/S: カメラの前後方向
-        moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
-       
-        // A/D: カメラの左右方向
-        moveDir = VAdd(moveDir, VScale(camRight, rightInput));
-       
-        moveDir.y = 0.0f;
-        
-        // 移動方向が有効な場合
-        if (VSize(moveDir) > 0.0001f)
-        {
-        
-            moveDir = VNorm(moveDir);
-        
-            // 移動量を設定
-            movePow_ = VScale(moveDir, 10.5f);
-        
-            isMoving_ = true;
-            
-            //モデルが反対を向いている場合は180度足す
-            float targetAngle = atan2f(moveDir.x, moveDir.z) + DX_PI_F;
 
-            // 現在の回転角度を取得
-            VECTOR currentEuler = trans_.quaRot.ToEuler();
-            
-            float currentAngle = currentEuler.y;
-           
-            // 角度差を計算（-π～πの範囲に正規化）
-            float angleDiff = targetAngle - currentAngle;
-           
-            const float TWO_PI = DX_PI_F * 2.0f;
-          
-            while (angleDiff > DX_PI_F) angleDiff -= TWO_PI;
-           
-            while (angleDiff < -DX_PI_F) angleDiff += TWO_PI;
-           
-            // スムーズに回転（最大回転速度を制限）
-            float maxRotSpeed = Utility::Deg2RadF(20.0f);
-            
-            if (fabs(angleDiff) > maxRotSpeed)
-            {
-                angleDiff = (angleDiff > 0) ? maxRotSpeed : -maxRotSpeed;
-            }
-           
-            // 新しい角度を計算
-            float newAngle = currentAngle + angleDiff;
-           
-            // Y軸回転のクォータニオンを作成
-            trans_.quaRot = Quaternion::AngleAxis(newAngle, Utility::AXIS_Y);
-          
-            // ローカル回転はリセット
-            trans_.quaRotLocal = Quaternion::Identity();
+    auto& input = InputManager::GetInstance();
+    auto camera = SceneManager::GetInstance().GetCamera();
+
+    // 前回位置保存
+    prePos_ = trans_.pos;
+
+    float forwardInput = 0.0f;
+    float rightInput = 0.0f;
+
+    //前
+    if (input.IsNew(KEY_INPUT_W)) { forwardInput += 1.0f; }
+
+    //後ろ
+    if (input.IsNew(KEY_INPUT_S)) { forwardInput -= 1.0f; }
+
+    //左
+    if (input.IsNew(KEY_INPUT_A)) { rightInput -= 1.0f; }
+
+    //右
+    if (input.IsNew(KEY_INPUT_D)) { rightInput += 1.0f; }
+
+    isMoving_ = false;
+
+    // 左右入力中の処理
+    if (rightInput != 0.0f && forwardInput == 0.0f)
+    {
+        // カメラの追従を凍結（座標移動は停止、回転は追従）
+        camera->SetFreezeFollow(true);
+
+        // カメラの位置を取得
+        VECTOR camPos = camera->GetPos();
+
+        // カメラからプレイヤーへのベクトル（XZ平面のみ）
+        VECTOR toPlayer = VSub(trans_.pos, camPos);
+
+        // Y座標は保持
+        float currentHeight = toPlayer.y;
+        toPlayer.y = 0.0f;
+
+        // 現在の距離を保存
+        float radius = VSize(toPlayer);
+
+        // 現在の角度を計算
+        float currentAngle = atan2f(toPlayer.x, toPlayer.z);
+
+        // 回転速度
+        float rotSpeed = rightInput * 1.5f;
+
+        // 新しい角度（キー入力による回転を加える）
+        float newAngle = currentAngle + Utility::Deg2RadF(rotSpeed);
+
+        // 新しい位置を計算（極座標→直交座標）
+        VECTOR newOffset;
+        newOffset.x = radius * sinf(newAngle);
+        newOffset.y = currentHeight;
+        newOffset.z = radius * cosf(newAngle);
+
+        // カメラ位置を基準に新しい位置を設定
+        trans_.pos = VAdd(camPos, newOffset);
+
+        isMoving_ = true;
+
+        // プレイヤーの向きを接線方向に設定
+        VECTOR tangent;
+        if (rightInput > 0)
+        {
+            // 右回り：接線は反時計回り
+            tangent.x = -toPlayer.z;
+            tangent.z = toPlayer.x;
         }
+        else
+        {
+            // 左回り：接線は時計回り
+            tangent.x = toPlayer.z;
+            tangent.z = -toPlayer.x;
+        }
+
+        tangent.y = 0.0f;
+        tangent = VNorm(tangent);
+
+        // プレイヤーの向きを接線方向に設定
+        Quaternion targetLocalRot = Quaternion::LookRotation(tangent);
+        trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
     }
     else
     {
-        // 入力がない場合、カメラ追従は解除
+        // 左右移動していない時はカメラの追従を再開
         camera->SetFreezeFollow(false);
-        
-        camera->SetKeyRotation(0.0f);
+
+        //前後左右入力がある場合
+        if (forwardInput != 0.0f || rightInput != 0.0f)
+        {
+            // カメラの前方向
+            VECTOR camForward = camera->GetFrontVec();
+            camForward.y = 0.0f;
+            camForward = VNorm(camForward);
+
+            // カメラの右方向
+            VECTOR camRight = camera->GetRightVec();
+            camRight.y = 0.0f;
+            camRight = VNorm(camRight);
+
+            // 移動方向を合成
+            VECTOR moveDir = Utility::VECTOR_ZERO;
+            moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
+            moveDir = VAdd(moveDir, VScale(camRight, -rightInput));
+            moveDir.y = 0.0f;
+
+            // 移動方向を正規化
+            if (VSize(moveDir) > 0.0001f)
+            {
+                moveDir = VNorm(moveDir);
+
+                // 移動量を適用
+                VECTOR movement = VScale(moveDir, 10.5f);
+                trans_.pos = VAdd(trans_.pos, movement);
+
+                isMoving_ = true;
+
+                // 移動方向に向く
+                Quaternion targetLocalRot = Quaternion::LookRotation(VScale(moveDir, -1.0f));
+                trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
+            }
+        }
     }
-   
+
     // アニメーション制御
     if (isMoving_)
     {
@@ -547,14 +551,32 @@ void Player::ProcessMove(void)
     {
         PlayAnim(ANIM::IDEL, true, 0.2f);
     }
-   
-    // ジャンプ処理
-    if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
+
+    // 移動制限（壁など）
+    VECTOR moveDir = VSub(trans_.pos, prePos_);
+    if ((blockedDirX_ == 1 && moveDir.x < 0) || (blockedDirX_ == -1 && moveDir.x > 0))
     {
+        trans_.pos.x = prePos_.x;
+    }
+
+    if ((blockedDirZ_ == 1 && moveDir.z < 0) || (blockedDirZ_ == -1 && moveDir.z > 0))
+    {
+        trans_.pos.z = prePos_.z;
+    }
+
+    // ジャンプ処理
+
+    if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
+
+    {
+
         jumpPow_ = VGet(0, param_.jumpPower, 0);
+
         isGround_ = false;
+
     }
 }
+
 
 // Playerのカプセルを描画
 void Player::DrawCollisionCapsuleDebug(void) const

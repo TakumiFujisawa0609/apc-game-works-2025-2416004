@@ -6,7 +6,6 @@ D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderLine.cpp;D:\AGSdeta\AGS_Game_Work
 D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderBase.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ColliderBase.obj
 D:\AGSdeta\AGS_Game_Works\Src\pch.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\pch.obj
 D:\AGSdeta\AGS_Game_Works\Src\Fps\FpsController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\FpsController.obj
-D:\AGSdeta\AGS_Game_Works\Src\Manager\System\CollisionManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\CollisionManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Enemy\EnemyData.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\EnemyData.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Manager\EnemyManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\EnemyManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Enemy\EnemySlime.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\EnemySlime.obj
@@ -30,7 +29,6 @@ D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\InputManager.cpp;D:\AGSdeta\AGS_Ga
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\Resource.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Resource.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\ResourceManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\ResourceManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\SceneManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\SceneManager.obj
-D:\AGSdeta\AGS_Game_Works\Src\Manager\System\Collision.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Collision.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\DateTimeManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\DateTimeManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\TimeManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\TimeManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\AnimationController.obj

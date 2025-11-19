@@ -43,6 +43,9 @@ public:
 	// 敵の座標を取得
 	VECTOR GetEnemyPos(void) const;
 
+	// 全ての敵の座標を取得
+	std::vector<VECTOR> GetAllEnemyPositions(void) const;
+
 private:
 
 	// 敵リスト（shared_ptr に変更）

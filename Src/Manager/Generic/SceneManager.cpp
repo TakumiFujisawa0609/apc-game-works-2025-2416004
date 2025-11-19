@@ -1,7 +1,6 @@
 #include "SceneManager.h"
 #include "../../Scene/SceneBase.h"
 #include "../../Scene/SceneTitle.h"
-#include "../System/Collision.h"
 #include "../System/CollisionController.h" 
 #include "../Decoration/SoundManager.h"
 #include "../System/TimeManager.h"
@@ -57,8 +56,6 @@ SceneManager::~SceneManager(void)
 // 初期化する
 void SceneManager::Init(void)
 {
-    // 各マネージャーを生成する
-    Collision::CreateInstance();
     SoundManager::CreateInstance();
     TimeManager::CreateInstance();
     Loading::CreateInstance();

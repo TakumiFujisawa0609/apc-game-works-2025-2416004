@@ -141,12 +141,23 @@ void EnemyManager::SetTargetPos(const VECTOR& pos)
 // 敵の座標を取得
 VECTOR EnemyManager::GetEnemyPos(void) const
 {
-	for (auto& enemy : enemies_)
+	// 敵がいない場合
+	if (enemies_.empty())
 	{
-	 return	enemy->GetPos();
+		return Utility::VECTOR_ZERO;
 	}
 
-	return Utility::VECTOR_ZERO;
+	// 中心座標を計算
+	VECTOR center = Utility::VECTOR_ZERO;
+	for (const auto& enemy : enemies_)
+	{
+		center = VAdd(center, enemy->GetPos());
+	}
+
+	// 平均を取る
+	center = VScale(center, 1.0f / static_cast<float>(enemies_.size()));
+
+	return center;
 }
 
 //敵の生成
@@ -170,4 +181,18 @@ std::shared_ptr<EnemyBase> EnemyManager::CreateEnemy(const EnemyInfo& info)
 	
 	// 対応するタイプがなければ nullptr を返す
 	return std::shared_ptr<EnemyBase>(nullptr);
+}
+
+// 全ての敵の座標を取得
+std::vector<VECTOR> EnemyManager::GetAllEnemyPositions(void) const
+{
+	std::vector<VECTOR> positions;
+	positions.reserve(enemies_.size());
+
+	for (const auto& enemy : enemies_)
+	{
+		positions.push_back(enemy->GetPos());
+	}
+
+	return positions;
 }

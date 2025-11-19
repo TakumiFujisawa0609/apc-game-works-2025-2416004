@@ -96,6 +96,9 @@ Camera::Camera(void)
 
     // 凍結開始時のY軸オフセット
     initialHeightOffset_ = 0.0f;
+
+    // 押し出し前の座標の初期化を追加
+    prePos_ = Utility::VECTOR_ZERO;
 }
 
 Camera::~Camera(void)
@@ -409,7 +412,6 @@ void Camera::SetBeforeDrawFreeMouse(void)
     SetMousePoint(centerX_, centerY_);
 }
 
-// TPS用カメラ
 void Camera::SetBeforeDrawTPSMouse(void)
 {
     if (!followTransform_) return;
@@ -417,7 +419,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
     auto& ins = InputManager::GetInstance();
 
     // 押し出しが発生したかチェック（Y方向のみ）
-    VECTOR pushVec = VSub(trans_.pos, prePos_);  // pos_ → trans_.pos
+    VECTOR pushVec = VSub(trans_.pos, prePos_);
     bool isGroundHit = (pushVec.y > 0.01f);
 
     // 地面接触の持続時間を管理（一瞬の貫通を無視）
@@ -433,7 +435,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
 
         if (!isGroundFixed)
         {
-            fixedGroundY = trans_.pos.y - 15.0f;  // pos_ → trans_.pos
+            fixedGroundY = trans_.pos.y - 15.0f;
             isGroundFixed = true;
         }
     }
@@ -469,15 +471,13 @@ void Camera::SetBeforeDrawTPSMouse(void)
         groundContactTime = 0.0f;
         wasGroundContact = false;
         isGroundFixed = false;
+        isStableGroundContact = false;
     }
-
-    isStableGroundContact = (groundContactTime > 0.1f);
 
     // 地面固定中で下を向こうとしている場合のみ距離を縮める
     if (isStableGroundContact && pitchDelta < 0.0f)
     {
-        distance_ -= 20.0f;
-
+        distance_ -= 20.0f; 
         const float MIN_DISTANCE = 0.0f;
         if (distance_ < MIN_DISTANCE)
         {
@@ -490,7 +490,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
     }
 
     // 安定した地面接触がない時のみ距離を元に戻す
-    if (!isStableGroundContact && distance_ < CAMERA_DISTANCE)
+    if (!isStableGroundContact && distance_ < CAMERA_DISTANCE && !freezeFollow_)
     {
         distance_ += 20.0f;
         if (distance_ > CAMERA_DISTANCE)
@@ -522,9 +522,19 @@ void Camera::SetBeforeDrawTPSMouse(void)
     const float TARGET_HEIGHT_OFFSET = 100.0f;
     const float GROUND_OFFSET = 15.0f;
 
-    // 追従が凍結されていない場合の通常処理
-    if (!freezeFollow_)
+    // 凍結中はカメラ位置を完全に固定
+    if (freezeFollow_)
     {
+        // カメラ位置は変更しない（frozenCameraPos_を維持）
+        // trans_.pos = frozenCameraPos_; // これも不要、何もしない
+
+        // 注視点だけプレイヤーを向くように更新
+        VECTOR playerPos = followTransform_->pos;
+        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
+    }
+    else
+    {
+        // 通常の追従処理
         VECTOR followPos = followTransform_->pos;
 
         // 球面座標でカメラのオフセットを計算
@@ -540,7 +550,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
             idealPos.y = followPos.y + MIN_CAMERA_HEIGHT;
         }
 
-        VECTOR toCamera = VSub(trans_.pos, followPos);  // pos_ → trans_.pos
+        VECTOR toCamera = VSub(trans_.pos, followPos);
         float currentDistXZ = sqrtf(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
 
         VECTOR toIdeal = VSub(idealPos, followPos);
@@ -552,73 +562,32 @@ void Camera::SetBeforeDrawTPSMouse(void)
 
             if (idealDistXZ < 1.0f)
             {
-                trans_.pos.x = followPos.x;  // pos_ → trans_.pos
-                trans_.pos.z = followPos.z;  // pos_ → trans_.pos
+                trans_.pos.x = followPos.x;
+                trans_.pos.z = followPos.z;
             }
             else
             {
-                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;  // pos_ → trans_.pos
-                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;  // pos_ → trans_.pos
+                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;
+                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;
             }
 
-            trans_.pos.y = fixedGroundY + GROUND_OFFSET;  // pos_ → trans_.pos
+            trans_.pos.y = fixedGroundY + GROUND_OFFSET;
         }
         else
         {
             if (idealDistXZ < 1.0f)
             {
-                trans_.pos.x = followPos.x;  // pos_ → trans_.pos
-                trans_.pos.z = followPos.z;  // pos_ → trans_.pos
-                trans_.pos.y = idealPos.y;   // pos_ → trans_.pos
+                trans_.pos.x = followPos.x;
+                trans_.pos.z = followPos.z;
+                trans_.pos.y = idealPos.y;
             }
             else
             {
-                trans_.pos = idealPos;  // pos_ → trans_.pos
+                trans_.pos = idealPos;
             }
         }
 
         targetPos_ = VGet(followPos.x, followPos.y + TARGET_HEIGHT_OFFSET, followPos.z);
-    }
-    else
-    {
-        // 凍結中の処理
-        VECTOR playerPos = followTransform_->pos;
-
-        float xzDistance = sqrtf(initialDistance_ * initialDistance_ - initialHeightOffset_ * initialHeightOffset_);
-
-        VECTOR cameraOffset;
-        cameraOffset.x = xzDistance * sinf(Utility::Deg2RadF(yaw_));
-        cameraOffset.y = initialHeightOffset_;
-        cameraOffset.z = xzDistance * cosf(Utility::Deg2RadF(yaw_));
-
-        VECTOR idealPos = VAdd(playerPos, cameraOffset);
-
-        if (isGroundFixed && isStableGroundContact)
-        {
-            float lerpRate = 0.3f;
-
-            VECTOR toIdeal = VSub(idealPos, playerPos);
-            float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
-
-            if (idealDistXZ < 1.0f)
-            {
-                trans_.pos.x = playerPos.x;  // pos_ → trans_.pos
-                trans_.pos.z = playerPos.z;  // pos_ → trans_.pos
-            }
-            else
-            {
-                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;  // pos_ → trans_.pos
-                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;  // pos_ → trans_.pos
-            }
-
-            trans_.pos.y = fixedGroundY + GROUND_OFFSET;  // pos_ → trans_.pos
-        }
-        else
-        {
-            trans_.pos = idealPos;  // pos_ → trans_.pos
-        }
-
-        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
     }
 
     cameraUp_ = VGet(0, 1, 0);

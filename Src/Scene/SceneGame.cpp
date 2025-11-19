@@ -145,8 +145,8 @@ void SceneGame::Update(void)
 	// プレイヤーの位置を取得
 	groundManager_->SetPlayerPos(player_->GetPos());
 
-	// えねみーの位置を取得
-	groundManager_->SetEnemyPos(enemyManager_->GetEnemyPos());
+	// 全ての敵の位置を設定
+	groundManager_->SetEnemyPos(enemyManager_->GetAllEnemyPositions());
 }
 
 // 描画処理

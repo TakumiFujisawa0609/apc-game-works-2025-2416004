@@ -40,7 +40,7 @@ public:
     void SetPlayerPos(const VECTOR& pos);
 
     // 敵の座標を設定
-    void SetEnemyPos(const VECTOR& pos);
+    void SetEnemyPos(const std::vector<VECTOR>& positions);
 
 private:
     // 地面の最大数
@@ -71,7 +71,7 @@ private:
     VECTOR playerPos_;
 
     // 敵のの座標を取得
-    VECTOR enemyPos_;
+    std::vector<VECTOR> enemyPoss_;
 
     // 周辺の地面を登録（追加）
     void RegisterNearbyGrounds(void);

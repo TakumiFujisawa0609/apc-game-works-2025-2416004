@@ -234,7 +234,7 @@ private:
     float initialHeightOffset_;
 
     // 押し出し前の座標
-    VECTOR prevPos_;
+    VECTOR prePos_;
 
     // カメラモード別更新処理
     std::map<MODE, std::function<void(void)>> setBeforeDrawMode_;

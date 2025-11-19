@@ -167,7 +167,6 @@
     <ClInclude Include="Src\Collider\ColliderBase.h" />
     <ClInclude Include="Src\pch.h" />
     <ClInclude Include="Src\Fps\FpsController.h" />
-    <ClInclude Include="Src\Manager\System\CollisionManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
     <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemySlime.h" />
@@ -191,7 +190,6 @@
     <ClInclude Include="Src\Manager\Generic\Resource.h" />
     <ClInclude Include="Src\Manager\Generic\ResourceManager.h" />
     <ClInclude Include="Src\Manager\Generic\SceneManager.h" />
-    <ClInclude Include="Src\Manager\System\Collision.h" />
     <ClInclude Include="Src\Manager\System\DateTimeManager.h" />
     <ClInclude Include="Src\Manager\System\TimeManager.h" />
     <ClInclude Include="Src\Object\Common\AnimationController.h" />
@@ -220,7 +218,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Src\Fps\FpsController.cpp" />
-    <ClCompile Include="Src\Manager\System\CollisionManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />
     <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemySlime.cpp" />
@@ -244,7 +241,6 @@
     <ClCompile Include="Src\Manager\Generic\Resource.cpp" />
     <ClCompile Include="Src\Manager\Generic\ResourceManager.cpp" />
     <ClCompile Include="Src\Manager\Generic\SceneManager.cpp" />
-    <ClCompile Include="Src\Manager\System\Collision.cpp" />
     <ClCompile Include="Src\Manager\System\DateTimeManager.cpp" />
     <ClCompile Include="Src\Manager\System\TimeManager.cpp" />
     <ClCompile Include="Src\Object\Common\AnimationController.cpp" />

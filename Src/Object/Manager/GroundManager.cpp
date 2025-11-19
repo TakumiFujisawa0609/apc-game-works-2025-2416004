@@ -10,7 +10,7 @@ GroundManager::GroundManager(void)
     : baseModelId_(-1)
     , isLoaded_(false)
     , grounds_()
-    , enemyPos_(Utility::VECTOR_ZERO)
+    , enemyPoss_(1, VECTOR{0.0f, 0.0f, 0.0f})
     , playerPos_(Utility::VECTOR_ZERO)
 {
 }
@@ -88,7 +88,6 @@ void GroundManager::RegisterNearbyGrounds(void)
     }
     registeredGrounds_.clear();
 
-    // カメラ位置を取得
     auto camera = SceneManager::GetInstance().GetCamera();
     if (!camera) return;
 
@@ -96,46 +95,48 @@ void GroundManager::RegisterNearbyGrounds(void)
 
     for (auto& g : grounds_)
     {
-        // カメラ
-        VECTOR diff = VSub(g->GetPos(), centerPos);
-        diff.y = 0.0f;
-        float distSq = VSquareSize(diff);
+        bool shouldRegister = false;
 
-        // プレイヤー
-        VECTOR playerDiff = VSub(g->GetPos(), playerPos_);
-        playerDiff.y = 0.0f;
-        float playerDostSq = VSquareSize(playerDiff);
-
-        // エネミー
-        VECTOR enemyDiff = VSub(g->GetPos(), enemyPos_);
-        enemyDiff.y = 0.0f;
-        float enemyDostSq = VSquareSize(enemyDiff);
-
-        if (distSq <= REGISTER_RANGE_SQ)
+        // カメラ位置チェック
+        VECTOR cameraDiff = VSub(g->GetPos(), centerPos);
+        cameraDiff.y = 0.0f;
+        if (VSquareSize(cameraDiff) <= REGISTER_RANGE_SQ)
         {
-            // 範囲内の地面のみ登録
-            CollisionController::GetInstance().RegisterUnit(g.get());
-            registeredGrounds_.push_back(g);
+            shouldRegister = true;
         }
 
-        if (playerDostSq <= REGISTER_RANGE_SQ)
+        // プレイヤー位置チェック
+        if (!shouldRegister)
         {
-            // 範囲内の地面のみ登録
-            CollisionController::GetInstance().RegisterUnit(g.get());
-            registeredGrounds_.push_back(g);
+            VECTOR playerDiff = VSub(g->GetPos(), playerPos_);
+            playerDiff.y = 0.0f;
+            if (VSquareSize(playerDiff) <= REGISTER_RANGE_SQ)
+            {
+                shouldRegister = true;
+            }
         }
 
-        if (enemyDostSq <= REGISTER_RANGE_SQ)
+        // 全ての敵の位置チェック
+        if (!shouldRegister)
         {
-            // 範囲内の地面のみ登録
+            for (const auto& enemyPos : enemyPoss_)
+            {
+                VECTOR enemyDiff = VSub(g->GetPos(), enemyPos);
+                enemyDiff.y = 0.0f;
+                if (VSquareSize(enemyDiff) <= REGISTER_RANGE_SQ)
+                {
+                    shouldRegister = true;
+                    break;
+                }
+            }
+        }
+
+        if (shouldRegister)
+        {
             CollisionController::GetInstance().RegisterUnit(g.get());
             registeredGrounds_.push_back(g);
         }
     }
-
-#ifdef _DEBUG
-    //printfDx("登録された地面の数: %d / %d\n", registeredGrounds_.size(), grounds_.size());
-#endif
 }
 
 // カメラ位置に近いタイルのモデルIDと位置を取得
@@ -250,7 +251,7 @@ void GroundManager::SetPlayerPos(const VECTOR& pos)
     playerPos_ = pos;
 }
 
-void GroundManager::SetEnemyPos(const VECTOR& pos)
+void GroundManager::SetEnemyPos(const std::vector<VECTOR>& positions)
 {
-    enemyPos_ = pos;
+    enemyPoss_ = positions;
 }
