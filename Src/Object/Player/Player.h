@@ -36,8 +36,6 @@ public:
 	// 初期化
 	void Init(void) override;
 
-	void SetSelfPtr(std::shared_ptr<Player> ptr);
-
 	// 更新処理
 	void Update(void) override;
 
@@ -78,8 +76,6 @@ protected:
 	void InitCollider(void) override;
 
 private:
-	std::shared_ptr<Player> selfPtr_;
-	std::shared_ptr<Sword> sword_;
 
 	// 重力加速度（削除：UnitBaseで管理）
 	// static constexpr float GRAVITY = -1.0f;
@@ -111,8 +107,6 @@ private:
 	// 攻撃クールタイムの最大値
 	static constexpr float ATTACK_COOL_TIME_MAX = 0.5f;
 
-	// ========== コライダ設定 ==========
-
 	// 衝突判定用線分開始（地面判定用）
 	static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 100.0f, 0.0f };
 
@@ -131,12 +125,6 @@ private:
 
 	// モデルハンドル
 	int modelId_;
-
-	// 移動制限x（削除予定：新システムでは不要）
-	int blockedDirX_;
-
-	// 移動制限z（削除予定：新システムでは不要）
-	int blockedDirZ_;
 
 	// 移動可能か
 	bool movementEnabled_;

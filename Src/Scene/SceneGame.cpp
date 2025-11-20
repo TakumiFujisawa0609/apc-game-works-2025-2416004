@@ -92,16 +92,13 @@ void SceneGame::Init()
 	//エネミーマネージャー初期化
 	enemyManager_->Init();
 
-	
-	// プレイヤーに自分自身の shared_ptr を設定
-	player_->SetSelfPtr(player_);
 
 	//プレイヤーの初期化
 	player_->Init();
 	camera->SetFollow(&player_->GetTransform());
 
 	//敵のランダム生成(初期スポーン)
-	for (int i = 0; i < 250; ++i)
+	for (int i = 0; i < 10; ++i)
 	{
 		enemyManager_->RandomSpawn("SLIME", *enemyData_);
 	}

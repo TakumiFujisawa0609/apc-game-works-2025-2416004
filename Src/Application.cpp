@@ -1,6 +1,5 @@
 #include"Application.h"
 
-#include "Pch.h"
 #include "Manager/Decoration/EffectManager.h"
 #include "Manager/Generic/ResourceManager.h"
 #include "Manager/Generic/InputManager.h"
@@ -191,7 +190,7 @@ void Application::Run(void)
 
 		fps_->Wait();
 
-		ScreenFlip();
+ 		ScreenFlip();
 
 		
 		

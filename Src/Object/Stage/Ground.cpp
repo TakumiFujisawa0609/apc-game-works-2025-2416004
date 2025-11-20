@@ -95,6 +95,7 @@ void Ground::InitCollider(void)
         static_cast<int>(COLLIDER_TYPE::MODEL),
         colModel
     );
+
 }
 
 // 更新処理（地面は動かないので空実装）

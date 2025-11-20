@@ -19,12 +19,6 @@ Player::Player(void)
     // モデルの初期化
     modelId_ = -1;
 
-    // 移動制限xの初期化
-    blockedDirX_ = 0;
-
-    // 移動制限zの初期化
-    blockedDirZ_ = 0;
-
     // 地面にいるかどうか
     isGround_ = true;
 
@@ -48,9 +42,6 @@ Player::Player(void)
 
     // 無敵時間の初期化
     invincibleTime_ = 0.0f;
-
-    // 剣の生成
-    sword_ = std::make_shared<Sword>();
 }
 
 // デストラクタ
@@ -118,8 +109,6 @@ void Player::Load(void)
     modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
     trans_.SetModel(modelId_);
 
-    sword_->Load();
-
     // アニメーションの読み込み
     anim_ = std::make_unique<AnimationController>(modelId_);
     anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.Load(ResourceManager::SRC::ANIM_PLAYER_IDEL).handleId_, 35.0f);
@@ -161,15 +150,6 @@ void Player::Init(void)
 
     // CollisionControllerに登録
     CollisionController::GetInstance().RegisterUnit(this);
-
-    // ソードの初期化
-    if (sword_)
-    {
-        sword_->Init();
-        sword_->SetPlayer(selfPtr_);
-        sword_->SetPositionOffset(VGet(0.0f, 0.0f, 0.0f));
-        sword_->SetRotationOffset(VGet(DX_PI_F, 0.0f, 0.0f));
-    }
 }
 
 // コライダ初期化
@@ -192,11 +172,6 @@ void Player::InitCollider(void)
         param_.collisionRadius
     );
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::SPHERE), colSphere);
-}
-
-void Player::SetSelfPtr(std::shared_ptr<Player> ptr)
-{
-    selfPtr_ = ptr;
 }
 
 // 更新処理
@@ -258,12 +233,6 @@ void Player::Update(void)
     {
         hpDisplay_ = param_.hp;
     }
-
-    // ソードの更新
-    if (sword_)
-    {
-        sword_->Update();
-    }
 }
 
 // 描画処理
@@ -274,12 +243,6 @@ void Player::Draw(void) const
 
     DrawHpBar();
 
-    // ソードの描画
-    if (sword_)
-    {
-        sword_->Draw();
-    }
-
     // デバック表示
    // デバック表示
 #ifdef _DEBUG
@@ -288,23 +251,23 @@ void Player::Draw(void) const
     DrawFormatString(0, 80, 0xffffff, "JumpPow: (%.2f, %.2f, %.2f)", jumpPow_.x, jumpPow_.y, jumpPow_.z);
     DrawFormatString(0, 100, 0xffffff, "Invincible: %.2f", invincibleTime_);
 
-    // ★キャラクターの向きを矢印で表示
-    VECTOR forward = trans_.quaRot.GetForward();
-    VECTOR arrowStart = VAdd(trans_.pos, VGet(0, 50, 0)); // 腰の高さ
-    VECTOR arrowEnd = VAdd(arrowStart, VScale(forward, 100.0f)); // 100単位の矢印
+    //// キャラクターの向きを矢印で表示
+    //VECTOR forward = trans_.quaRot.GetForward();
+    //VECTOR arrowStart = VAdd(trans_.pos, VGet(0, 50, 0)); // 腰の高さ
+    //VECTOR arrowEnd = VAdd(arrowStart, VScale(forward, 100.0f)); // 100単位の矢印
 
-    // 赤い矢印で正面方向を表示
-    DrawLine3D(arrowStart, arrowEnd, GetColor(255, 0, 0));
-    DrawSphere3D(arrowEnd, 10.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
+    //// 赤い矢印で正面方向を表示
+    //DrawLine3D(arrowStart, arrowEnd, GetColor(255, 0, 0));
+    //DrawSphere3D(arrowEnd, 10.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
 
-    // 移動方向を緑の矢印で表示
-    if (!Utility::EqualsVZero(movePow_))
-    {
-        VECTOR moveDir = VNorm(movePow_);
-        VECTOR moveArrowEnd = VAdd(arrowStart, VScale(moveDir, 80.0f));
-        DrawLine3D(arrowStart, moveArrowEnd, GetColor(0, 255, 0));
-        DrawSphere3D(moveArrowEnd, 8.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
-    }
+    //// 移動方向を緑の矢印で表示
+    //if (!Utility::EqualsVZero(movePow_))
+    //{
+    //    VECTOR moveDir = VNorm(movePow_);
+    //    VECTOR moveArrowEnd = VAdd(arrowStart, VScale(moveDir, 80.0f));
+    //    DrawLine3D(arrowStart, moveArrowEnd, GetColor(0, 255, 0));
+    //    DrawSphere3D(moveArrowEnd, 8.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
+    //}
 #endif 
 }
 
@@ -321,12 +284,6 @@ void Player::Release(void)
     {
         anim_->Release();
         anim_.reset();
-    }
-
-    if (sword_)
-    {
-        sword_->Release();
-        sword_.reset();
     }
 }
 
@@ -411,10 +368,12 @@ bool Player::IsAttacking(void) const
 }
 
 
-// 入力による移動制御
+//入力による移動制御
 void Player::ProcessMove(void)
 {
     if (!movementEnabled_) return;
+
+    if (isAttacking_) return;
 
     auto& input = InputManager::GetInstance();
     auto camera = SceneManager::GetInstance().GetCamera();
@@ -437,13 +396,28 @@ void Player::ProcessMove(void)
     //右
     if (input.IsNew(KEY_INPUT_D)) { rightInput += 1.0f; }
 
-    isMoving_ = false;
+    // パッド入力（GetDirectionXZAKey を使用）
+    InputManager::JOYPAD_IN_STATE padState = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
+    VECTOR padInputDir = input.GetDirectionXZAKey(padState.AKeyLX, padState.AKeyLY);
 
-    // 左右入力中の処理
+    forwardInput += padInputDir.z;  // Z軸がforward
+    rightInput += padInputDir.x;    // X軸がright
+
+    // 移動判定
+    isMoving_ = (fabs(forwardInput) > 0.0001f || fabs(rightInput) > 0.0001f);
+
+    //左右移動
     if (rightInput != 0.0f && forwardInput == 0.0f)
     {
-        // カメラの追従を凍結（座標移動は停止、回転は追従）
+        //カメラを停止
         camera->SetFreezeFollow(true);
+
+
+        // 回転速度
+        float keyRotSpeed = rightInput * 1.5f;
+
+        // カメラにキー入力による回転速度を設定
+        camera->SetKeyRotation(keyRotSpeed);
 
         // カメラの位置を取得
         VECTOR camPos = camera->GetPos();
@@ -453,6 +427,7 @@ void Player::ProcessMove(void)
 
         // Y座標は保持
         float currentHeight = toPlayer.y;
+
         toPlayer.y = 0.0f;
 
         // 現在の距離を保存
@@ -461,11 +436,8 @@ void Player::ProcessMove(void)
         // 現在の角度を計算
         float currentAngle = atan2f(toPlayer.x, toPlayer.z);
 
-        // 回転速度
-        float rotSpeed = rightInput * 1.5f;
-
         // 新しい角度（キー入力による回転を加える）
-        float newAngle = currentAngle + Utility::Deg2RadF(rotSpeed);
+        float newAngle = currentAngle + Utility::Deg2RadF(keyRotSpeed);
 
         // 新しい位置を計算（極座標→直交座標）
         VECTOR newOffset;
@@ -478,26 +450,26 @@ void Player::ProcessMove(void)
 
         isMoving_ = true;
 
-        // プレイヤーの向きを接線方向に設定
         VECTOR tangent;
+
         if (rightInput > 0)
         {
-            // 右回り：接線は反時計回り
             tangent.x = -toPlayer.z;
+
             tangent.z = toPlayer.x;
         }
         else
         {
-            // 左回り：接線は時計回り
             tangent.x = toPlayer.z;
             tangent.z = -toPlayer.x;
         }
 
         tangent.y = 0.0f;
+
         tangent = VNorm(tangent);
 
-        // プレイヤーの向きを接線方向に設定
         Quaternion targetLocalRot = Quaternion::LookRotation(tangent);
+
         trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
     }
     else
@@ -552,31 +524,14 @@ void Player::ProcessMove(void)
         PlayAnim(ANIM::IDEL, true, 0.2f);
     }
 
-    // 移動制限（壁など）
-    VECTOR moveDir = VSub(trans_.pos, prePos_);
-    if ((blockedDirX_ == 1 && moveDir.x < 0) || (blockedDirX_ == -1 && moveDir.x > 0))
-    {
-        trans_.pos.x = prePos_.x;
-    }
-
-    if ((blockedDirZ_ == 1 && moveDir.z < 0) || (blockedDirZ_ == -1 && moveDir.z > 0))
-    {
-        trans_.pos.z = prePos_.z;
-    }
-
     // ジャンプ処理
-
-    if (isGround_ && input.IsTrgDown(KEY_INPUT_SPACE))
-
+    if (isGround_ && (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::DOWN)))
     {
-
         jumpPow_ = VGet(0, param_.jumpPower, 0);
-
         isGround_ = false;
-
     }
+   
 }
-
 
 // Playerのカプセルを描画
 void Player::DrawCollisionCapsuleDebug(void) const

@@ -161,7 +161,7 @@ protected:
 	virtual void Collision(void);
 
 	// d—ÍŒvZ
-	void CalcGravityPow(void);
+	virtual void CalcGravityPow(void);
 
 	// ’n–Ê‚Æ‚ÌÕ“Ë”»’è
 	void CollisionGravity(void);

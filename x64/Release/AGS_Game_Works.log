@@ -1,9 +1,7 @@
-﻿  SceneManager.cpp
-     ライブラリ D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.lib とオブジェクト D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exp を作成中
+﻿  Camera.cpp
   コード生成しています。
-  0 of 4038 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+  All 4054 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
 EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2019_x64.pdb' が 'EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj)' で、または 'D:\AGSdeta\AGS_Game_Works\x64\Release\EffekseerForDXLib_vs2019_x64.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exe

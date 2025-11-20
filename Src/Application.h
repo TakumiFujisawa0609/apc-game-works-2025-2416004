@@ -1,7 +1,5 @@
 #pragma once
-#include<string>
-#include<memory>
-#include<windows.h>
+#include "Pch.h"
 
 class FpsController;
 class PauseMenu;

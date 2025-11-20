@@ -6,6 +6,7 @@
 #include "../../Object/Common/Transform.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Collider/ColliderSphere.h"
+#include "../../Collider/ColliderModel.h"
 
 // コンストラクタ
 Camera::Camera(void)
@@ -156,24 +157,19 @@ void Camera::InitCollider(void)
 // 衝突判定のコールバック（Update()メソッドの後あたりに追加）
 void Camera::OnCollisionStay(const CollisionInfo& info)
 {
-    // 地面との衝突の場合
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::GROUND)
-    {
-        // 押し出しベクトルを計算
-        VECTOR pushVec = VSub(trans_.pos, prePos_);
-
-        // Y方向に押し出された = 地面接触
-        bool isGroundHit = (pushVec.y > 0.01f);
-
-        if (isGroundHit)
-        {
-            // 地面接触時の処理（必要に応じて）
-#ifdef _DEBUG
-            // printfDx("カメラが地面に接触\n");
-#endif
-        }
-    }
+   
 }
+
+// 重力計算
+void Camera::CalcGravityPow(void)
+{
+}
+
+// 衝突判定
+void Camera::Collision(void)
+{
+}
+
 // 更新処理（衝突判定前）
 void Camera::UpdateBeforeCollision(void)
 {
@@ -186,6 +182,9 @@ void Camera::Update(void)
 {
     // 基底クラスの更新（衝突判定を実行）
     UnitBase::Update();
+
+    // カメラ押し出し処理（地面との衝突対応）
+    HandleCollisionPushback();
 
     // ライトの移動
     SetLightPositionHandle(spotLight_, trans_.pos);
@@ -403,7 +402,7 @@ void Camera::SetBeforeDrawFreeMouse(void)
 
     // 注視点更新
     VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
-    targetPos_ = VAdd(trans_.pos, rotLocalPos);  // pos_ → trans_.pos
+    targetPos_ = VAdd(trans_.pos, rotLocalPos);
 
     // 上ベクトル更新
     cameraUp_ = rot_.GetUp();
@@ -412,45 +411,12 @@ void Camera::SetBeforeDrawFreeMouse(void)
     SetMousePoint(centerX_, centerY_);
 }
 
+// TPSマウス操作カメラ
 void Camera::SetBeforeDrawTPSMouse(void)
 {
     if (!followTransform_) return;
 
     auto& ins = InputManager::GetInstance();
-
-    // 押し出しが発生したかチェック（Y方向のみ）
-    VECTOR pushVec = VSub(trans_.pos, prePos_);
-    bool isGroundHit = (pushVec.y > 0.01f);
-
-    // 地面接触の持続時間を管理（一瞬の貫通を無視）
-    static float groundContactTime = 0.0f;
-    static bool wasGroundContact = false;
-    static float fixedGroundY = 0.0f;
-    static bool isGroundFixed = false;
-
-    if (isGroundHit)
-    {
-        groundContactTime += SceneManager::GetInstance().GetDeltaTime();
-        wasGroundContact = true;
-
-        if (!isGroundFixed)
-        {
-            fixedGroundY = trans_.pos.y - 15.0f;
-            isGroundFixed = true;
-        }
-    }
-    else if (wasGroundContact)
-    {
-        groundContactTime -= SceneManager::GetInstance().GetDeltaTime() * 5.0f;
-        if (groundContactTime < 0.0f)
-        {
-            groundContactTime = 0.0f;
-            wasGroundContact = false;
-            isGroundFixed = false;
-        }
-    }
-
-    bool isStableGroundContact = (groundContactTime > 0.1f);
 
     // マウス座標を取得
     Vector2 mousePos = ins.GetMousePos();
@@ -464,40 +430,7 @@ void Camera::SetBeforeDrawTPSMouse(void)
 
     // Pitch（上下回転）の処理
     float pitchDelta = -(deltaY_ * sensitivity_);
-
-    // 上を向く動作をしたら接触判定を即座に解除
-    if (isStableGroundContact && pitchDelta > 0.0f)
-    {
-        groundContactTime = 0.0f;
-        wasGroundContact = false;
-        isGroundFixed = false;
-        isStableGroundContact = false;
-    }
-
-    // 地面固定中で下を向こうとしている場合のみ距離を縮める
-    if (isStableGroundContact && pitchDelta < 0.0f)
-    {
-        distance_ -= 20.0f; 
-        const float MIN_DISTANCE = 0.0f;
-        if (distance_ < MIN_DISTANCE)
-        {
-            distance_ = MIN_DISTANCE;
-        }
-    }
-    else
-    {
-        pitch_ += pitchDelta;
-    }
-
-    // 安定した地面接触がない時のみ距離を元に戻す
-    if (!isStableGroundContact && distance_ < CAMERA_DISTANCE && !freezeFollow_)
-    {
-        distance_ += 20.0f;
-        if (distance_ > CAMERA_DISTANCE)
-        {
-            distance_ = CAMERA_DISTANCE;
-        }
-    }
+    pitch_ += pitchDelta;
 
     // キー入力による回転を適用（凍結中のみ）
     if (freezeFollow_)
@@ -509,32 +442,12 @@ void Camera::SetBeforeDrawTPSMouse(void)
     if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
     if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
 
-    // 地面固定中はピッチを0度以上に制限
-    if (isStableGroundContact)
-    {
-        const float MIN_PITCH_ON_GROUND = 0.0f;
-        if (pitch_ < MIN_PITCH_ON_GROUND)
-        {
-            pitch_ = MIN_PITCH_ON_GROUND;
-        }
-    }
-
+    // 注視点の高さオフセット（プレイヤーの胸の高さ）
     const float TARGET_HEIGHT_OFFSET = 100.0f;
-    const float GROUND_OFFSET = 15.0f;
 
-    // 凍結中はカメラ位置を完全に固定
-    if (freezeFollow_)
+    // 追従が凍結されていない場合の通常処理
+    if (!freezeFollow_)
     {
-        // カメラ位置は変更しない（frozenCameraPos_を維持）
-        // trans_.pos = frozenCameraPos_; // これも不要、何もしない
-
-        // 注視点だけプレイヤーを向くように更新
-        VECTOR playerPos = followTransform_->pos;
-        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
-    }
-    else
-    {
-        // 通常の追従処理
         VECTOR followPos = followTransform_->pos;
 
         // 球面座標でカメラのオフセットを計算
@@ -542,56 +455,84 @@ void Camera::SetBeforeDrawTPSMouse(void)
         offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
         offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
+        // 理想的なカメラ位置を計算
         VECTOR idealPos = VAdd(followPos, offset_);
 
+        // 地面の高さを取得
+        float groundY = GetGroundHeight(idealPos);
+
+        // カメラの球体コライダ半径を考慮した最低高度
+        float minCameraY = groundY + COLLISION_RADIUS + MIN_CAMERA_Y;
+
+        // 地面より下にならないように制限
+        if (idealPos.y < minCameraY)
+        {
+            idealPos.y = minCameraY;
+
+        }
+
+        // 距離が非常に近い場合、Y座標を地面より上に補正
         const float MIN_CAMERA_HEIGHT = 50.0f;
         if (distance_ < 100.0f && idealPos.y < followPos.y + MIN_CAMERA_HEIGHT)
         {
             idealPos.y = followPos.y + MIN_CAMERA_HEIGHT;
         }
 
-        VECTOR toCamera = VSub(trans_.pos, followPos);
-        float currentDistXZ = sqrtf(toCamera.x * toCamera.x + toCamera.z * toCamera.z);
-
+        // プレイヤーからカメラへの距離（XZ平面のみ）
         VECTOR toIdeal = VSub(idealPos, followPos);
         float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
 
-        if (isGroundFixed && isStableGroundContact)
+        // 通常時の処理
+        if (idealDistXZ < 1.0f)
         {
-            float lerpRate = 0.3f;
-
-            if (idealDistXZ < 1.0f)
-            {
-                trans_.pos.x = followPos.x;
-                trans_.pos.z = followPos.z;
-            }
-            else
-            {
-                trans_.pos.x += (idealPos.x - trans_.pos.x) * lerpRate;
-                trans_.pos.z += (idealPos.z - trans_.pos.z) * lerpRate;
-            }
-
-            trans_.pos.y = fixedGroundY + GROUND_OFFSET;
+            trans_.pos.x = followPos.x;
+            trans_.pos.z = followPos.z;
+            trans_.pos.y = idealPos.y;
         }
         else
         {
-            if (idealDistXZ < 1.0f)
-            {
-                trans_.pos.x = followPos.x;
-                trans_.pos.z = followPos.z;
-                trans_.pos.y = idealPos.y;
-            }
-            else
-            {
-                trans_.pos = idealPos;
-            }
+            trans_.pos = idealPos;
         }
 
+        // 注視点（プレイヤーの胸の高さを見る）
         targetPos_ = VGet(followPos.x, followPos.y + TARGET_HEIGHT_OFFSET, followPos.z);
     }
+    else
+    {
+        // 凍結中の処理
+        VECTOR playerPos = followTransform_->pos;
 
+        // 球面座標でカメラのオフセットを計算（通常時と同じ）
+        offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+        offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+        offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+        // 理想的なカメラ位置を計算
+        VECTOR idealPos = VAdd(playerPos, offset_);
+
+        // 地面の高さを取得
+        float groundY = GetGroundHeight(idealPos);
+
+        // カメラの球体コライダ半径を考慮した最低高度
+        float minCameraY = groundY + COLLISION_RADIUS + MIN_CAMERA_Y;
+
+        // 地面より下にならないように制限
+        if (idealPos.y < minCameraY)
+        {
+            idealPos.y = minCameraY;
+
+        }
+
+        trans_.pos = idealPos;
+
+        // 注視点（プレイヤーの胸の高さを見る）
+        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
+    }
+
+    // 上方向は固定
     cameraUp_ = VGet(0, 1, 0);
 
+    // マウスを中央に戻す
     SetMousePoint(centerX_, centerY_);
 }
 
@@ -664,8 +605,11 @@ void Camera::SetBeforeDrawLockon(void)
 void Camera::Draw(void) const
 {
 #ifdef _DEBUG
-    // 基底クラスのコライダ描画
     UnitBase::Draw();
+
+    // カメラ位置を可視化
+    DrawSphere3D(trans_.pos, 10.0f, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+
 #endif
 }
 
@@ -954,4 +898,72 @@ void Camera::Decelerate(float speed)
             moveSpeed_ = 0.0f;  // 修正: speed → 0.0f
         }
     }
+}
+
+// 衝突処理
+void Camera::HandleCollisionPushback(void)
+{
+    // マウス操作で既に高さ制限されているので、
+    // ここでは最終的な安全チェックのみ行う
+
+    // 最低高度の安全装置
+    const float ABSOLUTE_MIN_Y = 5.0f;
+    if (trans_.pos.y < ABSOLUTE_MIN_Y)
+    {
+        float pushY = ABSOLUTE_MIN_Y - trans_.pos.y;
+        trans_.pos.y = ABSOLUTE_MIN_Y;
+        targetPos_.y += pushY;
+    }
+}
+
+// 地面の高さを取得
+float Camera::GetGroundHeight(const VECTOR& pos)
+{
+    // デフォルト値（地面が見つからない場合）
+    float groundY = 0.0f;
+    bool found = false;
+
+    // 衝突候補から地面を探す
+    for (const auto& hitCol : hitColliders_)
+    {
+        if (!hitCol) continue;
+
+        // 地面タグのみ処理
+        if (hitCol->GetTag() != ColliderBase::TAG::GROUND)
+        {
+            continue;
+        }
+
+        // モデルコライダにキャスト
+        const ColliderModel* groundModel = dynamic_cast<const ColliderModel*>(hitCol);
+        if (!groundModel) continue;
+
+        int modelId = groundModel->GetFollow()->modelId;
+        if (modelId == -1) continue;
+
+        // 指定座標から真下にレイキャスト
+        VECTOR rayStart = VAdd(pos, VGet(0, 1000.0f, 0));  // 十分高い位置から
+        VECTOR rayEnd = VAdd(pos, VGet(0, -1000.0f, 0));   // 十分低い位置まで
+
+        auto lineHits = MV1CollCheck_LineDim(modelId, -1, rayStart, rayEnd);
+
+        if (lineHits.HitNum > 0)
+        {
+            // 最も高い地面を取得
+            for (int i = 0; i < lineHits.HitNum; i++)
+            {
+                float hitY = lineHits.Dim[i].HitPosition.y;
+
+                if (!found || hitY > groundY)
+                {
+                    groundY = hitY;
+                    found = true;
+                }
+            }
+
+            MV1CollResultPolyDimTerminate(lineHits);
+        }
+    }
+
+    return groundY;
 }

@@ -95,7 +95,21 @@ protected:
     // 衝突判定のコールバック
     void OnCollisionStay(const CollisionInfo& info) override;
 
+    // 重力計算
+    void CalcGravityPow(void) override;
+
+    // 衝突判定
+    void Collision(void) override;
+
 private:
+
+    // 衝突判定
+    enum class COLLIDER_TYPE
+    {
+        SPHERE,
+        MAX,
+    };
+
     // カメラの初期設定
     static constexpr VECTOR DEFAULT_CAMERA_POS = { 0.0f, 100.0f, -500.0f };
 
@@ -136,6 +150,13 @@ private:
 
     // カメラ用当たり半径
     static constexpr float COLLISION_RADIUS = 35.0f;
+   
+
+    // 地面からの最低高度
+    static constexpr float MIN_HEIGHT_FROM_GROUND = 20.0f;
+
+    // 最低カメラ高度
+    static constexpr float MIN_CAMERA_Y = 20.0f;
 
     // モード
     MODE mode_;
@@ -283,4 +304,11 @@ private:
 
     // 減速
     void Decelerate(float speed);
+
+    // 押し出し処理用
+    void HandleCollisionPushback(void);
+
+    // 地面の高さを取得
+    float GetGroundHeight(const VECTOR& pos);
+
 };

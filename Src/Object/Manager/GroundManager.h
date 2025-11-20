@@ -1,10 +1,6 @@
 #pragma once
 #include "../Stage/Ground.h"
-#include <vector>
-#include <memory>
-#include <DxLib.h>
 
-// 前方宣言を追加
 class Camera;
 
 // ステージの地面生成マネージャー
@@ -50,7 +46,7 @@ private:
     static constexpr float TILE_SIZE = 100.0f;
 
     // 登録範囲
-    static constexpr float REGISTER_RANGE = 100.0f;
+    static constexpr float REGISTER_RANGE = 200.0f;
 
     // 登録範囲の二乗
     static constexpr float REGISTER_RANGE_SQ = REGISTER_RANGE * REGISTER_RANGE;

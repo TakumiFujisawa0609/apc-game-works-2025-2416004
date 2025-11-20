@@ -86,7 +86,7 @@ void CollisionController::Update(void)
                 auto& actor2 = actors_[j];
                 VECTOR pos2 = actor2->GetPos();
 
-                // ★最適化1: 距離カリング（早期リターン）
+                // 距離カリング（早期リターン）
                 if (enableDistanceCulling_)
                 {
                     float dx = pos2.x - pos1.x;

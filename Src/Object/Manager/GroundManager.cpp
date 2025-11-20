@@ -91,14 +91,14 @@ void GroundManager::RegisterNearbyGrounds(void)
     auto camera = SceneManager::GetInstance().GetCamera();
     if (!camera) return;
 
-    VECTOR centerPos = camera->GetPos();
+    VECTOR cameraPos = camera->GetPos();
 
     for (auto& g : grounds_)
     {
         bool shouldRegister = false;
 
         // カメラ位置チェック
-        VECTOR cameraDiff = VSub(g->GetPos(), centerPos);
+        VECTOR cameraDiff = VSub(g->GetPos(), cameraPos);
         cameraDiff.y = 0.0f;
         if (VSquareSize(cameraDiff) <= REGISTER_RANGE_SQ)
         {
@@ -137,6 +137,7 @@ void GroundManager::RegisterNearbyGrounds(void)
             registeredGrounds_.push_back(g);
         }
     }
+
 }
 
 // カメラ位置に近いタイルのモデルIDと位置を取得
