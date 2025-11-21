@@ -74,14 +74,59 @@ void EnemyBase::InitCollider(void)
 // 更新処理
 void EnemyBase::Update(void)
 {
+    // 押し出し前の位置を保存
+    preCollisionPos_ = trans_.pos;
+
     // UnitBaseの更新（重力・衝突判定を含む）
     UnitBase::Update();
+
+    // ステージ外に出た場合は元の位置に戻す
+    if (!IsOnStage(trans_.pos))
+    {
+        // 前フレームの位置に戻す
+        trans_.pos = preCollisionPos_;
+
+        // 移動をキャンセル
+        movePow_ = Utility::VECTOR_ZERO;
+    }
 
 #ifdef _DEBUG
     // デバッグ情報
     //printfDx("Enemy Y: %.2f, JumpPow.y: %.2f\n", trans_.pos.y, jumpPow_.y);
     //printfDx("Enemy HitColliders: %d\n", hitColliders_.size());
 #endif
+}
+
+// ステージ上にいるかチェック
+bool EnemyBase::IsOnStage(const VECTOR& pos) const
+{
+    // GroundManagerのタイル範囲を参照
+    // TILE_COUNT = 10, TILE_SIZE = 1000.0f と仮定
+    const float TILE_COUNT = 10.0f;
+    const float TILE_SIZE = 1000.0f;
+    const float HALF_STAGE_SIZE = (TILE_COUNT * TILE_SIZE) * 0.5f;
+
+    // ステージの範囲内かチェック（マージンを持たせる）
+    const float MARGIN = 100.0f;
+    const float MAX_X = HALF_STAGE_SIZE - MARGIN;
+    const float MIN_X = -HALF_STAGE_SIZE + MARGIN;
+    const float MAX_Z = HALF_STAGE_SIZE - MARGIN;
+    const float MIN_Z = -HALF_STAGE_SIZE + MARGIN;
+
+    // 範囲チェック
+    if (pos.x < MIN_X || pos.x > MAX_X ||
+        pos.z < MIN_Z || pos.z > MAX_Z)
+    {
+        return false;
+    }
+
+    // Y座標が異常に低い場合もfalse
+    if (pos.y < -500.0f)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 // 描画処理
@@ -107,6 +152,30 @@ void EnemyBase::Draw(void) const
             DrawSphere3D(start, 5.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
             DrawSphere3D(end, 5.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
         }
+    }
+
+    // 衝突しているエネミー数の表示
+    int enemyCollisionCount = 0;
+    for (auto* col : hitColliders_)
+    {
+        if (col->GetTag() == ColliderBase::TAG::ENEMY)
+        {
+            enemyCollisionCount++;
+        }
+    }
+    if (enemyCollisionCount > 0)
+    {
+        VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 100, 0)));
+        DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
+            GetColor(255, 255, 0), "Colliding: %d", enemyCollisionCount);
+    }
+
+    // ステージ外警告
+    if (!IsOnStage(trans_.pos))
+    {
+        VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 150, 0)));
+        DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
+            GetColor(255, 0, 0), "OUT OF STAGE!");
     }
 #endif // _DEBUG
 }

@@ -47,5 +47,8 @@ private:
 	// 移動速度
 	VECTOR targetPos_;
 
+	// コライダのオフセットを更新
+	void UpdateColliderOffset(void);
+
 };
 

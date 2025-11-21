@@ -40,10 +40,10 @@ public:
 
 private:
     // 地面の最大数
-    static constexpr int TILE_COUNT = 100;
+    static constexpr int TILE_COUNT = 160;
 
     // 地面の大きさ
-    static constexpr float TILE_SIZE = 100.0f;
+    static constexpr float TILE_SIZE = 1150.0f;
 
     // 登録範囲
     static constexpr float REGISTER_RANGE = 200.0f;
@@ -69,6 +69,12 @@ private:
     // 敵のの座標を取得
     std::vector<VECTOR> enemyPoss_;
 
-    // 周辺の地面を登録（追加）
+    // 周辺の地面を登録
     void RegisterNearbyGrounds(void);
+
+    // 座標からグリッドインデックスを取得
+    int GetGridIndex(const VECTOR& pos) const;
+
+    // 周辺のグリッド範囲を取得
+    std::vector<int> GetNearbyGridIndices(const VECTOR& pos, float range) const;
 };

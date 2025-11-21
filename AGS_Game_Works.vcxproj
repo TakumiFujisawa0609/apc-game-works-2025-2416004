@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Manager\System\DamageManager.h" />
     <ClInclude Include="Src\Manager\System\CollisionController.h" />
     <ClInclude Include="Src\Collider\ColliderModel.h" />
     <ClInclude Include="Src\Collider\ColliderCapsule.h" />
@@ -205,6 +206,7 @@
     <ClInclude Include="Src\Object\Player\Sword.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Manager\System\DamageManager.cpp" />
     <ClCompile Include="Src\Manager\System\CollisionController.cpp" />
     <ClCompile Include="Src\Collider\ColliderModel.cpp" />
     <ClCompile Include="Src\Collider\ColliderCapsule.cpp" />

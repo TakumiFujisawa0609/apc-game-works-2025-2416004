@@ -41,8 +41,8 @@ private:
     static constexpr float BASE_TILE_SIZE = 100.0f;
 
     // ÉXÉPÅ[Éã
-    static constexpr float TILE_SCALE = 2.0f;
+    static constexpr float TILE_SCALE = 10.0f;
 
-    // CollisionControllerÇ…ìoò^çœÇ›Ç©Åií«â¡Åj
+    // CollisionControllerÇ…ìoò^çœÇ›Ç©
     bool isRegistered_;
 };

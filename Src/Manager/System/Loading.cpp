@@ -114,7 +114,7 @@ void Loading::Update(void)
     }
 }
 
-// 描画する（★必ずメインスレッドから呼ぶこと）
+// 描画する
 void Loading::Draw(void)
 {
     // 画面サイズを取得する

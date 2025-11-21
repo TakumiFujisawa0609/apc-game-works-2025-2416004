@@ -60,6 +60,7 @@ public:
 	// ダメージ処理
 	void TakeDamage(int damage);
 
+	// 座標のポインタ取得
 	VECTOR* GetPosPtr(void);
 
 	// 攻撃中かどうか
@@ -123,6 +124,9 @@ private:
 	// パラメータ
 	Param param_;
 
+	// 剣オブジェクト
+	std::unique_ptr<Sword> sword_;
+
 	// モデルハンドル
 	int modelId_;
 
@@ -146,6 +150,9 @@ private:
 
 	// 攻撃クールタイム
 	float attackCoolTime_;
+
+	// 敵からの最後のヒット時間
+	float lastHitEnemyTime_;
 
 	// 移動入力
 	void ProcessMove(void);

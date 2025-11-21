@@ -306,8 +306,6 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
 // 衝突可能かどうかの判定
 bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const
 {
-    // 同じタグ同士は衝突しない
-    if (tagA == tagB) return false;
 
     // プレイヤーと地面
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::GROUND) ||

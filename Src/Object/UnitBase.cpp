@@ -219,7 +219,7 @@ void UnitBase::InitAnimaiton(void)
 {
 }
 
-// ========== コライダシステム ==========
+// コライダシステム
 
 const ColliderBase* UnitBase::GetOwnCollider(int key) const
 {
@@ -273,20 +273,20 @@ void UnitBase::AddHitCollidersInRange(const std::vector<const ColliderBase*>& co
 
 void UnitBase::Collision(void)
 {
-	// 移動処理
+	// 1. 移動処理
 	trans_.pos = VAdd(trans_.pos, movePow_);
 
-	// ジャンプ量を加算
+	// 2. ジャンプ量を加算
 	trans_.pos = VAdd(trans_.pos, jumpPow_);
 
-	// 地面との衝突
-	CollisionGravity();
-
-	// 球体同士の押し出し（敵同士など）
+	// 3. 球体同士の押し出し（敵同士・プレイヤーとの押し合い）
 	CollisionSphereVsSphere();
 
-	// 敵との衝突（ダメージ判定など）
+	// 4. 敵との衝突（ダメージ判定など）
 	CollisionWithEnemy();
+
+	// 5. 地面との衝突
+	CollisionGravity();
 }
 
 void UnitBase::CalcGravityPow(void)
@@ -361,7 +361,7 @@ void UnitBase::CollisionGravity(void)
 				continue;
 			}
 
-			// ★最もY座標が高い衝突点を採用
+			// 最もY座標が高い衝突点を採用
 			if (hit.HitPosition.y > maxY)
 			{
 				maxY = hit.HitPosition.y;
@@ -403,13 +403,19 @@ void UnitBase::CollisionSphereVsSphere(void)
 		// 球体以外はスキップ
 		if (hitCol->GetShape() != ColliderBase::SHAPE::SPHERE) continue;
 
-		// 自分と同じタグはスキップ（同じ種類同士は押し合わない）
-		if (hitCol->GetTag() == mySphere->GetTag()) continue;
-
 		const ColliderSphere* hitSphere =
 			dynamic_cast<const ColliderSphere*>(hitCol);
 
 		if (hitSphere == nullptr) continue;
+
+		// 同じタグ同士の判定条件を変更
+		// ENEMYタグ同士は押し出しを行う、それ以外の同じタグはスキップ
+		bool isSameTag = (hitCol->GetTag() == mySphere->GetTag());
+		bool isEnemyVsEnemy = (mySphere->GetTag() == ColliderBase::TAG::ENEMY &&
+			hitSphere->GetTag() == ColliderBase::TAG::ENEMY);
+
+		// 同じタグかつENEMY同士でない場合はスキップ
+		if (isSameTag && !isEnemyVsEnemy) continue;
 
 		// 球体同士の衝突判定
 		VECTOR myPos = mySphere->GetPos();
@@ -428,9 +434,26 @@ void UnitBase::CollisionSphereVsSphere(void)
 			VECTOR normal = VScale(diff, 1.0f / dist);
 			float penetration = radiusSum - dist;
 
-			// 押し出し（半分ずつ）
-			VECTOR pushVec = VScale(normal, penetration * 0.5f);
-			trans_.pos = VSub(trans_.pos, pushVec);
+			// ENEMY同士の場合は水平方向のみ押し出し
+			if (isEnemyVsEnemy)
+			{
+				// 水平方向の押し出しベクトル
+				VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
+				float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
+
+				if (pushLen > 0.0001f)
+				{
+					// 正規化して押し出し量を適用
+					pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
+					trans_.pos = VSub(trans_.pos, pushVec);
+				}
+			}
+			else
+			{
+				// それ以外は通常の押し出し（全方向）
+				VECTOR pushVec = VScale(normal, penetration * 0.5f);
+				trans_.pos = VSub(trans_.pos, pushVec);
+			}
 
 			// コールバック呼び出し
 			CollisionInfo info;

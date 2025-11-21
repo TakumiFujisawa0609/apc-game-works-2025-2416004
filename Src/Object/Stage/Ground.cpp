@@ -1,5 +1,4 @@
 #include "Ground.h"
-#include "../../Manager/Generic/ResourceManager.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Collider/ColliderModel.h"
 #include "../../Utility/Utility.h"

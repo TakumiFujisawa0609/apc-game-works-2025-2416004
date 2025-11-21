@@ -177,6 +177,7 @@ void SceneTitle::Update(void)
             else if (selected == maxIndex) { // ゲーム終了
                 sound.Play(SoundManager::SOUND::SE_PUSH);
                 exitRequested_ = true;
+                SceneManager::GetInstance().GameEnd();
                 return;
             }
             else {
@@ -207,16 +208,16 @@ void SceneTitle::Update(void)
             if (selected == 0) { // 目標について
                 howToPlayPage_ = 1;
             }
-            else if (selected == 1) { // 錬金について
+            else if (selected == 1) {
                 howToPlayPage_ = 2;
             }
-            else if (selected == 2) { // アトリエについて
+            else if (selected == 2) {
                 howToPlayPage_ = 3;
             }
-            else if (selected == 3) { // ギルドについて
+            else if (selected == 3) { 
                 howToPlayPage_ = 4;
             }
-            else if (selected == 4) { // ガーデンについて
+            else if (selected == 4) {
                 howToPlayPage_ = 5;
             }
             else if (selected == 5) { // 戻る
@@ -246,17 +247,17 @@ void SceneTitle::Draw(void)
                 Application::SCREEN_SIZE_Y / 2,
                 1.0, 0.0, playHandle2_, true);
         }
-        else if (howToPlayPage_ == 3) { // アトリエ
+        else if (howToPlayPage_ == 3) { 
             DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
                 Application::SCREEN_SIZE_Y / 2,
                 1.0, 0.0, atelierHandle_, true);
         }
-        else if (howToPlayPage_ == 4) { // ギルド
+        else if (howToPlayPage_ == 4) { 
             DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
                 Application::SCREEN_SIZE_Y / 2,
                 1.0, 0.0, guildHandle_, true);
         }
-        else if (howToPlayPage_ == 5) { // ガーデン
+        else if (howToPlayPage_ == 5) {
             DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
                 Application::SCREEN_SIZE_Y / 2,
                 1.0, 0.0, gardenHandle_, true);

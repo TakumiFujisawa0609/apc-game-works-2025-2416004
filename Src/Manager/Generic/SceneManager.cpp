@@ -160,28 +160,26 @@ void SceneManager::Update(void)
 {
     if (scenes_.empty()) return;
 
-    // 時間を更新する
+    // 経過時間
     TimeManager::GetInstance().Update();
 
-    // デルタタイムを計算する
     auto nowTime = std::chrono::system_clock::now();
-   
-    deltaTime_ = static_cast<float>(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(nowTime - preTime_).count()
-        / 1000000000.0
-        );
-   
+    deltaTime_ = std::chrono::duration<float>(nowTime - preTime_).count();
     preTime_ = nowTime;
 
-    // 現在のシーンを取得する
+    // ゲーム終了フラグが立っていたら何もしない
+    if (isGameEnd_)
+    {
+        return; // ※破棄は Application 側で行う
+    }
+
     std::shared_ptr<SceneBase> current = scenes_.back();
 
-    // シーン切り替え中の場合、ロードを更新する
+    // ロード中
     if (isSceneChanging_)
     {
         Loading::GetInstance()->Update();
 
-        // ロード完了を確認する
         if (!Loading::GetInstance()->IsLoading())
         {
             current->EndLoad();
@@ -190,26 +188,16 @@ void SceneManager::Update(void)
         }
         return;
     }
-    else
-    {
-        // シーンを更新する
-        if (current) { current->Update(); }
 
-        if (camera_) { camera_->UpdateBeforeCollision(); }
+    // 通常更新
+    if (current) current->Update();
 
-        // 衝突判定を実行（CollisionControllerが自動で全ユニット間の判定を行う）
-        CollisionController::GetInstance().Update();
+    if (camera_) camera_->UpdateBeforeCollision();
 
-        // カメラを更新する
-        if (camera_) camera_->Update();
-    }
+    // 衝突
+    CollisionController::GetInstance().Update();
 
-    // 終了フラグを確認する
-    if (isGameEnd_)
-    {
-        scenes_.clear();
-        Release();
-    }
+    if (camera_) camera_->Update();
 }
 
 // 描画する

@@ -55,6 +55,12 @@ protected:
     // 地面からのオフセット
     static constexpr float GROUND_OFFSET = 2.0f;
 
+    // 衝突前の座標
+    VECTOR preCollisionPos_;
+
+    // ステージ上にいるかチェック
+    bool IsOnStage(const VECTOR& pos) const;
+
     // 衝突判定の初期化
     void InitCollider(void) override;
 

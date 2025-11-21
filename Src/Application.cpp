@@ -161,7 +161,7 @@ void Application::Run(void)
 
 				case 3: // ƒQ[ƒ€I—¹
 					sceneManager.GameEnd();
-					return;
+					break;
 				}
 			}
 		}
