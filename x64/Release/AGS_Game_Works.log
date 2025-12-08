@@ -1,50 +1,19 @@
 ﻿  Application.cpp
-  PauseMenu.cpp
-  SceneUi.cpp
-  Camera.cpp
-  ResourceManager.cpp
-  SceneManager.cpp
-  CollisionController.cpp
-  Loading.cpp
-  AnimationController.cpp
-  EnemyBase.cpp
-  EnemySlime.cpp
-  EnemyManager.cpp
-  GroundManager.cpp
   Player.cpp
   Sword.cpp
-  Ground.cpp
-  UnitBase.cpp
-  SceneGame.cpp
-  SceneScore.cpp
-  SceneTitle.cpp
-  Utility.cpp
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(83,69): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル '/Src/DrawUI/SceneUI/PauseMenu.cpp' をコンパイルしています)
-  
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(115,78): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル '/Src/DrawUI/SceneUI/PauseMenu.cpp' をコンパイルしています)
-  
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(163,40): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル '/Src/DrawUI/SceneUI/PauseMenu.cpp' をコンパイルしています)
-  
-D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(163,26): warning C4267: '初期化中': 'size_t' から 'const int' に変換しました。データが失われているかもしれません。
-  (ソース ファイル '/Src/DrawUI/SceneUI/PauseMenu.cpp' をコンパイルしています)
-  
-  main.cpp
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(25,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(26,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(179,32): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(190,36): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(184,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(195,32): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
   
   コード生成しています。
-  474 of 4210 functions (11.3%) were compiled, the rest were copied from previous compilation.
-    223 functions were new in current compilation
-    264 functions had inline decision re-evaluated but remain unchanged
+  8 of 4540 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    17 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。
 EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2019_x64.pdb' が 'EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj)' で、または 'D:\AGSdeta\AGS_Game_Works\x64\Release\EffekseerForDXLib_vs2019_x64.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exe

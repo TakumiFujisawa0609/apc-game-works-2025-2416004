@@ -7,6 +7,7 @@
 #include "../Collider/ColliderSphere.h"
 #include "../Collider/ColliderModel.h"
 #include "../Manager/System/CollisionController.h"
+#include "../Collider/ColliderCapsule.h"
 
 // コンストラクタ
 UnitBase::UnitBase(void)
@@ -285,7 +286,10 @@ void UnitBase::Collision(void)
 	// 4. 敵との衝突（ダメージ判定など）
 	CollisionWithEnemy();
 
-	// 5. 地面との衝突
+	// 5. カプセルとの衝突（剣の攻撃判定など）
+	CollisionWithCapsule();
+
+	// 6. 地面との衝突
 	CollisionGravity();
 }
 
@@ -361,7 +365,7 @@ void UnitBase::CollisionGravity(void)
 				continue;
 			}
 
-			// 最もY座標が高い衝突点を採用
+			// ★最もY座標が高い衝突点を採用
 			if (hit.HitPosition.y > maxY)
 			{
 				maxY = hit.HitPosition.y;
@@ -471,6 +475,119 @@ void UnitBase::CollisionSphereVsSphere(void)
 
 void UnitBase::CollisionWithEnemy(void)
 {
+	// カプセルコライダー
+	int capsuleType = static_cast<int>(COLLIDER_TYPE::CAPSULE);
+
+	// カプセルコライダーがあればそれを利用なければスフィアを利用
+	ColliderBase* myCol = nullptr;
+
+	if (ownColliders_.count(capsuleType) > 0)
+	{
+		myCol = ownColliders_.at(capsuleType);
+	}
+	else if (ownColliders_.count(static_cast<int>(COLLIDER_TYPE::SPHERE)) > 0)
+	{
+		myCol = ownColliders_.at(static_cast<int>(COLLIDER_TYPE::SPHERE));
+	}
+
+	if (myCol == nullptr) { return; }
+
+	// 登録されている衝突物を全てチェック
+	for (const auto& hitCol : hitColliders_)
+	{
+		// 敵タグ以外はスキップ(自分も敵の場合は別のタグと判定)
+		if (hitCol->GetTag() != ColliderBase::TAG::ENEMY && hitCol->GetTag() != ColliderBase::TAG::PLAYER) { continue; }
+
+		// 自分と同じタグはスキップ
+		if (hitCol->GetTag() == myCol->GetTag()) { continue; }
+
+		// 衝突判定
+		CollisionInfo info;
+		bool isHit = false;
+
+		// カプセル同士の衝突判定
+		if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
+		{
+			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
+			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
+
+			if (myCapsule && hitCapsule)
+			{
+				isHit = CollisionController::GetInstance().CheckCollision(myCapsule, hitCapsule, info);
+			}
+		}
+		// ここを追加/修正 
+		// カプセルと球体の衝突判定（自分がカプセル、相手が球体）
+		else if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
+		{
+			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
+			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
+
+			if (myCapsule && hitSphere)
+			{
+				// CheckCollision は (sphere, capsule) の順で呼ぶ必要がある
+				isHit = CollisionController::GetInstance().CheckCollision(hitSphere, myCapsule, info);
+
+				// infoの中身を入れ替える（myとhitが逆になっているため）
+				if (isHit)
+				{
+					// myColliderとhitColliderを入れ替え
+					const ColliderBase* temp = info.myCollider;
+					info.myCollider = info.hitCollider;
+					info.hitCollider = temp;
+
+					// 法線を反転
+					info.hitNormal = VScale(info.hitNormal, -1.0f);
+				}
+			}
+		}
+		// 球体とカプセルの衝突判定（自分が球体、相手がカプセル）
+		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
+		{
+			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
+			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
+
+			if (mySphere && hitCapsule)
+			{
+				isHit = CollisionController::GetInstance().CheckCollision(mySphere, hitCapsule, info);
+			}
+		}
+		// 球体同士の衝突判定
+		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
+		{
+			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
+			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
+
+			if (mySphere && hitSphere)
+			{
+				VECTOR diff = VSub(hitSphere->GetPos(), mySphere->GetPos());
+				float distSq = VDot(diff, diff);
+				float radiusSum = mySphere->GetRadius() + hitSphere->GetRadius();
+
+				if (distSq < radiusSum * radiusSum)
+				{
+					float dist = sqrtf(distSq + 0.0001f);
+
+					info.myCollider = mySphere;
+					info.hitCollider = hitSphere;
+					info.hitPosition = VAdd(mySphere->GetPos(), VScale(diff, mySphere->GetRadius() / dist));
+					info.hitNormal = dist > 0.0001f ? VScale(diff, 1.0f / dist) : Utility::DIR_U;
+					info.penetration = radiusSum - dist;
+					info.isValid = true;
+					isHit = true;
+				}
+			}
+		}
+
+		if (isHit)
+		{
+			OnCollisionEnter(info);
+		}
+	}
+}
+
+void UnitBase::CollisionWithCapsule(void)
+{
 	// 球体コライダ
 	int sphereType = static_cast<int>(COLLIDER_TYPE::SPHERE);
 
@@ -484,44 +601,19 @@ void UnitBase::CollisionWithEnemy(void)
 	// 登録されている衝突物を全てチェック
 	for (const auto& hitCol : hitColliders_)
 	{
-		// 敵タグ以外はスキップ（自分も敵の場合は別のタグと判定）
-		if (hitCol->GetTag() != ColliderBase::TAG::ENEMY &&
-			hitCol->GetTag() != ColliderBase::TAG::PLAYER) continue;
+		// カプセル以外はスキップ
+		if (hitCol->GetShape() != ColliderBase::SHAPE::CAPSULE) continue;
 
-		// 自分と同じタグはスキップ
-		if (hitCol->GetTag() == mySphere->GetTag()) continue;
+		const ColliderCapsule* hitCapsule =
+			dynamic_cast<const ColliderCapsule*>(hitCol);
 
-		// 球体以外はスキップ
-		if (hitCol->GetShape() != ColliderBase::SHAPE::SPHERE) continue;
-
-		const ColliderSphere* hitSphere =
-			dynamic_cast<const ColliderSphere*>(hitCol);
-
-		if (hitSphere == nullptr) continue;
+		if (hitCapsule == nullptr) continue;
 
 		// 衝突判定
-		VECTOR myPos = mySphere->GetPos();
-		VECTOR hitPos = hitSphere->GetPos();
-		float myRadius = mySphere->GetRadius();
-		float hitRadius = hitSphere->GetRadius();
-
-		VECTOR diff = VSub(hitPos, myPos);
-		float distSq = VDot(diff, diff);
-		float radiusSum = myRadius + hitRadius;
-
-		if (distSq < radiusSum * radiusSum)
+		CollisionInfo info;
+		if (CollisionController::GetInstance().CheckCollision(mySphere, hitCapsule, info))
 		{
-			// 衝突している（ダメージ処理など）
-			float dist = sqrtf(distSq + 0.0001f);
-
-			CollisionInfo info;
-			info.myCollider = mySphere;
-			info.hitCollider = hitSphere;
-			info.hitPosition = VAdd(myPos, VScale(diff, myRadius / dist));
-			info.hitNormal = dist > 0.0001f ? VScale(diff, 1.0f / dist) : VGet(0, 1, 0);
-			info.penetration = radiusSum - dist;
-			info.isValid = true;
-
+			// コールバック呼び出し
 			OnCollisionEnter(info);
 		}
 	}

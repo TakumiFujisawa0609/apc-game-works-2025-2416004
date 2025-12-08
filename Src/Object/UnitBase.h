@@ -174,4 +174,7 @@ protected:
 
 	// コライダの初期化（派生クラスで実装）
 	virtual void InitCollider(void) = 0;
+
+	// カプセルとの衝突処理（剣の攻撃判定）
+	void CollisionWithCapsule(void);
 };

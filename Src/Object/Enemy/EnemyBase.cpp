@@ -3,19 +3,25 @@
 #include "../../Collider/ColliderSphere.h"
 #include "../../Collider/ColliderLine.h"
 #include "../../Manager/System/CollisionController.h"
+#include "../../Manager/Generic/SceneManager.h"
 
 // コンストラクタ
-EnemyBase::EnemyBase(void) :
-    hp_(0.0f),
-    maxHp_(0.0f),
-    moveSpeed_(0.0f),
-    type_(""),
-    viewRange_(0.0f),
-    lostRange_(0.0f),
-    forward_(Utility::DIR_F),
-    viewAngle_(0.0f),
-    isChasing_(false),
-    isInView_(false)
+EnemyBase::EnemyBase(void) 
+    : hp_(0.0f)
+    , lastHitTime_(0.0f)
+    , maxHp_(0.0f)
+    , attack_(0.0f)
+    , defense_(0.0f)
+    , level_(1)
+    , moveSpeed_(0.0f)
+    , viewRange_(0.0f)
+    , lostRange_(0.0f)
+    , forward_(Utility::DIR_F)
+    , viewAngle_(0.0f)
+    , type_("")
+    , isChasing_(false)
+    , isInView_(false)
+    
 {
 }
 
@@ -74,6 +80,16 @@ void EnemyBase::InitCollider(void)
 // 更新処理
 void EnemyBase::Update(void)
 {
+    // ヒット判定のクールタイム更新
+    if (lastHitTime_ > 0.0f)
+    {
+        lastHitTime_ -= SceneManager::GetInstance().GetDeltaTime();
+        if (lastHitTime_ < 0.0f)
+        {
+            lastHitTime_ = 0.0f;
+        }
+    }
+
     // 押し出し前の位置を保存
     preCollisionPos_ = trans_.pos;
 
@@ -88,6 +104,7 @@ void EnemyBase::Update(void)
 
         // 移動をキャンセル
         movePow_ = Utility::VECTOR_ZERO;
+
     }
 
 #ifdef _DEBUG
@@ -101,9 +118,8 @@ void EnemyBase::Update(void)
 bool EnemyBase::IsOnStage(const VECTOR& pos) const
 {
     // GroundManagerのタイル範囲を参照
-    // TILE_COUNT = 10, TILE_SIZE = 1000.0f と仮定
-    const float TILE_COUNT = 10.0f;
-    const float TILE_SIZE = 1000.0f;
+    const float TILE_COUNT = 100.0f;
+    const float TILE_SIZE = 100.0f;
     const float HALF_STAGE_SIZE = (TILE_COUNT * TILE_SIZE) * 0.5f;
 
     // ステージの範囲内かチェック（マージンを持たせる）
@@ -135,6 +151,21 @@ void EnemyBase::Draw(void) const
     // モデル描画（UnitBaseの描画）
     UnitBase::Draw();
 
+    // HPバーの表示
+    VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 80, 0)));
+    int barWidth = 60;
+    int barHeight = 8;
+    int barX = static_cast<int>(screenPos.x) - barWidth / 2;
+    int barY = static_cast<int>(screenPos.y);
+
+    float hpRate = hp_ / maxHp_;
+    int hpBarWidth = static_cast<int>(barWidth * hpRate);
+
+    // 枠
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
+    // HP
+    DrawBox(barX, barY, barX + hpBarWidth, barY + barHeight, GetColor(0, 255, 0), true);
+
 #ifdef _DEBUG
     // 当たり判定可視化（球体）
     DrawCapsule3D(trans_.pos, trans_.pos, radius_, 12, 0xff0000, 0xff0000, false);
@@ -153,31 +184,26 @@ void EnemyBase::Draw(void) const
             DrawSphere3D(end, 5.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
         }
     }
+#endif // _DEBUG
+}
 
-    // 衝突しているエネミー数の表示
-    int enemyCollisionCount = 0;
-    for (auto* col : hitColliders_)
+// EnemyBase.cpp
+void EnemyBase::Release(void)
+{
+    // 1. コライダを無効化
+    for (auto& pair : ownColliders_)
     {
-        if (col->GetTag() == ColliderBase::TAG::ENEMY)
+        if (pair.second != nullptr)
         {
-            enemyCollisionCount++;
+            pair.second->SetValid(false);
         }
     }
-    if (enemyCollisionCount > 0)
-    {
-        VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 100, 0)));
-        DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
-            GetColor(255, 255, 0), "Colliding: %d", enemyCollisionCount);
-    }
 
-    // ステージ外警告
-    if (!IsOnStage(trans_.pos))
-    {
-        VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 150, 0)));
-        DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
-            GetColor(255, 0, 0), "OUT OF STAGE!");
-    }
-#endif // _DEBUG
+    // 2. CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
+
+    // 3. UnitBaseの解放（コライダ削除）
+    UnitBase::Release();
 }
 
 // CSVデータを適用
@@ -186,8 +212,35 @@ void EnemyBase::ApplyData(const EnemyInfo& info)
     type_ = info.type;
     maxHp_ = info.param.maxHp;
     hp_ = info.param.hp;
+    attack_ = info.param.attack;
+    defense_ = info.param.defense;
     moveSpeed_ = info.param.speed;
     radius_ = info.param.radius;
+    level_ = info.param.level;
+}
+
+// 衝突時のコールバック
+void EnemyBase::OnCollisionEnter(const CollisionInfo& info)
+{
+    // 剣との衝突（SWORDタグ、カプセルコライダ）
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::SWORD &&
+        info.hitCollider->GetShape() == ColliderBase::SHAPE::CAPSULE)
+    {
+
+        // ヒット判定のクールタイム中はダメージを受けない
+        if (lastHitTime_ > 0.0f)
+        {
+            return;
+        }
+
+        // ダメージを受ける
+        float oldHp = hp_;
+        TakeDamage(SWORD_DAMAGE);
+
+        // ヒット判定のクールタイムを設定
+        lastHitTime_ = HIT_COOLDOWN;
+
+    }
 }
 
 // 前方向を設定
@@ -228,4 +281,53 @@ void EnemyBase::TakeDamage(float damage)
 const std::string& EnemyBase::GetType(void) const
 {
     return type_;
+}
+
+// レベルを設定
+void EnemyBase::SetLevel(int level)
+{
+    level_ = level;
+
+    ApplyLevelParams();
+}
+
+// レベルを取得
+int EnemyBase::GetLevel(void) const
+{
+    return level_;
+}
+
+// レベルボーナスを適用
+void EnemyBase::ApplyLevelParams(void)
+{
+    if (level_ <= 1) { return; }
+
+    int levelDiff = level_ - 1;
+
+    // パラメータ上昇
+    maxHp_ += LEVEL_UP_STAT * levelDiff;
+
+    hp_ = maxHp_;
+
+    attack_ += LEVEL_UP_STAT * levelDiff;
+
+    defense_ += LEVEL_UP_STAT * levelDiff;
+}
+
+// 撃破時の経験値報酬
+int EnemyBase::GetExpReward(void) const
+{
+    return BASE_EXP_REWARD * level_;
+}
+
+// 攻撃力を取得
+float EnemyBase::GetAttack(void) const
+{
+    return attack_;
+}
+
+// 防御力を取得
+float EnemyBase::GetDefense(void) const
+{
+    return defense_;
 }

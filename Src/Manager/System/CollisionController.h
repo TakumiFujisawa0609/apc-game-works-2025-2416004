@@ -52,6 +52,9 @@ public:
     // カリング距離の設定
     void SetCullingDistance(float distance) { cullingDistance_ = distance; }
 
+    // 2つのコライダ間の衝突判定
+    bool CheckCollision(const ColliderBase* col1, const ColliderBase* col2, CollisionInfo& outInfo);
+
 private:
     // コンストラクタ
     CollisionController(void);
@@ -87,9 +90,6 @@ private:
 
     // デフォルトのカリング距離
     static constexpr float DEFAULT_CULLING_DISTANCE = 1500.0f;
-
-    // 2つのコライダ間の衝突判定
-    bool CheckCollision(const ColliderBase* col1, const ColliderBase* col2, CollisionInfo& outInfo);
 
     // 線分とモデルの衝突判定
     bool CheckLineVsModel(const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo);

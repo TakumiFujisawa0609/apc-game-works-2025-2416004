@@ -38,6 +38,8 @@ void SceneManager::DestroyInstance(void)
 
 // コンストラクタ
 SceneManager::SceneManager(void)
+    : playerDistance_(0.0f)        
+    , enemyDeathCount_(0)
 {
     isGameEnd_ = false;
     isSceneChanging_ = false;
@@ -63,6 +65,10 @@ void SceneManager::Init(void)
 
     // カメラを初期化する
     camera_->Init();
+
+    // ★ゲーム統計を初期化
+    playerDistance_ = 0.0f;
+    enemyDeathCount_ = 0;
 
     // 3D描画設定を初期化する
     Init3D();
@@ -290,4 +296,54 @@ void SceneManager::ResetDeltaTime(void)
 {
     deltaTime_ = 1.0f / 60.0f;
     preTime_ = std::chrono::system_clock::now();
+}
+
+
+// プレイヤーの移動距離を設定
+void SceneManager::SetPlayerDistance(float distance)
+{
+    playerDistance_ = distance;
+}
+
+// プレイヤーの移動距離を取得
+float SceneManager::GetPlayerDistance(void) const
+{
+    return playerDistance_;
+}
+
+// プレイヤーの移動距離をリセット
+void SceneManager::ResetPlayerDistance(void)
+{
+    playerDistance_ = 0.0f;
+}
+
+// エネミーの死亡数を設定
+void SceneManager::SetEnemyDeathCount(int count)
+{
+    enemyDeathCount_ = count;
+}
+
+// エネミーの死亡数を取得
+int SceneManager::GetEnemyDeathCount(void) const
+{
+    return enemyDeathCount_;
+}
+
+// エネミーの死亡数をリセット
+void SceneManager::ResetEnemyDeathCount(void)
+{
+    enemyDeathCount_ = 0;
+}
+
+// エネミーの死亡数を加算
+void SceneManager::AddEnemyDeathCount(int add)
+{
+    enemyDeathCount_ += add;
+}
+
+// ゲーム統計をリセット（距離と死亡数を一括リセット）
+void SceneManager::ResetGameStats(void)
+{
+    playerDistance_ = 0.0f;
+    enemyDeathCount_ = 0;
 }

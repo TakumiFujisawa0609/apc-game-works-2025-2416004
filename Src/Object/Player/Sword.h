@@ -28,6 +28,9 @@ public:
     // フレームの座標の設定
     void SetFramePos(const VECTOR& pos);
 
+    // プレイヤーの回転を設定
+    void SetPlayerRotation(const Quaternion& playerRot);
+
     // 攻撃状態の設定
     void SetAttacking(bool attacking);
 
@@ -35,15 +38,24 @@ public:
     bool IsAttacking(void) const;
 
 private:
-    // カプセルコライダの半径
-    static constexpr float CAPSULE_RADIUS = 15.0f;
 
-    // フレームの座標
+    // 定数
+    static constexpr float CAPSULE_RADIUS = 15.0f;      // カプセル半径
+    static constexpr float SWORD_TILT_ANGLE = 30.0f;   // 剣の傾き（通常時）
+    static constexpr float SWORD_ATTACK_ANGLE = 10.0f;  // 剣の傾き（攻撃時）
+    static constexpr float POSITION_OFFSET_Y = 30.0f;    // Y座標オフセット
+
+    // 剣の基準フレーム座標
     VECTOR framePos_;
 
     // 攻撃中フラグ
     bool isAttacking_;
 
-    // コライダーの初期化
-    void InitCollider(void) override;
+    // プレイヤーの回転情報
+    Quaternion playerRot_;
+
+    // コライダの初期化
+    void InitCollider(void);
+
+    
 };

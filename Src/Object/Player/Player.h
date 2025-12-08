@@ -2,163 +2,199 @@
 #include "../UnitBase.h"
 
 class Sword;
-struct CollisionInfo;
+class AnimationController;
 
 class Player : public UnitBase
 {
 public:
-	// プレイヤー
-	struct Param
-	{
-		int attack = 0;                // 攻撃力
-		int defensse = 0;              // 防御力
-		int hp = 0;                    // 現在の体力
-		int maxHp = 0;                 // 最大体力
-		int stamina = 0;               // スタミナ
-		float collisionRadius = 1.0f;  // 当たり判定
-		int level = 1;                 // 現在のレベル
-		int maxLevel = 1;              // 最大レベル
-		float jumpPower = 0.0f;        // ジャンプ力
-	};
+    // パラメータ構造体
+    struct Param
+    {
+        int attack;
+        int defensse;
+        int hp;
+        int maxHp;
+        int stamina;
+        float collisionRadius;
+        int level;
+        int maxLevel;
+        float jumpPower;
+    };
 
-	// コンストラクタ
-	Player(void);
+    // コンストラクタ
+    Player(void);
 
-	// デストラクタ
-	~Player(void);
+    // デストラクタ
+    ~Player(void);
 
-	// CSV読み込み
-	void LoadParamCSV(const std::string& path);
+    // CSV読み込み
+    void LoadParamCSV(const std::string& path);
 
-	// リソースの読み込み
-	void Load(void) override;
+    // リソースの読み込み
+    void Load(void);
 
-	// 初期化
-	void Init(void) override;
+    // 初期化
+    void Init(void);
 
-	// 更新処理
-	void Update(void) override;
+    // 更新処理
+    void Update(void);
 
-	// 描画処理
-	void Draw(void) const override;
+    // 描画処理
+    void Draw(void) const;
 
-	// 解放処理
-	void Release(void) override;
+    // 解放処理
+    void Release(void);
 
-	// 移動可能かの設定
-	void SetMovementEndbled(bool enabled);
+    // 移動可能フラグの設定
+    void SetMovementEndbled(bool enabled);
 
-	// 移動可能かを取得
-	bool IsMovementEndbled(void) const;
+    // 移動可能フラグの取得
+    bool IsMovementEndbled(void) const;
 
-	// プレイヤーのパラメータ取得
-	const Param& GetParam(void) const;
+    // パラメータの取得
+    const Param& GetParam(void) const;
 
-	// プレイヤーのhpバーの描画
-	void DrawHpBar(void) const;
+    // ダメージ処理
+    void TakeDamage(int damage);
 
-	// ダメージ処理
-	void TakeDamage(int damage);
+    // 座標ポインタの取得
+    VECTOR* GetPosPtr(void);
 
-	// 座標のポインタ取得
-	VECTOR* GetPosPtr(void);
+    // 攻撃中かどうか
+    bool IsAttacking(void) const;
 
-	// 攻撃中かどうか
-	bool IsAttacking(void) const;
+    // 原点からの移動距離を取得
+    float GetDistanceFromOrigin(void) const;
 
+    // 原点からの移動距離（XZ平面のみ）を取得
+    float GetDistanceFromOriginXZ(void) const;
 
+    // 原点座標を設定（スタート地点を変更する場合）
+    void SetOriginPos(const VECTOR& pos);
 
-	// 衝突時のコールバック
-	void OnCollisionEnter(const CollisionInfo& info) override;
-	void OnCollisionStay(const CollisionInfo& info) override;
+    // 原点座標を取得
+    const VECTOR& GetOriginPos(void) const;
 
-protected:
-	// コライダ初期化（必須実装）
-	void InitCollider(void) override;
+    // 衝突コールバック
+    void OnCollisionEnter(const CollisionInfo& info) override;
+    void OnCollisionStay(const CollisionInfo& info) override;
+
+    void Collision(void) override;
+
+    // レベルアップ処理
+    void LevelUp(void);
+
+    // 経験値を追加
+    void AddExperinece(int exp);
+
+    // レベルを取得
+    int GetLevel(void) const;
+
+    // 現在の経験値を取得
+    int GetExperinece(void) const;
+
+    // 次のレベルに必要な経験値を取得
+    int GetRequireExp(void) const;
+
+    // レベルアップ可能か
+    bool IsLevelUp(void) const;
 
 private:
 
-	// 重力加速度（削除：UnitBaseで管理）
-	// static constexpr float GRAVITY = -1.0f;
+    // 定数
+    static constexpr float INVINCIBLE_DURATION = 1.0f;
+    static constexpr float ATTACK_COOL_TIME_MAX = 1.0f;
+    static constexpr float DELAY_SPEED = 0.5f;
+    static constexpr int HP_BAR_WIDTH = 400;
+    static constexpr int HP_BAR_HEIGHT = 30;
+    static constexpr int BAR_Y = 100;
+    static constexpr VECTOR PLAYER_SCL = { 2.5f, 2.5f, 2.5f };
+    static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 120.0f, 0.0f };
+    static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -20.0f, 0.0f };
+    static constexpr VECTOR COL_SPHERE_LOCAL_POS = { 0.0f, 50.0f, 0.0f };
 
-	// プレイヤーの大きさ
-	static constexpr VECTOR PLAYER_SCL = { 2.5f, 2.5f, 2.5f };
+    // ヒット判定のクールタイム
+    static constexpr float HIT_COOL_TIME = 0.5f;
 
-	// HPバーの長さ
-	static constexpr int HP_BAR_WIDTH = 300;
+    // カプセルコライダー用初期値座標
+    static constexpr VECTOR COL_CAPSULE_START_POS = { 0.0f, 50.0f, 0.0f };
 
-	// HPバーの高さ
-	static constexpr int HP_BAR_HEIGHT = 25;
+    // カプセルコライダー用終端座標
+    static constexpr VECTOR COL_CAPSULE_END_POS = { 0.0f, 100.0f,0.0f };
 
-	// HPの数値の文字幅の調整
-	static constexpr int HP_TEXT_HALF_WIDTH = 30;
 
-	// HPの数値の高さの調整
-	static constexpr int HP_TEXT_HALF_HEIGHT = 8;
+    // 経験値テーブル
+    static constexpr int LEVEL_UP_STAT = 10;       // レベルアップ時の上昇量
 
-	// HPバーを下からちょっと上に
-	static constexpr int BAR_Y = 60;
+    static constexpr int BASE_EXP = 100;           // レベル1から2に上がるための基本経験値
 
-	// HPバーの枠カラー
-	static constexpr VECTOR HP_BAR_FRAME = { 255, 255, 255 };
+    static constexpr float EXP_MULTIPLIER = 1.5f;  // 必要経験値の倍率
 
-	// 遅延スピード
-	static constexpr float DELAY_SPEED = 0.5f;
 
-	// 攻撃クールタイムの最大値
-	static constexpr float ATTACK_COOL_TIME_MAX = 0.5f;
+    // パラメータ
+    Param param_;
 
-	// 衝突判定用線分開始（地面判定用）
-	static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 100.0f, 0.0f };
+    // カプセル初期座標
+    VECTOR localStartPos_;
 
-	// 衝突判定用線分終了
-	static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };
+    // カプセル終端座標
+    VECTOR localEndPos_;
 
-	// 本体の球体コライダ（ローカル位置）
-	static constexpr VECTOR COL_SPHERE_LOCAL_POS = { 0.0f, 50.0f, 0.0f };
+    // モデルID
+    int modelId_;
 
-	// 無敵時間
-	float invincibleTime_;
-	static constexpr float INVINCIBLE_DURATION = 1.0f;
+    // 移動可能フラグ
+    bool movementEnabled_;
 
-	// パラメータ
-	Param param_;
+    // 地面フラグ
+    bool isGround_;
 
-	// 剣オブジェクト
-	std::unique_ptr<Sword> sword_;
+    // 移動中フラグ
+    bool isMoving_;
 
-	// モデルハンドル
-	int modelId_;
+    // 攻撃中フラグ
+    bool isAttacking_;
 
-	// 移動可能か
-	bool movementEnabled_;
+    // 攻撃クールタイム
+    float attackCoolTime_;
 
-	// 地面にいるかどうか
-	bool isGround_;
+    // 無敵時間
+    float invincibleTime_;
 
-	// 動いているかどうか
-	bool isMoving_;
+    // 敵との衝突クールタイム
+    float lastHitEnemyTime_;
 
-	// 表示状のHP
-	float hpDisplay_;
+    // HP表示用
+    float hpDisplay_;
+    float hpDelaySpeed_;
 
-	// 追いつく速度
-	float hpDelaySpeed_;
+    // レベルシステム
+    int experience_;   // 現在の経験値
 
-	// 攻撃状態
-	bool isAttacking_;
+    // 剣
+    std::unique_ptr<Sword> sword_;
 
-	// 攻撃クールタイム
-	float attackCoolTime_;
+    // 原点座標（スタート地点）
+    VECTOR originPos_;
 
-	// 敵からの最後のヒット時間
-	float lastHitEnemyTime_;
+    // コライダ初期化
+    void InitCollider(void);
 
-	// 移動入力
-	void ProcessMove(void);
+    // 移動処理
+    void ProcessMove(void);
 
-	// 攻撃処理
-	void Attack(void);
+    // 攻撃処理
+    void Attack(void);
 
-	void DrawCollisionCapsuleDebug(void) const;
+    // HPバー描画
+    void DrawHpBar(void) const;
+
+    // デバッグ用コリジョンカプセル描画
+    void DrawCollisionCapsuleDebug(void) const;
+
+    // レベルアップに必要な経験値を計算
+    int CalcRequiredExp(int level) const;
+
+    // レベル情報の描画
+    void DrawLevelInfo(void) const;
 };

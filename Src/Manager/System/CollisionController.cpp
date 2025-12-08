@@ -75,6 +75,11 @@ void CollisionController::Update(void)
         // 距離カリング用
         const float CULL_DISTANCE_SQ = cullingDistance_ * cullingDistance_;
 
+#ifdef _DEBUG
+        int enemyPairRegistered = 0;  // ENEMY同士の登録数
+        int totalPairRegistered = 0;   // 全ペアの登録数
+#endif
+
         for (size_t i = 0; i < n; ++i)
         {
             auto& actor1 = actors_[i];
@@ -115,11 +120,30 @@ void CollisionController::Update(void)
                         {
                             actor1->AddHitCollider(col2);
                             actor2->AddHitCollider(col1);
+
+#ifdef _DEBUG
+                            totalPairRegistered++;
+
+                            // ENEMY同士のペアをカウント
+                            if (col1->GetTag() == ColliderBase::TAG::ENEMY &&
+                                col2->GetTag() == ColliderBase::TAG::ENEMY)
+                            {
+                                enemyPairRegistered++;
+                            }
+#endif
                         }
                     }
                 }
             }
         }
+
+#ifdef _DEBUG
+        // デバッグ情報を画面に表示
+        DrawFormatString(10, 100, GetColor(255, 255, 255), "Total Actors: %d", n);
+        DrawFormatString(10, 120, GetColor(255, 255, 255), "Total Pairs: %d", totalPairRegistered);
+        DrawFormatString(10, 140, GetColor(255, 255, 0), "Enemy Pairs: %d", enemyPairRegistered);
+        DrawFormatString(10, 160, GetColor(0, 255, 255), "Culling Distance: %.1f", cullingDistance_);
+#endif
     }
 }
 
@@ -190,7 +214,7 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
 }
 
 // 線分とモデルの衝突判定
-bool CollisionController::CheckLineVsModel( const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
+bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
 {
     const ColliderLine* line = dynamic_cast<const ColliderLine*>(lineCol);
     const ColliderModel* model = dynamic_cast<const ColliderModel*>(modelCol);
@@ -306,6 +330,16 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
 // 衝突可能かどうかの判定
 bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const
 {
+    // 同じタグ同士は基本的に衝突しない（ENEMYは例外）
+    if (tagA == tagB)
+    {
+        // ★ENEMY同士は衝突する
+        if (tagA == ColliderBase::TAG::ENEMY)
+        {
+            return true;
+        }
+        return false;
+    }
 
     // プレイヤーと地面
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::GROUND) ||
@@ -335,12 +369,6 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
         return true;
     }
 
-    // 敵同士（球体コライダ同士で押し出し）
-    if (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::ENEMY)
-    {
-        return true;
-    }
-
     // プレイヤーと敵
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::ENEMY) ||
         (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::PLAYER))
@@ -358,6 +386,12 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
     // カメラと壁
     if ((tagA == ColliderBase::TAG::CAMERA && tagB == ColliderBase::TAG::WALL) ||
         (tagA == ColliderBase::TAG::WALL && tagB == ColliderBase::TAG::CAMERA))
+    {
+        return true;
+    }
+     // 剣と敵
+    if ((tagA == ColliderBase::TAG::SWORD && tagB == ColliderBase::TAG::ENEMY) ||
+        (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::SWORD))
     {
         return true;
     }
