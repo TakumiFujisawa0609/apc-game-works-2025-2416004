@@ -59,6 +59,22 @@ void SoundManager::Stop(const SOUND _sound)
 	StopSoundMem(sounds_[_sound].data);
 }
 
+// 全てのBGMを停止する
+void SoundManager::StopAllBGM(void)
+{
+	// 格納されている全ての音声データをチェック
+	for (auto& pair : sounds_)
+	{
+		const SOUND_DATA& data = pair.second;
+
+		// BGMとして登録されている音声のみを停止
+		if (data.type == TYPE::BGM)
+		{
+			StopSoundMem(data.data);
+		}
+	}
+}
+
 // 全音声データの解放処理
 void SoundManager::Release(void)
 {

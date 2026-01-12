@@ -26,6 +26,8 @@ public:
 		WALL,
 		GROUND,
 		SWORD,
+		FIRE_ATTACK, 
+		WATER_ATTACK,
 	};
 
 	// コンストラクタ

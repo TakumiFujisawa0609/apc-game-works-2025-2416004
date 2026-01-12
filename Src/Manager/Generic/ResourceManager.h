@@ -18,19 +18,44 @@ public:
 		GAMECLERA_LOGO,			//ゲームクリア
 
 		// モデル
-		MODEL_PLAYER,			//プレイヤーモデル
-		MODEL_GROUND,			//ステージ地面のモデル
-		MODEL_SLIME,            //スライムモデル
-		MODEL_SWORD,            //剣モデル
+		MODEL_PLAYER,			// プレイヤーモデル
+		MODEL_GROUND,			// ステージ地面のモデル
+		MODEL_SLIME,            // スライムモデル
+		MODEL_SWORD,            // 剣モデル
+		MODEL_SKY_DOME,         // スカイドーム
+		MODEL_ENEMYSPAWNER,     // エネミースポナーモデル
+		MODEL_TOWER,            // タワーモデル
+		MODEL_GLIDER,           // グライダーモデル
 
 		// サウンド
+		BGM_TITLE,              // タイトル画面BGM
+		BGM_SCORE,              // スコア画面BGM
+		BGM_GAME,               // ゲーム画面BGM
+		BGM_FAITE,              // 戦闘BGM
 
+		// 効果音
+		SE_CANCEL,              // キャンセル音
+		SE_SELECT,              // 選択音
+		SE_PUSH,                // 決定音
+		SE_SLASH,               // 斬撃音
+		
 		// エフェクト
+		EFFECT_FIRE,            // 火のエフェクト
+		EFFECT_WATER,           // 水のエフェクト
+		EFFECT_BLAST,           // 爆発エフェクト
+		EFFECT_FREEZE,          // 凍結エフェクト
+		EFFECT_LEVER_UP,        // レベルアップエフェクト
+
 
 		// アニメーション
 		ANIM_PLAYER_IDEL,       //プレイヤーの待機アニメーション
 		ANIM_PLAYER_WALK,       //プレイヤーの歩きアニメーション
 		ANIM_PLAYER_ATTACK,     //プレイヤーの攻撃アニメーション
+		ANIM_PLAYER_JAMP,       //プレイヤーのジャンプアニメーション
+		ANIM_PLAYER_GLIDE,      //プレイヤーのグライドアニメーション
+
+		// 映像
+		TITLE_MOVIE,            // タイトルムービー
 	};
 
 	//明示的にインスタンスを生成する
@@ -92,6 +117,21 @@ private:
 
 	//デストラクタも同様
 	~ResourceManager(void) = default;
+
+	// コピー禁止コンストラクタ
+	ResourceManager(const ResourceManager&) = delete;
+
+	// コピー代入演算子禁止
+	ResourceManager& operator=(const ResourceManager&) = delete;
+
+	// ムーブコンストラクタ禁止
+	ResourceManager(ResourceManager&&) = delete;
+
+	// ムーブ代入演算子禁止
+	ResourceManager& operator=(ResourceManager&&) = delete;
+
+	// アドレス取得演算子(参照演算子)禁止
+	ResourceManager* operator&() = delete;
 
 	//内部ロード
 	Resource* _Load(SRC src);

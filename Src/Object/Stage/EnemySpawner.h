@@ -62,6 +62,9 @@ public:
     // プレイヤーが範囲内にいるかチェック
     bool IsPlayerInRange(const VECTOR& playerPos) const;
 
+    // スポナーモデルの設定
+    void SetModelId(int modedlId);
+
 private:
     // スポナーの座標
     VECTOR position_;      
@@ -76,7 +79,10 @@ private:
     float spawnInterval_;
 
     // スポーンタイマー
-    float spawnTimer_;          
+    float spawnTimer_;         
+
+    // スポナーモデル
+    int modelId_;
 
     // このスポナーから生成できる最大数
     int maxEnemies_;            

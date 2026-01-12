@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../../Collider/ColliderBase.h"
 
 class UnitBase;
@@ -58,7 +57,7 @@ public:
 private:
     // コンストラクタ
     CollisionController(void);
-    
+
     // デストラクタ
     ~CollisionController(void);
 
@@ -86,10 +85,13 @@ private:
     float updateTimer_;
 
     // 更新間隔（秒）
-    static constexpr float UPDATE_INTERVAL = 0.1f;
+    static constexpr float UPDATE_INTERVAL = 0.016f;
 
     // デフォルトのカリング距離
     static constexpr float DEFAULT_CULLING_DISTANCE = 1500.0f;
+
+    // コライダペアの更新処理（★追加）
+    void UpdateCollisionPairs(void);
 
     // 線分とモデルの衝突判定
     bool CheckLineVsModel(const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo);

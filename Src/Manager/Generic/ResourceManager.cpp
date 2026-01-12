@@ -27,20 +27,60 @@ ResourceManager& ResourceManager::GetInstance(void)
 // 共通初期化処理（今は空）
 void ResourceManager::Init(void)
 {
-	
+	Resource res;
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "SkyDome/skyDome.mv1");
+	resourcesMap_.emplace(SRC::MODEL_SKY_DOME, res);
+
+	// SE登録
+
+	// キャンセル音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_60461.mp3");
+	resourcesMap_.emplace(SRC::SE_CANCEL, res);
+
+	// 選択音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "nc444082.wav");
+	resourcesMap_.emplace(SRC::SE_SELECT, res);
+
+	// 決定音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_130310");
+	resourcesMap_.emplace(SRC::SE_PUSH, res);
 }
 // タイトルシーン用リソースの初期化
 void ResourceManager::InitTitle(void)
 {
 	Resource res;
+
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1456298.mp3");
+	resourcesMap_.emplace(SRC::BGM_TITLE, res);
+
+	res = Resource(Resource::TYPE::IMG, Application::PATH_MOVIE + "TitleHaikei.mp4");
+	resourcesMap_.emplace(SRC::TITLE_MOVIE, res);
+
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tittle.png");
+	resourcesMap_.emplace(SRC::TYTLE_LOGO, res);
+
 }
 
 // ゲームシーン用リソースの初期化
 void ResourceManager::InitGame(void)
 {
 	Resource res;
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/stagetest.mv1");
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/stage.mv1");
 	resourcesMap_.emplace(SRC::MODEL_GROUND, res);
+
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/EnemyHouse.mv1");
+	resourcesMap_.emplace(SRC::MODEL_ENEMYSPAWNER, res);
+
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/tower.mv1");
+	resourcesMap_.emplace(SRC::MODEL_TOWER, res);
+
+	// ゲームBGM登録
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_814620.mp3");
+	resourcesMap_.emplace(SRC::BGM_GAME, res);
+
+	// 戦闘BGM登録
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1312744.mp3");
+	resourcesMap_.emplace(SRC::BGM_FAITE, res);
 
 	// プレイヤー関連リソースの初期化
 	ResourcePlayer();
@@ -57,6 +97,7 @@ void ResourceManager::InitGameOver(void)
 	// ゲームオーバーロゴ画像を登録
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
 	resourcesMap_.emplace(SRC::GAMEOVER_LOGO, res);
+
 }
 
 // ゲームクリアシーン用リソースの初期化
@@ -67,6 +108,10 @@ void ResourceManager::InitGameClear(void)
 	// ゲームクリアロゴ画像を登録
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
 	resourcesMap_.emplace(SRC::GAMECLERA_LOGO, res);
+
+	// BGM登録
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1528820.mp3");
+	resourcesMap_.emplace(SRC::BGM_SCORE, res);
 }
 
 
@@ -80,18 +125,44 @@ void ResourceManager::ResourcePlayer(void)
 	resourcesMap_.emplace(SRC::MODEL_PLAYER, res);
 
 	// 剣のモデル
-	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/debugSowrd.mv1");
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/Sword.mv1");
 	resourcesMap_.emplace(SRC::MODEL_SWORD, res);
+
+	// グライダーのモデル
+	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/glide.mv1");
+	resourcesMap_.emplace(SRC::MODEL_GLIDER, res);
 
 	// プレイヤーの歩くアニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_IDEL, res);
 
+	// プレイヤーの歩くアニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Walking.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_WALK, res);
 
+	// プレイヤーの攻撃アニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Attack.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_ATTACK, res);
+
+	// プレイヤーのジャンプアニメーション
+	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Jumping.mv1");
+	resourcesMap_.emplace(SRC::ANIM_PLAYER_JAMP, res);
+
+	// プレイヤーのグライドアニメーション
+	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Victory.mv1");
+	resourcesMap_.emplace(SRC::ANIM_PLAYER_GLIDE, res);
+
+	// 火攻撃のエフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "FireAttack/patch_stElmo_area.efkproj");
+	resourcesMap_.emplace(SRC::EFFECT_FIRE, res);
+
+	// 水攻撃のエフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "WaterAttack/MagicWater.efkproj");
+	resourcesMap_.emplace(SRC::EFFECT_WATER, res);
+
+	// レベルアップのエフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "LevelUp/levelUp.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_LEVER_UP, res);
 }
 
 // 敵用リソース初期化

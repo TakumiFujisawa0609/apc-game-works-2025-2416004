@@ -44,6 +44,7 @@ void EffectManager::Add(const EFFECT& efc, int data)
 // エフェクトの再生
 void EffectManager::Play(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size, const SoundManager::SOUND _sound)
 {
+
     // 元データがないときは警告 (未登録のエフェクトを再生しようとした場合)
     // 注意: 変数名が不一致 (_efc → *efc)
     if (effectRes_.find(efc) == effectRes_.end()) assert("設定していないエフェクトを再生しようとしています。");

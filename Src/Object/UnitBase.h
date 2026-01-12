@@ -15,6 +15,8 @@ public:
 		IDEL,
 		WALK,
 		ATTACK,
+		JUMP,
+		GLIDE
 	};
 
 	// П’УЋФїТиОнХ 

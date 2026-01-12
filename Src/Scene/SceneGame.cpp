@@ -3,7 +3,6 @@
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/ResourceManager.h"
-#include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Object/Player/Player.h"
@@ -11,9 +10,9 @@
 #include "../Object/Manager/EnemyManager.h"
 #include "../Object/Manager/StageManager.h"
 #include "../Object/Enemy/EnemyData.h"
+#include "../Object/Stage/SkyDome.h"
 #include "../Scene/SceneScore.h"
 #include "../Manager/System/Loading.h"
-#include "../Collider/ColliderBase.h"
 
 // コンストラクタ
 SceneGame::SceneGame(void)
@@ -29,11 +28,15 @@ SceneGame::SceneGame(void)
 	//エネミーデータ
 	enemyData_ = std::make_shared<EnemyData>();
 
+	// スカイドーム
+	skyDome_ = std::make_shared<SkyDome>();
+
 	//エネミーマネージャー
 	enemyManager_ = std::make_unique<EnemyManager>();
 
 	// ステージマネージャー
 	stageManager_ = std::make_unique<StageManager>();
+
 }
 
 // 読み込み
@@ -53,7 +56,7 @@ void SceneGame::Load()
 
 	//ステージの読み込み
 	groundManager_->Load();
-	Loading::GetInstance()->SetProgress(40.0f);
+	Loading::GetInstance()->SetProgress(45.0f);
 
 	//エネミーの読み込み
 	enemyManager_->Load();
@@ -64,9 +67,24 @@ void SceneGame::Load()
 	// ステージマネージャーの読み込み
 	stageManager_->Load();
 
+	// スカイドームの読み込み
+	skyDome_->Load();
+
 	Loading::GetInstance()->SetProgress(60.0f);
 
 	// サウンドの読み込み
+	
+	// ゲームBGM登録
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_GAME, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_GAME).handleId_);
+
+	// ゲームBGMの音量調整
+	SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_GAME, 30);
+
+	// 戦闘BGMの登録
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_FAITE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_FAITE).handleId_);
+
+	// 戦闘BGMの音量調整
+	SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_FAITE, 30);
 
 	Loading::GetInstance()->SetProgress(80.0f);
 
@@ -89,8 +107,6 @@ void SceneGame::Init()
 	auto camera = SceneManager::GetInstance().GetCamera();
 	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
 
-	// サウンド音量調整
-
 	isStartFont_ = true;
 
 	//ステージの初期化
@@ -105,6 +121,10 @@ void SceneGame::Init()
 
 	// ステージマネージャーの初期化
 	stageManager_->Init(enemyManager_.get());
+
+	// スカイドームの初期化
+	skyDome_->Init();
+	skyDome_->SetFollowTarget(&player_->GetPos());
 
 	// エネミースポナーの配置設定
 	SetupEnemySpawners();
@@ -168,6 +188,9 @@ void SceneGame::Update(void)
 	// エネミーマネージャーの更新（プレイヤー座標を渡す）
 	enemyManager_->Update(SceneManager::GetInstance().GetDeltaTime(), player_->GetPos());
 
+	// スカイドームの更新
+	skyDome_->Update();
+
 	// 撃破した敵からの経験値を取得してプレイヤーに付与
 	auto expRewards = enemyManager_->GetAndClearExpRewards();
 	for (int exp : expRewards)
@@ -211,6 +234,9 @@ void SceneGame::Draw(void)
 	//ステージの描画
 	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVec());
 
+	// スカイドームの描画
+	skyDome_->Draw();
+
 	//プレイヤーの描画
 	player_->Draw();
 
@@ -252,61 +278,4 @@ void SceneGame::Release(void)
 // 描画(デバック)
 void SceneGame::DrawDebug(void)
 {
-#ifdef _DEBUG
-	// ★デバッグ情報表示
-	int y = 300;
-
-	// プレイヤー情報
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"=== Player ===");
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Level: %d", player_->GetLevel());
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"EXP: %d / %d", player_->GetExperinece(), player_->GetRequireExp());
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"ATK: %d  DEF: %d  HP: %d/%d",
-		player_->GetParam().attack,
-		player_->GetParam().defensse,
-		player_->GetParam().hp,
-		player_->GetParam().maxHp);
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Distance from Origin: %.1f", player_->GetDistanceFromOriginXZ());
-
-	y += 40;
-
-	// エネミー情報
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"=== Enemies ===");
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Active Enemies: %d", enemyManager_->GetEnemyCount());
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Total Defeated: %d", enemyManager_->GetDeathCount());
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Active Spawners: %d", stageManager_->GetActiveSpawnerCount());
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 255),
-		"Total Spawners: %d", stageManager_->GetSpawnerCount());
-
-	// レベルシステム情報
-	y += 40;
-	DrawFormatString(10, y, GetColor(255, 255, 0),
-		"=== Level System ===");
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 0),
-		"Enemy Level = Distance / 1000");
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 0),
-		"Current Zone Level: %d",
-		static_cast<int>(player_->GetDistanceFromOriginXZ() / 1000.0f) + 1);
-	y += 20;
-	DrawFormatString(10, y, GetColor(255, 255, 0),
-		"Max Enemy Level: 10");
-#endif
 }

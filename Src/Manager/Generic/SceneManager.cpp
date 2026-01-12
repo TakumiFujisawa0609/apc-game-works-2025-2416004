@@ -96,6 +96,13 @@ void SceneManager::Init3D(void)
     SetUseLighting(true);
     SetLightEnable(true);
 
+    SetGlobalAmbientLight(GetColorF(0.8f, 0.8f, 0.8f, 1.0f));
+
+    ChangeLightTypeDir(VGet(0.0f, -1.0f, 1.0f));  // ライトの方向
+    SetLightDifColor(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));  // 拡散光
+    SetLightSpcColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 鏡面光
+    SetLightAmbColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 環境光
+
     // フォグを設定する
     SetFogEnable(true);
     SetFogColor(5, 5, 5);
@@ -112,6 +119,9 @@ void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
 
     // CollisionControllerをクリア
     CollisionController::GetInstance().Clear();
+
+    // BGMを停止する
+    SoundManager::GetInstance().StopAllBGM();
 
     // 新しいシーンを設定
     scenes_.push_back(scene);
@@ -151,6 +161,9 @@ void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
 
     // CollisionControllerをクリア
     CollisionController::GetInstance().Clear();
+
+    // BGMを停止する
+    SoundManager::GetInstance().StopAllBGM();
 
     isSceneChanging_ = true;
     scenes_.push_back(scene);

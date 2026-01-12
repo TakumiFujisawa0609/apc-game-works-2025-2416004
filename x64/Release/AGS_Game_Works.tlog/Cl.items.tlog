@@ -1,3 +1,6 @@
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Glider.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Glider.obj
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\FireAttack.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\FireAttack.obj
+D:\AGSdeta\AGS_Game_Works\Src\Object\Stage\SkyDome.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\SkyDome.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Stage\EnemySpawner.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\EnemySpawner.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\DamageManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\DamageManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\CollisionController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\CollisionController.obj
@@ -45,3 +48,5 @@ D:\AGSdeta\AGS_Game_Works\Src\Scene\SceneTitle.cpp;D:\AGSdeta\AGS_Game_Works\x64
 D:\AGSdeta\AGS_Game_Works\Src\Utility\Utility.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Utility.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Sword.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Sword.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Manager\StageManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\StageManager.obj
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\WaterAttack.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\WaterAttack.obj
+D:\AGSdeta\AGS_Game_Works\Src\Object\Stage\Tower.cpp;D:\AGSdeta\AGS_Game_Works\x64\Release\Tower.obj

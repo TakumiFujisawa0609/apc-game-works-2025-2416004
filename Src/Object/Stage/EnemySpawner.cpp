@@ -14,6 +14,7 @@ EnemySpawner::EnemySpawner(const VECTOR& position, float spawnRange, const std::
     , activationRange_(1000.0f)
     , requirePlayerInRange_(true)
     , enemyLevel_(1)
+    , modelId_(-1)
 {
 }
 
@@ -29,6 +30,9 @@ void EnemySpawner::Update(float deltaTime)
 // 描画処理（デバッグ用）
 void EnemySpawner::Draw(void) const
 {
+    MV1SetScale(modelId_, VGet(5.0f, 5.0f, 5.0f));
+    MV1SetPosition(modelId_, position_);
+    MV1DrawModel(modelId_);
 #ifdef _DEBUG
     // レベルに応じた色（レベルが高いほど赤く）
     int colorR = 100 + (enemyLevel_ * 15);
@@ -243,4 +247,9 @@ bool EnemySpawner::IsPlayerInRange(const VECTOR& playerPos) const
 
     // 範囲内かチェック
     return distanceSq <= rangeSq;
+}
+
+void EnemySpawner::SetModelId(int modedlId)
+{
+    modelId_ = modedlId;
 }

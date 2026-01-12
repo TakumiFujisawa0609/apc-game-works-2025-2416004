@@ -647,6 +647,42 @@ void Quaternion::ToAngleAxis(float* angle, VECTOR* axis)
 	}
 }
 
+// 回転軸と角度（ラジアン）からクォータニオンを生成する静的メソッド
+Quaternion Quaternion::Axis(const VECTOR& axis, float angleRad)
+{
+	// 回転軸を正規化
+	VECTOR normalizedAxis = Utility::VNormalize(axis);
+
+	// 回転角を半分にする
+	float halfAngle = angleRad * 0.5f;
+
+	// クォータニオンの成分を計算
+	float sinHalf = sinf(halfAngle);
+	double w = cosf(halfAngle);
+	double x = normalizedAxis.x * sinHalf;
+	double y = normalizedAxis.y * sinHalf;
+	double z = normalizedAxis.z * sinHalf;
+
+	return Quaternion(w, x, y, z);
+}
+
+// クォータニオン同士の乗算 (q1 * q2)
+Quaternion Quaternion::operator*(const Quaternion& q) const
+{
+	// 以下の計算式で乗算結果を求めます。
+	// q.w = w1*w2 - x1*x2 - y1*y2 - z1*z2
+	// q.x = w1*x2 + x1*w2 + y1*z2 - z1*y2
+	// q.y = w1*y2 - x1*z2 + y1*w2 + z1*x2
+	// q.z = w1*z2 + x1*y2 - y1*x2 + z1*w2
+
+	double new_w = w * q.w - x * q.x - y * q.y - z * q.z;
+	double new_x = w * q.x + x * q.w + y * q.z - z * q.y;
+	double new_y = w * q.y - x * q.z + y * q.w + z * q.x;
+	double new_z = w * q.z + x * q.y - y * q.x + z * q.w;
+
+	return Quaternion(new_w, new_x, new_y, new_z);
+}
+
 // スカラー倍のオーバーロード（非const版）
 Quaternion Quaternion::operator*(float& f) {
 	return Quaternion(w * f, x * f, y * f, z * f);

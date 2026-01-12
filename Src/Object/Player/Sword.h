@@ -41,9 +41,11 @@ private:
 
     // 定数
     static constexpr float CAPSULE_RADIUS = 15.0f;      // カプセル半径
-    static constexpr float SWORD_TILT_ANGLE = 30.0f;   // 剣の傾き（通常時）
-    static constexpr float SWORD_ATTACK_ANGLE = 10.0f;  // 剣の傾き（攻撃時）
-    static constexpr float POSITION_OFFSET_Y = 30.0f;    // Y座標オフセット
+    static constexpr float SWORD_TILT_ANGLE = -90.0f;   // 剣の傾き（通常時）
+    static constexpr float SWORD_ATTACK_ANGLE = -90.0f;  // 剣の傾き（攻撃時）
+    static constexpr float POSITION_OFFSET_Y = 10.0f;    // Y座標オフセット
+
+    static constexpr VECTOR SOWRD_SCALE = { 80.0f, 80.0f, 80.0f };
 
     // 剣の基準フレーム座標
     VECTOR framePos_;

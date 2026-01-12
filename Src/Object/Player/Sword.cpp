@@ -35,33 +35,65 @@ void Sword::Init(void)
 
     // CollisionControllerに登録
     CollisionController::GetInstance().RegisterUnit(this);
+
+    trans_.Update();
+
 }
 
 // 更新処理
 void Sword::Update(void)
 {
+    // スケール
+    trans_.scl = SOWRD_SCALE;
+
     // フレーム位置から少し上にオフセット
     trans_.pos = VAdd(framePos_, VGet(0.0f, POSITION_OFFSET_Y, 0.0f));
 
-    // 攻撃中は剣を下に向ける、それ以外は通常の角度
-    float tiltAngle = isAttacking_ ? SWORD_ATTACK_ANGLE : SWORD_TILT_ANGLE;
+    if (isAttacking_) // 攻撃時
+    {
+        // 剣を縦向きにするための回転 (Z軸周りに-90度: モデルを縦に起こす)
+        Quaternion verticalRotation = Quaternion::Axis(VGet(0.0f, 0.0f, 1.0f), Utility::Deg2RadF(-90.0f));
 
-    // プレイヤーのローカル回転をそのまま剣のグローバル回転に設定
-    trans_.quaRot = playerRot_;
+        // 剣のデフォルトの傾き（X軸周り: SWORD_TILT_ANGLE = 30.0f）
+        Quaternion tiltRotation = Quaternion::Axis(VGet(1.0f, 0.0f, 0.0f), Utility::Deg2RadF(SWORD_TILT_ANGLE));
 
-    // プレイヤーの向きに相対的にX軸で傾ける（ローカル回転）
-    trans_.quaRotLocal = Quaternion::AngleAxis(
-        Utility::Deg2RadF(tiltAngle),
-        VGet(1.0f, 0.0f, 0.0f)  // X軸
-    );
+        // ローカル回転は「縦向き」と「傾き」を合成
+        // Z軸回転 * X軸回転 の順序で合成します。
+        // ※Quaternion::Axis()とoperator*()が実装されている前提です。
+        trans_.quaRotLocal = verticalRotation * tiltRotation;
+    }
+    else // 通常時
+    {
+        // 剣を縦向きにするための回転 (Z軸周りに-90度: モデルを縦に起こす)
+        Quaternion verticalRotation = Quaternion::Axis(VGet(0.0f, 0.0f, 1.0f), Utility::Deg2RadF(-90.0f));
 
+        // 剣のデフォルトの傾き（X軸周り: SWORD_TILT_ANGLE = 30.0f）
+        Quaternion tiltRotation = Quaternion::Axis(VGet(1.0f, 0.0f, 0.0f), Utility::Deg2RadF(SWORD_TILT_ANGLE));
+
+        // ローカル回転は「縦向き」と「傾き」を合成
+        // Z軸回転 * X軸回転 の順序で合成します。
+        // ※Quaternion::Axis()とoperator*()が実装されている前提です。
+        trans_.quaRotLocal = verticalRotation * tiltRotation;
+    }
+
+    // UnitBaseの更新（コライダ更新など）
     UnitBase::Update();
 }
 
 // 描画処理
 void Sword::Draw(void) const
 {
-    UnitBase::Draw();
+
+    // 攻撃中でなければ描画しない
+    if (!isAttacking_)
+    {
+        return;
+    }
+
+    if (trans_.modelId != -1)
+    {
+        UnitBase::Draw();
+    }
 
 #ifdef _DEBUG
     // カプセルコライダの可視化
@@ -138,13 +170,13 @@ void Sword::InitCollider(void)
     // ローカル座標で剣の刃の部分を指定 
 
     // 剣の柄の位置（基準点から少し下、Z方向に傾ける）
-    VECTOR localStart = VGet(0.0f, -10.0f, -15.0f);
+    VECTOR localStart = VGet(0.0f, -10.0f, -35.0f);
 
     // 剣の先端位置（基準点から上方向、Z方向に傾ける）
-    VECTOR localEnd = VGet(0.0f, 80.0f, 25.0f);
+    VECTOR localEnd = VGet(0.0f, 90.0f, -65.0f);
 
     ColliderCapsule* colCapsule = new ColliderCapsule(
-        ColliderBase::TAG::SWORD,  // プレイヤーの攻撃判定として扱う
+        ColliderBase::TAG::SWORD,
         &trans_,
         localStart,
         localEnd,

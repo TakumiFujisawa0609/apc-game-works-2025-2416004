@@ -1,9 +1,11 @@
-#include "StageManager.h"
+ï»¿#include "StageManager.h"
 #include "EnemyManager.h"
 #include "../Stage/EnemySpawner.h"
 #include "../../Utility/Utility.h"
+#include "../../Manager/Generic/ResourceManager.h"
+#include "../Stage/Tower.h"
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 StageManager::StageManager(void)
     : enemyManager_(nullptr)
     , isLoaded_(false)
@@ -18,23 +20,30 @@ StageManager::StageManager(void)
     , maxEnemyLevel_(10)               
     , lastPlayerPos_(Utility::VECTOR_ZERO)
     , updateTimer_(0.0f)
+    , towerModelId_(-1)
 {
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 StageManager::~StageManager(void)
 {
 }
 
-// “Ç‚İ‚İ
+// èª­ã¿è¾¼ã¿
 void StageManager::Load(void)
 {
     if (isLoaded_) return;
 
+    auto& res = ResourceManager::GetInstance();
+
+    // ã‚¿ãƒ¯ãƒ¼ã®ãƒã‚¹ã‚¿ãƒ¼ãƒ¢ãƒ‡ãƒ«ã‚’èª­ã¿è¾¼ã‚€
+    towerModelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_TOWER);
+
+
     isLoaded_ = true;
 }
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void StageManager::Init(EnemyManager* enemyManager)
 {
     if (!enemyManager)
@@ -50,54 +59,123 @@ void StageManager::Init(EnemyManager* enemyManager)
     updateTimer_ = 0.0f;
 }
 
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 void StageManager::Update(const VECTOR& playerPos, float deltaTime)
 {
-    // ˆê’èŠÔŠu‚Åü•Ó‚ÌƒXƒ|ƒi[‚ğXV
+    for (const auto& tower : towers_)
+    {
+        if (tower) tower->Update();
+    }
+
+    // ä¸€å®šé–“éš”ã§å‘¨è¾ºã®ã‚¹ãƒãƒŠãƒ¼ã‚’æ›´æ–°
     updateTimer_ += deltaTime;
 
     if (updateTimer_ >= 0.2f)
     {
         updateTimer_ = 0.0f;
         RegisterNearbySpawners(playerPos);
+        UpdateTowerPlacement(playerPos);
         lastPlayerPos_ = playerPos;
     }
 }
 
-// •`‰æˆ—
+// æç”»å‡¦ç†
 void StageManager::Draw(void) const
 {
+    for (const auto& tower : towers_)
+    {
+        tower->Draw();
+    }
 #ifdef _DEBUG
-    // ƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[ˆÊ’u‚ğ‰Â‹‰»
+    // ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼ä½ç½®ã‚’å¯è¦–åŒ–
     for (const auto& pair : spawners_)
     {
         const auto& info = pair.second;
         if (info.isActive)
         {
-            // ƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[‚ÍƒIƒŒƒ“ƒWF
+            // ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼ã¯ã‚ªãƒ¬ãƒ³ã‚¸è‰²
             DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
         }
         else
         {
-            // ”ñƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[‚ÍƒOƒŒ[
+            // éã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼ã¯ã‚°ãƒ¬ãƒ¼
             DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
         }
     }
 #endif
 }
 
-// •`‰æˆ—iƒJƒŠƒ“ƒO‘Î‰j
+// æç”»å‡¦ç†ï¼ˆã‚«ãƒªãƒ³ã‚°å¯¾å¿œï¼‰
+// StageManager.cpp ã® StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const é–¢æ•°å…¨ä½“
+
 void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
 {
-#ifdef _DEBUG
-    // ƒJƒŠƒ“ƒOİ’è
+    // ã‚«ãƒªãƒ³ã‚°è¨­å®š
     const float cullDistance = 5000.0f;
     const float viewAngleCos = cosf(Utility::Deg2RadF(100.0f));
 
+    // ã‚«ã‚¦ãƒ³ã‚¿ã®åˆæœŸåŒ– (ãƒ‡ãƒãƒƒã‚°æƒ…å ±ç”¨)
+    int drawnTowers = 0;
+    int culledTowers = 0;
+
+    for (const auto& tower : towers_)
+    {
+        if (!tower) continue;
+
+        VECTOR towerPos = tower->GetPos(); // UnitBase::GetPos()ã‚’ä½¿ç”¨
+        VECTOR toTower = VSub(towerPos, cameraPos);
+
+        float distSq = VSquareSize(toTower);
+
+        // è·é›¢ã‚«ãƒªãƒ³ã‚°
+        if (distSq > cullDistance * cullDistance)
+        {
+            culledTowers++;
+            continue;
+        }
+
+        // è¦–é‡ã‚«ãƒªãƒ³ã‚°
+        if (distSq > 100.0f)
+        {
+            // â˜…ã€é‡è¦ä¿®æ­£ã€‘ã‚«ãƒ¡ãƒ©ã‹ã‚‰ã‚¿ãƒ¯ãƒ¼ã¸ã®ãƒ™ã‚¯ãƒˆãƒ« (toTower) ã‚’æ­£è¦åŒ–ã™ã‚‹
+            // ä»¥å‰ã® VNorm(towerPos) ã¯ã‚¿ãƒ¯ãƒ¼ã®ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚’æ­£è¦åŒ–ã—ã¦ãŠã‚Šã€èª¤ã‚Šã§ã—ãŸã€‚
+            VECTOR toTowerNorm = VNorm(toTower);
+            float dot = VDot(cameraDir, toTowerNorm);
+
+            if (dot < viewAngleCos)
+            {
+                culledTowers++;
+                continue;
+            }
+        }
+
+        // æç”»
+        tower->Draw();
+        drawnTowers++;
+
+        // ----------------------------------------------------
+        // â˜…ã€è¿½åŠ ã€‘ã‚¿ãƒ¯ãƒ¼ä½ç½®ã®ãƒ‡ãƒãƒƒã‚°æç”»
+        // ----------------------------------------------------
+#ifdef _DEBUG
+        // ã‚¿ãƒ¯ãƒ¼ä½ç½®ã«å††ã‚’æç”»ï¼ˆã‚¹ãƒãƒŠãƒ¼ã¨åŒºåˆ¥ã™ã‚‹ãŸã‚ã€ç·‘è‰²ã®çƒä½“: åŠå¾„50.0fï¼‰
+        DrawSphere3D(towerPos, 50.0f, 8, GetColor(0, 200, 50), GetColor(0, 255, 0), TRUE);
+#endif
+        // ----------------------------------------------------
+    }
+
+#ifdef _DEBUG
+    // æ—¢å­˜ã®ã‚¹ãƒãƒŠãƒ¼ãƒ‡ãƒãƒƒã‚°è¡¨ç¤ºã®å‰ã«ã€ã‚¿ãƒ¯ãƒ¼ã®ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã‚’è¿½åŠ 
+
+    printfDx("=== Tower Debug Info ===\n");
+    printfDx("Total Towers: %d, Drawn: %d, Culled: %d\n", (int)towers_.size(), drawnTowers, culledTowers);
+    printfDx("------------------------\n");
+
+    // ã‚¹ãƒãƒŠãƒ¼ä½ç½®ã‚’å¯è¦–åŒ–ï¼ˆã‚«ãƒªãƒ³ã‚°é©ç”¨ï¼‰
+    // NOTE: å…ƒã®ã‚³ãƒ¼ãƒ‰ã§ culledSpawners ã®åˆæœŸåŒ–ãŒã“ã®ãƒ–ãƒ­ãƒƒã‚¯ã®å¤–ã«ã‚ã‚‹ãŸã‚ã€
+    // ã“ã“ã§ä¸€æ—¦åˆæœŸåŒ–ã—ç›´ã—ã¾ã™ï¼ˆã¾ãŸã¯æ—¢å­˜ã®ã‚¹ãƒãƒŠãƒ¼ã‚³ãƒ¼ãƒ‰ã‹ã‚‰ drawnSpawners/culledSpawners ã®åˆæœŸåŒ–ã‚’å‰Šé™¤ï¼‰ã€‚
     int drawnSpawners = 0;
     int culledSpawners = 0;
 
-    // ƒXƒ|ƒi[ˆÊ’u‚ğ‰Â‹‰»iƒJƒŠƒ“ƒO“K—pj
     for (const auto& pair : spawners_)
     {
         const auto& info = pair.second;
@@ -105,16 +183,17 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
         VECTOR toSpawner = VSub(info.gridPos, cameraPos);
         float distSq = VSquareSize(toSpawner);
 
-        // ‹——£ƒJƒŠƒ“ƒO
+        // è·é›¢ã‚«ãƒªãƒ³ã‚°
         if (distSq > cullDistance * cullDistance)
         {
             culledSpawners++;
             continue;
         }
 
-        // ‹–ìƒJƒŠƒ“ƒO
+        // è¦–é‡ã‚«ãƒªãƒ³ã‚°
         if (distSq > 100.0f)
         {
+            // ã‚¹ãƒãƒŠãƒ¼ã®è¦–é‡ã‚«ãƒªãƒ³ã‚°ã¯ toSpawner ã‚’æ­£è¦åŒ–ã—ã¦ãŠã‚Šã€ãƒ­ã‚¸ãƒƒã‚¯ã¯æ­£ã—ã„
             VECTOR toSpawnerNorm = VNorm(toSpawner);
             float dot = VDot(cameraDir, toSpawnerNorm);
 
@@ -125,34 +204,40 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
             }
         }
 
-        // •`‰æ
+        // æç”»
         if (info.isActive)
         {
-            // ƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[‚ÍƒIƒŒƒ“ƒWF
+            // ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼ã¯ã‚ªãƒ¬ãƒ³ã‚¸è‰²
             DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
         }
         else
         {
-            // ”ñƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[‚ÍƒOƒŒ[
+            // éã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼ã¯ã‚°ãƒ¬ãƒ¼
             DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
         }
 
         drawnSpawners++;
     }
 
-#endif
+    printfDx("=== Spawner Debug Info ===\n");
+    printfDx("Total Spawners: %d, Drawn: %d, Culled: %d\n", (int)spawners_.size(), drawnSpawners, culledSpawners);
+    printfDx("--------------------------\n");
+
+#endif // _DEBUG
 }
 
-// ‰ğ•úˆ—
+// è§£æ”¾å‡¦ç†
 void StageManager::Release(void)
 {
     spawners_.clear();
     activeSpawners_.clear();
+    placedTowers_.clear();
+    towers_.clear();
     enemyManager_ = nullptr;
     isLoaded_ = false;
 }
 
-// ƒXƒ|ƒi[İ’è
+// ã‚¹ãƒãƒŠãƒ¼è¨­å®š
 void StageManager::SetSpawnerSettings(float spawnRange, const std::string& enemyType,
     float activationRange, float spawnInterval, int maxEnemies)
 {
@@ -163,63 +248,48 @@ void StageManager::SetSpawnerSettings(float spawnRange, const std::string& enemy
     maxEnemies_ = maxEnemies;
 }
 
-// ƒXƒ|ƒi[”‚ğæ“¾
+// ã‚¹ãƒãƒŠãƒ¼æ•°ã‚’å–å¾—
 int StageManager::GetSpawnerCount(void) const
 {
     return static_cast<int>(spawners_.size());
 }
 
-// ƒAƒNƒeƒBƒu‚ÈƒXƒ|ƒi[”‚ğæ“¾
+// ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ãªã‚¹ãƒãƒŠãƒ¼æ•°ã‚’å–å¾—
 int StageManager::GetActiveSpawnerCount(void) const
 {
     return static_cast<int>(activeSpawners_.size());
 }
 
-// “®“IƒŒƒxƒ‹İ’è‚ğ—LŒø‰»
+// å‹•çš„ãƒ¬ãƒ™ãƒ«è¨­å®šã‚’æœ‰åŠ¹åŒ–
 void StageManager::EnableDynamicLevel(bool enable, float distancePerLevel)
 {
     useDynamicLevel_ = enable;
     levelIncreaseDistance_ = distancePerLevel;
 
-#ifdef _DEBUG
-    if (enable)
-    {
-        printfDx("Dynamic Level Enabled: %.0f units per level, Max Level: %d\n",
-            distancePerLevel, maxEnemyLevel_);
-    }
-    else
-    {
-        printfDx("Dynamic Level Disabled\n");
-    }
-#endif
 }
 
-// Œ´“_À•W‚ğİ’è
+// åŸç‚¹åº§æ¨™ã‚’è¨­å®š
 void StageManager::SetOriginPos(const VECTOR& origin)
 {
     originPos_ = origin;
 
-#ifdef _DEBUG
-    printfDx("Origin Position Set: (%.1f, %.1f, %.1f)\n",
-        origin.x, origin.y, origin.z);
-#endif
 }
 
-// ƒOƒŠƒbƒhÀ•W‚©‚çƒL[‚ğ¶¬
+// ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‹ã‚‰ã‚­ãƒ¼ã‚’ç”Ÿæˆ
 int StageManager::GetGridKey(int gridX, int gridZ) const
 {
-    // ƒJƒ“ƒg[ƒ‹‘ÎŠÖ”‚ğg—p‚µ‚Äƒ†ƒj[ƒN‚ÈƒL[‚ğ¶¬
+    // ã‚«ãƒ³ãƒˆãƒ¼ãƒ«å¯¾é–¢æ•°ã‚’ä½¿ç”¨ã—ã¦ãƒ¦ãƒ‹ãƒ¼ã‚¯ãªã‚­ãƒ¼ã‚’ç”Ÿæˆ
     return ((gridX + gridZ) * (gridX + gridZ + 1)) / 2 + gridZ;
 }
 
-// ƒ[ƒ‹ƒhÀ•W‚©‚çƒOƒŠƒbƒhÀ•W‚ğæ“¾
+// ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‹ã‚‰ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‚’å–å¾—
 void StageManager::WorldToGrid(const VECTOR& worldPos, int& outGridX, int& outGridZ) const
 {
     outGridX = static_cast<int>(floorf(worldPos.x / SPAWNER_INTERVAL));
     outGridZ = static_cast<int>(floorf(worldPos.z / SPAWNER_INTERVAL));
 }
 
-// ƒOƒŠƒbƒhÀ•W‚©‚çƒ[ƒ‹ƒhÀ•W‚ğæ“¾
+// ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‹ã‚‰ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚’å–å¾—
 VECTOR StageManager::GridToWorld(int gridX, int gridZ) const
 {
     float worldX = (gridX * SPAWNER_INTERVAL) + (SPAWNER_INTERVAL * 0.5f);
@@ -227,7 +297,7 @@ VECTOR StageManager::GridToWorld(int gridX, int gridZ) const
     return VGet(worldX, 0.0f, worldZ);
 }
 
-// ü•Ó‚ÌƒOƒŠƒbƒhÀ•W‚ğæ“¾
+// å‘¨è¾ºã®ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‚’å–å¾—
 std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& centerPos, float range) const
 {
     std::vector<std::pair<int, int>> grids;
@@ -235,7 +305,7 @@ std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& cent
     int centerGridX, centerGridZ;
     WorldToGrid(centerPos, centerGridX, centerGridZ);
 
-    // ŒŸõ”ÍˆÍiƒOƒŠƒbƒh”j
+    // æ¤œç´¢ç¯„å›²ï¼ˆã‚°ãƒªãƒƒãƒ‰æ•°ï¼‰
     int searchRadius = static_cast<int>(ceilf(range / SPAWNER_INTERVAL)) + 1;
 
     for (int dz = -searchRadius; dz <= searchRadius; ++dz)
@@ -245,7 +315,7 @@ std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& cent
             int gridX = centerGridX + dx;
             int gridZ = centerGridZ + dz;
 
-            // ÀÛ‚Ì‹——£ƒ`ƒFƒbƒN
+            // å®Ÿéš›ã®è·é›¢ãƒã‚§ãƒƒã‚¯
             VECTOR gridWorldPos = GridToWorld(gridX, gridZ);
             VECTOR diff = VSub(gridWorldPos, centerPos);
             float distSq = VSquareSize(diff);
@@ -260,12 +330,12 @@ std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& cent
     return grids;
 }
 
-// ü•Ó‚ÌƒXƒ|ƒi[‚ğ“o˜^E‰ğœ
+// å‘¨è¾ºã®ã‚¹ãƒãƒŠãƒ¼ã‚’ç™»éŒ²ãƒ»è§£é™¤
 void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
 {
     if (!enemyManager_) return;
 
-    // “o˜^‚·‚×‚«ƒOƒŠƒbƒhÀ•W‚ğæ“¾
+    // ç™»éŒ²ã™ã¹ãã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‚’å–å¾—
     auto nearbyGrids = GetNearbyGrids(playerPos, REGISTER_RANGE);
 
     std::unordered_set<int> shouldBeActiveKeys;
@@ -275,12 +345,12 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
         shouldBeActiveKeys.insert(key);
     }
 
-    // V‹Kì¬‚·‚×‚«ƒXƒ|ƒi[
+    // æ–°è¦ä½œæˆã™ã¹ãã‚¹ãƒãƒŠãƒ¼
     for (int key : shouldBeActiveKeys)
     {
         if (spawners_.find(key) == spawners_.end())
         {
-            // ‚Ü‚¾‘¶İ‚µ‚È‚¢ƒXƒ|ƒi[‚ğì¬
+            // ã¾ã å­˜åœ¨ã—ãªã„ã‚¹ãƒãƒŠãƒ¼ã‚’ä½œæˆ
             for (const auto& grid : nearbyGrids)
             {
                 int gridKey = GetGridKey(grid.first, grid.second);
@@ -293,7 +363,7 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
         }
     }
 
-    // ƒAƒNƒeƒBƒuó‘Ô‚ÌXV
+    // ã‚¢ã‚¯ãƒ†ã‚£ãƒ–çŠ¶æ…‹ã®æ›´æ–°
     std::unordered_set<int> toDeactivate;
     for (int key : activeSpawners_)
     {
@@ -303,7 +373,7 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
         }
     }
 
-    // ”ñƒAƒNƒeƒBƒu‰»
+    // éã‚¢ã‚¯ãƒ†ã‚£ãƒ–åŒ–
     for (int key : toDeactivate)
     {
         auto it = spawners_.find(key);
@@ -323,7 +393,7 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
         }
     }
 
-    // ƒAƒNƒeƒBƒu‰»
+    // ã‚¢ã‚¯ãƒ†ã‚£ãƒ–åŒ–
     for (int key : shouldBeActiveKeys)
     {
         if (activeSpawners_.find(key) == activeSpawners_.end())
@@ -350,26 +420,26 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
 #endif
 }
 
-// ƒXƒ|ƒi[‚ğ¶¬iƒOƒŠƒbƒhÀ•Ww’èj
+// ã‚¹ãƒãƒŠãƒ¼ã‚’ç”Ÿæˆï¼ˆã‚°ãƒªãƒƒãƒ‰åº§æ¨™æŒ‡å®šï¼‰
 void StageManager::CreateSpawner(int gridX, int gridZ)
 {
     if (!enemyManager_) return;
 
     int key = GetGridKey(gridX, gridZ);
 
-    // Šù‚É‘¶İ‚·‚éê‡‚ÍƒXƒLƒbƒv
+    // æ—¢ã«å­˜åœ¨ã™ã‚‹å ´åˆã¯ã‚¹ã‚­ãƒƒãƒ—
     if (spawners_.find(key) != spawners_.end()) return;
 
-    // ƒ[ƒ‹ƒhÀ•W‚ğŒvZ
+    // ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚’è¨ˆç®—
     VECTOR worldPos = GridToWorld(gridX, gridZ);
 
-    // ‹——£‚É‰‚¶‚½ƒŒƒxƒ‹‚ğŒvZ
+    // è·é›¢ã«å¿œã˜ãŸãƒ¬ãƒ™ãƒ«ã‚’è¨ˆç®—
     int enemyLevel = CalculateEnemyLevelByDistance(worldPos);
 
-    // EnemyManager‚ÉƒXƒ|ƒi[‚ğ’Ç‰ÁiƒŒƒxƒ‹w’è”Åj
+    // EnemyManagerã«ã‚¹ãƒãƒŠãƒ¼ã‚’è¿½åŠ ï¼ˆãƒ¬ãƒ™ãƒ«æŒ‡å®šç‰ˆï¼‰
     enemyManager_->AddSpawner(worldPos, spawnRange_, enemyType_, enemyLevel);
 
-    // ’Ç‰Á‚µ‚½ƒXƒ|ƒi[‚Ìİ’è
+    // è¿½åŠ ã—ãŸã‚¹ãƒãƒŠãƒ¼ã®è¨­å®š
     int spawnerIndex = enemyManager_->GetSpawnerCount() - 1;
     auto* spawner = enemyManager_->GetSpawner(spawnerIndex);
     if (spawner)
@@ -378,10 +448,10 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
         spawner->SetRequirePlayerInRange(true);
         spawner->SetSpawnInterval(spawnInterval_);
         spawner->SetMaxEnemies(maxEnemies_);
-        spawner->SetActive(false); // Å‰‚Í”ñƒAƒNƒeƒBƒu
+        spawner->SetActive(false); // æœ€åˆã¯éã‚¢ã‚¯ãƒ†ã‚£ãƒ–
     }
 
-    // ƒXƒ|ƒi[î•ñ‚ğ‹L˜^
+    // ã‚¹ãƒãƒŠãƒ¼æƒ…å ±ã‚’è¨˜éŒ²
     SpawnerInfo info;
     info.gridPos = worldPos;
     info.spawnerIndex = spawnerIndex;
@@ -389,7 +459,7 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
     spawners_[key] = info;
 }
 
-// ƒXƒ|ƒi[‚ğíœiƒOƒŠƒbƒhÀ•Ww’èj
+// ã‚¹ãƒãƒŠãƒ¼ã‚’å‰Šé™¤ï¼ˆã‚°ãƒªãƒƒãƒ‰åº§æ¨™æŒ‡å®šï¼‰
 void StageManager::RemoveSpawner(int gridX, int gridZ)
 {
     int key = GetGridKey(gridX, gridZ);
@@ -397,35 +467,116 @@ void StageManager::RemoveSpawner(int gridX, int gridZ)
     auto it = spawners_.find(key);
     if (it != spawners_.end())
     {
-        // EnemyManager‚©‚ç‚Ííœ‚µ‚È‚¢iƒpƒtƒH[ƒ}ƒ“ƒX‚Ì‚½‚ß”ñƒAƒNƒeƒBƒu‰»‚Ì‚İj
-        // Š®‘S‚Éíœ‚µ‚½‚¢ê‡‚Í enemyManager_->RemoveSpawner() ‚ğŒÄ‚Ô
+        // EnemyManagerã‹ã‚‰ã¯å‰Šé™¤ã—ãªã„ï¼ˆãƒ‘ãƒ•ã‚©ãƒ¼ãƒãƒ³ã‚¹ã®ãŸã‚éã‚¢ã‚¯ãƒ†ã‚£ãƒ–åŒ–ã®ã¿ï¼‰
+        // å®Œå…¨ã«å‰Šé™¤ã—ãŸã„å ´åˆã¯ enemyManager_->RemoveSpawner() ã‚’å‘¼ã¶
 
         activeSpawners_.erase(key);
         spawners_.erase(it);
     }
 }
 
-// ‹——£‚É‰‚¶‚½ƒŒƒxƒ‹ŒvZ
+// è·é›¢ã«å¿œã˜ãŸãƒ¬ãƒ™ãƒ«è¨ˆç®—
 int StageManager::CalculateEnemyLevelByDistance(const VECTOR& spawnPos) const
 {
     if (!useDynamicLevel_)
     {
-        return 1;  // “®“IƒŒƒxƒ‹‚ª–³Œø‚Èê‡‚ÍƒŒƒxƒ‹1
+        return 1;  // å‹•çš„ãƒ¬ãƒ™ãƒ«ãŒç„¡åŠ¹ãªå ´åˆã¯ãƒ¬ãƒ™ãƒ«1
     }
 
-    // Œ´“_‚©‚ç‚Ì‹——£‚ğŒvZiXZ•½–Ê‚Ì‚İAY²‚Í–³‹j
+    // åŸç‚¹ã‹ã‚‰ã®è·é›¢ã‚’è¨ˆç®—ï¼ˆXZå¹³é¢ã®ã¿ã€Yè»¸ã¯ç„¡è¦–ï¼‰
     VECTOR diff = VSub(spawnPos, originPos_);
     diff.y = 0.0f;
     float distance = VSize(diff);
 
-    // ‹——£‚É‰‚¶‚ÄƒŒƒxƒ‹‚ğ‘‰Á
+    // è·é›¢ã«å¿œã˜ã¦ãƒ¬ãƒ™ãƒ«ã‚’å¢—åŠ 
     int level = 1 + static_cast<int>(distance / levelIncreaseDistance_);
 
-    // Å‘åƒŒƒxƒ‹‚ÅƒNƒ‰ƒ“ƒv
+    // æœ€å¤§ãƒ¬ãƒ™ãƒ«ã§ã‚¯ãƒ©ãƒ³ãƒ—
     if (level > maxEnemyLevel_)
     {
         level = maxEnemyLevel_;
     }
 
     return level;
+}
+
+void StageManager::CreateTower(int gridX, int gridZ)
+{
+    if (towerModelId_ < 0)
+    {
+        printfDx("Tower model not loaded!\n");
+        return;
+    }
+
+    int key = GetGridKey(gridX, gridZ);
+
+    if (placedTowers_.count(key) > 0)
+    {
+        return;
+    }
+
+    // â˜…ã€ä¿®æ­£ã€‘ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚’è¨ˆç®—ï¼ˆã‚ªãƒ•ã‚»ãƒƒãƒˆé©ç”¨ï¼‰
+    // å…ƒã®ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‹ã‚‰ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã‚’å–å¾—
+    VECTOR baseWorldPos = GridToWorld(gridX, gridZ);
+
+    // ã‚¿ãƒ¯ãƒ¼ã‚’ã‚¹ãƒãƒŠãƒ¼ã‹ã‚‰ãšã‚‰ã™ï¼ˆã‚°ãƒªãƒƒãƒ‰ã®åŠåˆ†ã ã‘ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼‰
+    VECTOR worldPos = VGet(
+        baseWorldPos.x + (SPAWNER_INTERVAL * 0.25f), // Xæ–¹å‘ã«1/4ã‚°ãƒªãƒƒãƒ‰åˆ†ãšã‚‰ã™
+        baseWorldPos.y,
+        baseWorldPos.z + (SPAWNER_INTERVAL * 0.25f)  // Zæ–¹å‘ã«1/4ã‚°ãƒªãƒƒãƒ‰åˆ†ãšã‚‰ã™
+    );
+
+    // ã‚¿ãƒ¯ãƒ¼ã‚’ç”Ÿæˆ
+    auto tower = std::make_unique<Tower>(worldPos);
+
+    // ãƒ¢ãƒ‡ãƒ«IDã‚’è¨­å®š
+    tower->Load(towerModelId_);
+    tower->Init();
+
+    // ãƒªã‚¹ãƒˆã«è¿½åŠ 
+    int towerIndex = static_cast<int>(towers_.size());
+    towers_.push_back(std::move(tower));
+
+    // é…ç½®æƒ…å ±ã‚’è¨˜éŒ²
+    TowerInfo info;
+    info.gridPos = worldPos;  // ã‚ªãƒ•ã‚»ãƒƒãƒˆé©ç”¨å¾Œã®åº§æ¨™ã‚’è¨˜éŒ²
+    info.towerIndex = towerIndex;
+    placedTowers_[key] = info;
+
+#ifdef _DEBUG
+    printfDx("Tower created at Grid(%d, %d) -> World(%.1f, %.1f, %.1f)\n",
+        gridX, gridZ, worldPos.x, worldPos.y, worldPos.z);
+#endif
+}
+
+void StageManager::UpdateTowerPlacement(const VECTOR& playerPos)
+{
+    // ã‚¹ãƒãƒŠãƒ¼ã®REGISTER_RANGEã¨åŒã˜ç¯„å›²ã‚’ãƒã‚§ãƒƒã‚¯
+    const float REGISTER_RANGE = 5000.0f;
+    auto nearbyGrids = GetNearbyGrids(playerPos, REGISTER_RANGE);
+
+    // ã‚¿ãƒ¯ãƒ¼é…ç½®ã®é–“éš”ï¼ˆã‚¹ãƒãƒŠãƒ¼ã‚ˆã‚Šå¯†ã«é…ç½®ï¼‰
+    const int TOWER_INTERVAL = 2; // 2ã‚°ãƒªãƒƒãƒ‰ã”ã¨ã«é…ç½®
+
+    // å‘¨è¾ºã®ã‚°ãƒªãƒƒãƒ‰ã‚’ãƒã‚§ãƒƒã‚¯
+    for (const auto& grid : nearbyGrids)
+    {
+        int gx = grid.first;
+        int gz = grid.second;
+
+        // ã‚¿ãƒ¯ãƒ¼é…ç½®ã®é–“éš”ãƒã‚§ãƒƒã‚¯ï¼ˆ2ã‚°ãƒªãƒƒãƒ‰ã”ã¨ï¼‰
+        if (gx % TOWER_INTERVAL != 0 || gz % TOWER_INTERVAL != 0)
+        {
+            continue;
+        }
+
+        int key = GetGridKey(gx, gz);
+
+        // æ—¢ã«ã‚¿ãƒ¯ãƒ¼ãŒé…ç½®ã•ã‚Œã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
+        if (placedTowers_.count(key) == 0)
+        {
+            // ã‚¿ãƒ¯ãƒ¼ã‚’ç”Ÿæˆ (CreateTowerå†…ã§ placedTowers_ ã«ç™»éŒ²ã•ã‚Œã¾ã™)
+            CreateTower(gx, gz);
+        }
+    }
 }

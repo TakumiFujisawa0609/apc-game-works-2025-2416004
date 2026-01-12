@@ -114,7 +114,7 @@ private:
     static constexpr VECTOR DEFAULT_CAMERA_POS = { 0.0f, 100.0f, -500.0f };
 
     // カメラのクリップ距離
-    static constexpr float CAMERA_NEAR = 10.0f;
+    static constexpr float CAMERA_NEAR = 1.0f;
     static constexpr float CAMERA_FAR = 30000.0f;
 
     // カメラの初期角度

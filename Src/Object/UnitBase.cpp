@@ -1,4 +1,4 @@
-#include "UnitBase.h"
+ï»¿#include "UnitBase.h"
 #include "../Utility/Utility.h"
 #include "../Common/Quaternion.h"
 #include "Common/AnimationController.h"
@@ -9,44 +9,44 @@
 #include "../Manager/System/CollisionController.h"
 #include "../Collider/ColliderCapsule.h"
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 UnitBase::UnitBase(void)
 {
-	// ”¼Œa‚Ì‰Šú‰»
+	// åŠå¾„ã®åˆæœŸåŒ–
 	radius_ = 0.0f;
 
-	// ˆÚ“®‘¬“x‚Ì‰Šú‰»
+	// ç§»å‹•é€Ÿåº¦ã®åˆæœŸåŒ–
 	speed_ = 0.0f;
 
-	// ˆÚ“®—Ê‚Ì‰Šú‰»
+	// ç§»å‹•é‡ã®åˆæœŸåŒ–
 	movePow_ = Utility::VECTOR_ZERO;
 
-	// ‘OÀ•W‚Ì‰Šú‰»
+	// å‰åº§æ¨™ã®åˆæœŸåŒ–
 	prePos_ = Utility::VECTOR_ZERO;
 
-	// ƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‰Šú‰»
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®åˆæœŸåŒ–
 	currentAnim_ = ANIM::NONE;
 
-	// ƒ‚ƒfƒ‹‚Ì‰Šú‰»
+	// ãƒ¢ãƒ‡ãƒ«ã®åˆæœŸåŒ–
 	trans_.modelId = -1;
 
-	// À•W‚Ì‰Šú‰»
+	// åº§æ¨™ã®åˆæœŸåŒ–
 	trans_.pos = Utility::VECTOR_ZERO;
 
-	// ƒXƒP[ƒ‹‚Ì‰Šú‰»
+	// ã‚¹ã‚±ãƒ¼ãƒ«ã®åˆæœŸåŒ–
 	trans_.scl = Utility::VECTOR_ONE;
 
-	// ‰ñ“]‚Ì‰Šú‰»
+	// å›è»¢ã®åˆæœŸåŒ–
 	trans_.rot = Utility::VECTOR_ZERO;
 
-	// ‰ñ“](ƒNƒH[ƒ^ƒjƒIƒ“)‚Ì‰Šú‰»
+	// å›è»¢(ã‚¯ã‚©ãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³)ã®åˆæœŸåŒ–
 	trans_.quaRot = Quaternion();
 
-	// ƒWƒƒƒ“ƒv—Ê‚Ì‰Šú‰»
+	// ã‚¸ãƒ£ãƒ³ãƒ—é‡ã®åˆæœŸåŒ–
 	jumpPow_ = Utility::VECTOR_ZERO;
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 UnitBase::~UnitBase(void)
 {
 }
@@ -59,19 +59,19 @@ void UnitBase::Init(void)
 {
 }
 
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 void UnitBase::Update(void)
 {
-	// ‘OÀ•W‚Ì‘}“ü
+	// å‰åº§æ¨™ã®æŒ¿å…¥
 	prePos_ = trans_.pos;
 
-	// d—ÍŒvZ
+	// é‡åŠ›è¨ˆç®—
 	CalcGravityPow();
 
-	// Õ“Ë”»’è
+	// è¡çªåˆ¤å®š
 	Collision();
 
-	// ƒ‚ƒfƒ‹î•ñ‚Ìİ’è
+	// ãƒ¢ãƒ‡ãƒ«æƒ…å ±ã®è¨­å®š
 	if (trans_.modelId >= 0)
 	{
 		MV1SetPosition(trans_.modelId, trans_.pos);
@@ -79,7 +79,7 @@ void UnitBase::Update(void)
 		MV1SetScale(trans_.modelId, trans_.scl);
 	}
 
-	// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌXV
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®æ›´æ–°
 	if (anim_)
 	{
 		anim_->Update();
@@ -88,17 +88,17 @@ void UnitBase::Update(void)
 	trans_.Update();
 }
 
-// •`‰æˆ—
+// æç”»å‡¦ç†
 void UnitBase::Draw(void) const
 {
-	// ƒ‚ƒfƒ‹‚Ì•`‰æ
+	// ãƒ¢ãƒ‡ãƒ«ã®æç”»
 	if (trans_.modelId >= 0)
 	{
 		MV1DrawModel(trans_.modelId);
 	}
 
 #ifdef _DEBUG
-	// Š—L‚µ‚Ä‚¢‚éƒRƒ‰ƒCƒ_‚Ì•`‰æ
+	// æ‰€æœ‰ã—ã¦ã„ã‚‹ã‚³ãƒ©ã‚¤ãƒ€ã®æç”»
 	for (const auto& own : ownColliders_)
 	{
 		own.second->Draw();
@@ -108,107 +108,107 @@ void UnitBase::Draw(void) const
 
 void UnitBase::Release(void)
 {
-	// ©g‚ÌƒRƒ‰ƒCƒ_‰ğ•ú
+	// è‡ªèº«ã®ã‚³ãƒ©ã‚¤ãƒ€è§£æ”¾
 	for (auto& own : ownColliders_)
 	{
 		delete own.second;
 	}
 }
 
-// ƒ‚ƒfƒ‹î•ñi”ñconst”Åj
+// ãƒ¢ãƒ‡ãƒ«æƒ…å ±ï¼ˆéconstç‰ˆï¼‰
 Transform& UnitBase::GetTransform(void)
 {
 	return trans_;
 }
 
-// ƒ‚ƒfƒ‹î•ñiconst”Åj
+// ãƒ¢ãƒ‡ãƒ«æƒ…å ±ï¼ˆconstç‰ˆï¼‰
 const Transform& UnitBase::GetTransform(void) const
 {
 	return trans_;
 }
 
-// À•W‚Ìæ“¾
+// åº§æ¨™ã®å–å¾—
 const VECTOR& UnitBase::GetPos(void) const
 {
 	return trans_.pos;
 }
 
-// À•W‚Ìİ’è
+// åº§æ¨™ã®è¨­å®š
 void UnitBase::SetPos(const VECTOR& pos)
 {
 	trans_.pos = pos;
 }
 
-// ‰ñ“]‚Ìæ“¾
+// å›è»¢ã®å–å¾—
 const VECTOR& UnitBase::GetRot(void) const
 {
 	return trans_.rot;
 }
 
-// ‰ñ“]‚Ìİ’è
+// å›è»¢ã®è¨­å®š
 void UnitBase::SetRot(const VECTOR& rot)
 {
 	trans_.rot = rot;
 }
 
-// ƒXƒP[ƒ‹‚Ìæ“¾
+// ã‚¹ã‚±ãƒ¼ãƒ«ã®å–å¾—
 const VECTOR& UnitBase::GetScl(void) const
 {
 	return trans_.scl;
 }
 
-// ƒXƒP[ƒ‹‚Ìİ’è
+// ã‚¹ã‚±ãƒ¼ãƒ«ã®è¨­å®š
 void UnitBase::SetScl(const VECTOR& scl)
 {
 	trans_.scl = scl;
 }
 
-// ‘OÀ•W‚Ìæ“¾
+// å‰åº§æ¨™ã®å–å¾—
 const VECTOR& UnitBase::GetPrePos(void) const
 {
 	return prePos_;
 }
 
-// ”¼Œa‚Ìæ“¾
+// åŠå¾„ã®å–å¾—
 float UnitBase::GetRadius(void) const
 {
 	return radius_;
 }
 
-// ”¼Œa‚Ìİ’è
+// åŠå¾„ã®è¨­å®š
 void UnitBase::SetRadius(float r)
 {
 	radius_ = r;
 }
 
-// ˆÚ“®ƒxƒNƒgƒ‹‚Ìİ’è
+// ç§»å‹•ãƒ™ã‚¯ãƒˆãƒ«ã®è¨­å®š
 void UnitBase::SetMovePow(const VECTOR& pow)
 {
 	movePow_ = pow;
 }
 
-// ˆÚ“®ƒxƒNƒgƒ‹‚Ìæ“¾
+// ç§»å‹•ãƒ™ã‚¯ãƒˆãƒ«ã®å–å¾—
 const VECTOR& UnitBase::GetMovePow(void) const
 {
 	return movePow_;
 }
 
-// ‰ñ“](ƒNƒH[ƒ^ƒjƒIƒ“)
+// å›è»¢(ã‚¯ã‚©ãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³)
 void UnitBase::Turn(float deg, const VECTOR& axis)
 {
 	trans_.quaRot = trans_.quaRot.Mult(trans_.quaRot, Quaternion::AngleAxis(Utility::Deg2RadF(deg), axis));
 }
 
-// ƒAƒjƒ[ƒVƒ‡ƒ“‚Ì§Œä
+// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã®åˆ¶å¾¡
 void UnitBase::PlayAnim(ANIM aanimType, bool loop, float blendTime)
 {
-	// ƒAƒjƒ[ƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‰‚ª‚È‚¢ê‡’â~
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©ãŒãªã„å ´åˆåœæ­¢
 	if (!anim_) return;
 
-	// ƒAƒjƒ[ƒVƒ‡ƒ“ƒCƒ“ƒfƒbƒNƒX‚ğİ’è
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’è¨­å®š
 	int animIndex = static_cast<int>(aanimType);
 
-	// ƒAƒjƒ[ƒVƒ‡ƒ“Ä¶
+	// ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿ
 	if (currentAnim_ != aanimType)
 	{
 		anim_->Play(animIndex, loop, blendTime);
@@ -220,7 +220,7 @@ void UnitBase::InitAnimaiton(void)
 {
 }
 
-// ƒRƒ‰ƒCƒ_ƒVƒXƒeƒ€
+// ã‚³ãƒ©ã‚¤ãƒ€ã‚·ã‚¹ãƒ†ãƒ 
 
 const ColliderBase* UnitBase::GetOwnCollider(int key) const
 {
@@ -233,7 +233,7 @@ const ColliderBase* UnitBase::GetOwnCollider(int key) const
 
 void UnitBase::AddHitCollider(const ColliderBase* hitCollider)
 {
-	// d•¡ƒ`ƒFƒbƒN
+	// é‡è¤‡ãƒã‚§ãƒƒã‚¯
 	for (const auto& c : hitColliders_)
 	{
 		if (c == hitCollider)
@@ -251,20 +251,20 @@ void UnitBase::ClearHitCollider(void)
 
 void UnitBase::AddHitCollidersInRange(const std::vector<const ColliderBase*>& colliders, float maxDistance)
 {
-	// ‹——£‚Ì2æ‚Å”äŠrisqrt‰ñ”ğ‚Å‚‘¬‰»j
+	// è·é›¢ã®2ä¹—ã§æ¯”è¼ƒï¼ˆsqrtå›é¿ã§é«˜é€ŸåŒ–ï¼‰
 	float maxDistSq = maxDistance * maxDistance;
 
 	for (const auto& collider : colliders)
 	{
-		// ƒRƒ‰ƒCƒ_‚Ì’Ç]æÀ•W‚ğæ“¾
+		// ã‚³ãƒ©ã‚¤ãƒ€ã®è¿½å¾“å…ˆåº§æ¨™ã‚’å–å¾—
 		VECTOR colliderPos = collider->GetFollow()->pos;
 
-		// ©•ª‚Æ‚Ì‹——£‚ğŒvZiXZ•½–Ê‚Ì‚İAY²‚Í–³‹j
+		// è‡ªåˆ†ã¨ã®è·é›¢ã‚’è¨ˆç®—ï¼ˆXZå¹³é¢ã®ã¿ã€Yè»¸ã¯ç„¡è¦–ï¼‰
 		float dx = colliderPos.x - trans_.pos.x;
 		float dz = colliderPos.z - trans_.pos.z;
 		float distSq = dx * dx + dz * dz;
 
-		// ”ÍˆÍ“à‚È‚ç“o˜^
+		// ç¯„å›²å†…ãªã‚‰ç™»éŒ²
 		if (distSq <= maxDistSq)
 		{
 			AddHitCollider(collider);
@@ -274,42 +274,42 @@ void UnitBase::AddHitCollidersInRange(const std::vector<const ColliderBase*>& co
 
 void UnitBase::Collision(void)
 {
-	// 1. ˆÚ“®ˆ—
+	// 1. ç§»å‹•å‡¦ç†
 	trans_.pos = VAdd(trans_.pos, movePow_);
 
-	// 2. ƒWƒƒƒ“ƒv—Ê‚ğ‰ÁZ
+	// 2. ã‚¸ãƒ£ãƒ³ãƒ—é‡ã‚’åŠ ç®—
 	trans_.pos = VAdd(trans_.pos, jumpPow_);
 
-	// 3. ‹…‘Ì“¯m‚Ì‰Ÿ‚µo‚µi“G“¯mEƒvƒŒƒCƒ„[‚Æ‚Ì‰Ÿ‚µ‡‚¢j
+	// 3. çƒä½“åŒå£«ã®æŠ¼ã—å‡ºã—ï¼ˆæ•µåŒå£«ãƒ»ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¨ã®æŠ¼ã—åˆã„ï¼‰
 	CollisionSphereVsSphere();
 
-	// 4. “G‚Æ‚ÌÕ“Ëiƒ_ƒ[ƒW”»’è‚È‚Çj
+	// 4. æ•µã¨ã®è¡çªï¼ˆãƒ€ãƒ¡ãƒ¼ã‚¸åˆ¤å®šãªã©ï¼‰
 	CollisionWithEnemy();
 
-	// 5. ƒJƒvƒZƒ‹‚Æ‚ÌÕ“ËiŒ•‚ÌUŒ‚”»’è‚È‚Çj
+	// 5. ã‚«ãƒ—ã‚»ãƒ«ã¨ã®è¡çªï¼ˆå‰£ã®æ”»æ’ƒåˆ¤å®šãªã©ï¼‰
 	CollisionWithCapsule();
 
-	// 6. ’n–Ê‚Æ‚ÌÕ“Ë
+	// 6. åœ°é¢ã¨ã®è¡çª
 	CollisionGravity();
 }
 
 void UnitBase::CalcGravityPow(void)
 {
-	// d—Í•ûŒü
+	// é‡åŠ›æ–¹å‘
 	VECTOR dirGravity = Utility::DIR_D;
 
-	// d—Í
+	// é‡åŠ›
 	VECTOR gravity = VScale(dirGravity, GRAVITY_POW);
 	jumpPow_ = VAdd(jumpPow_, gravity);
 
-	// Å‘å‘¬“x‚ğ’´‚¦‚È‚¢‚æ‚¤‚É‚·‚é
+	// æœ€å¤§é€Ÿåº¦ã‚’è¶…ãˆãªã„ã‚ˆã†ã«ã™ã‚‹
 	float dot = VDot(dirGravity, jumpPow_);
 	if (dot > SPEED_MAX_JUMP_DOWN)
 	{
-		// Å‘å‘¬“x
+		// æœ€å¤§é€Ÿåº¦
 		VECTOR vy = VScale(dirGravity, SPEED_MAX_JUMP_DOWN);
 
-		// d—Í•ûŒüˆÈŠO‚Ì‘¬“x(X,Z)
+		// é‡åŠ›æ–¹å‘ä»¥å¤–ã®é€Ÿåº¦(X,Z)
 		VECTOR vxz = VSub(jumpPow_, VScale(dirGravity, dot));
 
 		jumpPow_ = VAdd(vy, vxz);
@@ -318,36 +318,36 @@ void UnitBase::CalcGravityPow(void)
 
 void UnitBase::CollisionGravity(void)
 {
-	// ü•ªƒRƒ‰ƒCƒ_
+	// ç·šåˆ†ã‚³ãƒ©ã‚¤ãƒ€
 	int lineType = static_cast<int>(COLLIDER_TYPE::LINE);
 
-	// ü•ªƒRƒ‰ƒCƒ_‚ª–³‚¯‚ê‚Îˆ—‚ğ”²‚¯‚é
+	// ç·šåˆ†ã‚³ãƒ©ã‚¤ãƒ€ãŒç„¡ã‘ã‚Œã°å‡¦ç†ã‚’æŠœã‘ã‚‹
 	if (ownColliders_.count(lineType) == 0) { return; }
 
-	// ü•ªƒRƒ‰ƒCƒ_î•ñ
+	// ç·šåˆ†ã‚³ãƒ©ã‚¤ãƒ€æƒ…å ±
 	ColliderLine* colliderLine =
 		dynamic_cast<ColliderLine*>(ownColliders_.at(lineType));
 
 	if (colliderLine == nullptr) { return; }
 
-	// ü•ª‚Ìn“_‚ÆI“_‚ğæ“¾
+	// ç·šåˆ†ã®å§‹ç‚¹ã¨çµ‚ç‚¹ã‚’å–å¾—
 	VECTOR s = colliderLine->GetPosStart();
 	VECTOR e = colliderLine->GetPosEnd();
 
-	// “o˜^‚³‚ê‚Ä‚¢‚éÕ“Ë•¨‚ğ‘S‚Äƒ`ƒFƒbƒN
+	// ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹è¡çªç‰©ã‚’å…¨ã¦ãƒã‚§ãƒƒã‚¯
 	for (const auto& hitCol : hitColliders_)
 	{
-		// ƒXƒe[ƒWE’n–ÊˆÈŠO‚Íˆ—‚ğ”ò‚Î‚·
+		// ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ»åœ°é¢ä»¥å¤–ã¯å‡¦ç†ã‚’é£›ã°ã™
 		if (hitCol->GetTag() != ColliderBase::TAG::STAGE &&
 			hitCol->GetTag() != ColliderBase::TAG::GROUND) continue;
 
-		// ”h¶ƒNƒ‰ƒX‚ÖƒLƒƒƒXƒg
+		// æ´¾ç”Ÿã‚¯ãƒ©ã‚¹ã¸ã‚­ãƒ£ã‚¹ãƒˆ
 		const ColliderModel* colliderModel =
 			dynamic_cast<const ColliderModel*>(hitCol);
 
 		if (colliderModel == nullptr) { continue; }
 
-		// ƒXƒe[ƒWƒ‚ƒfƒ‹(’n–Ê)‚Æ‚ÌÕ“Ë
+		// ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ¢ãƒ‡ãƒ«(åœ°é¢)ã¨ã®è¡çª
 		auto hits = MV1CollCheck_LineDim(
 			colliderModel->GetFollow()->modelId, -1, s, e);
 
@@ -359,13 +359,13 @@ void UnitBase::CollisionGravity(void)
 		{
 			auto hit = hits.Dim[i];
 
-			// œŠOƒtƒŒ[ƒ€‚Í–³‹
+			// é™¤å¤–ãƒ•ãƒ¬ãƒ¼ãƒ ã¯ç„¡è¦–
 			if (colliderModel->IsExcludeFrame(hit.FrameIndex))
 			{
 				continue;
 			}
 
-			// šÅ‚àYÀ•W‚ª‚‚¢Õ“Ë“_‚ğÌ—p
+			// â˜…æœ€ã‚‚Yåº§æ¨™ãŒé«˜ã„è¡çªç‚¹ã‚’æ¡ç”¨
 			if (hit.HitPosition.y > maxY)
 			{
 				maxY = hit.HitPosition.y;
@@ -374,26 +374,35 @@ void UnitBase::CollisionGravity(void)
 			}
 		}
 
-		// ŒŸo‚µ‚½’n–Êƒ|ƒŠƒSƒ“î•ñ‚ÌŒãn––
+		// æ¤œå‡ºã—ãŸåœ°é¢ãƒãƒªã‚´ãƒ³æƒ…å ±ã®å¾Œå§‹æœ«
 		MV1CollResultPolyDimTerminate(hits);
 
 		if (isGrounded)
 		{
-			// Õ“Ë’n“_‚©‚ç­‚µã‚ÉˆÚ“®
+			// â˜…ã€è¿½åŠ ã€‘ã‚¸ãƒ£ãƒ³ãƒ—ä¸Šæ˜‡ä¸­ã¯åœ°é¢åˆ¤å®šã‚’ç„¡è¦–
+			if (jumpPow_.y > 0.1f)
+			{
+				continue;
+			}
+
+			// è¡çªåœ°ç‚¹ã‹ã‚‰å°‘ã—ä¸Šã«ç§»å‹•
 			trans_.pos = VAdd(bestHitPos, VScale(Utility::DIR_U, 2.0f));
 
-			// ƒWƒƒƒ“ƒvƒŠƒZƒbƒg
+			// ã‚¸ãƒ£ãƒ³ãƒ—ãƒªã‚»ãƒƒãƒˆ
 			jumpPow_ = Utility::VECTOR_ZERO;
+
+			// â˜…ã€è¿½åŠ ã€‘åœ°é¢ãƒ•ãƒ©ã‚°ã‚’ç«‹ã¦ã‚‹ï¼ˆPlayerã‚¯ãƒ©ã‚¹ã§ä½¿ç”¨ï¼‰
+			// â€»UnitBaseã«ã¯isGround_ãŒç„¡ã„ãŸã‚ã€æ´¾ç”Ÿã‚¯ãƒ©ã‚¹ã§è¨­å®šã™ã‚‹å¿…è¦ãŒã‚ã‚‹
 		}
 	}
 }
 
 void UnitBase::CollisionSphereVsSphere(void)
 {
-	// ‹…‘ÌƒRƒ‰ƒCƒ_
+	// çƒä½“ã‚³ãƒ©ã‚¤ãƒ€
 	int sphereType = static_cast<int>(COLLIDER_TYPE::SPHERE);
 
-	// ‹…‘ÌƒRƒ‰ƒCƒ_‚ª–³‚¯‚ê‚Îˆ—‚ğ”²‚¯‚é
+	// çƒä½“ã‚³ãƒ©ã‚¤ãƒ€ãŒç„¡ã‘ã‚Œã°å‡¦ç†ã‚’æŠœã‘ã‚‹
 	if (ownColliders_.count(sphereType) == 0) return;
 
 	ColliderSphere* mySphere =
@@ -401,10 +410,10 @@ void UnitBase::CollisionSphereVsSphere(void)
 
 	if (mySphere == nullptr) return;
 
-	// “o˜^‚³‚ê‚Ä‚¢‚éÕ“Ë•¨‚ğ‘S‚Äƒ`ƒFƒbƒN
+	// ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹è¡çªç‰©ã‚’å…¨ã¦ãƒã‚§ãƒƒã‚¯
 	for (const auto& hitCol : hitColliders_)
 	{
-		// ‹…‘ÌˆÈŠO‚ÍƒXƒLƒbƒv
+		// çƒä½“ä»¥å¤–ã¯ã‚¹ã‚­ãƒƒãƒ—
 		if (hitCol->GetShape() != ColliderBase::SHAPE::SPHERE) continue;
 
 		const ColliderSphere* hitSphere =
@@ -412,16 +421,15 @@ void UnitBase::CollisionSphereVsSphere(void)
 
 		if (hitSphere == nullptr) continue;
 
-		// “¯‚¶ƒ^ƒO“¯m‚Ì”»’èğŒ‚ğ•ÏX
-		// ENEMYƒ^ƒO“¯m‚Í‰Ÿ‚µo‚µ‚ğs‚¤A‚»‚êˆÈŠO‚Ì“¯‚¶ƒ^ƒO‚ÍƒXƒLƒbƒv
+		// åŒã˜ã‚¿ã‚°åŒå£«ã®åˆ¤å®šæ¡ä»¶
 		bool isSameTag = (hitCol->GetTag() == mySphere->GetTag());
 		bool isEnemyVsEnemy = (mySphere->GetTag() == ColliderBase::TAG::ENEMY &&
 			hitSphere->GetTag() == ColliderBase::TAG::ENEMY);
 
-		// “¯‚¶ƒ^ƒO‚©‚ÂENEMY“¯m‚Å‚È‚¢ê‡‚ÍƒXƒLƒbƒv
+		// åŒã˜ã‚¿ã‚°ã‹ã¤ENEMYåŒå£«ã§ãªã„å ´åˆã¯ã‚¹ã‚­ãƒƒãƒ—
 		if (isSameTag && !isEnemyVsEnemy) continue;
 
-		// ‹…‘Ì“¯m‚ÌÕ“Ë”»’è
+		// çƒä½“åŒå£«ã®è¡çªåˆ¤å®š
 		VECTOR myPos = mySphere->GetPos();
 		VECTOR hitPos = hitSphere->GetPos();
 		float myRadius = mySphere->GetRadius();
@@ -433,33 +441,12 @@ void UnitBase::CollisionSphereVsSphere(void)
 
 		if (distSq < radiusSum * radiusSum && distSq > 0.0001f)
 		{
-			// Õ“Ë‚µ‚Ä‚¢‚é
+			// è¡çªã—ã¦ã„ã‚‹
 			float dist = sqrtf(distSq);
 			VECTOR normal = VScale(diff, 1.0f / dist);
 			float penetration = radiusSum - dist;
 
-			// ENEMY“¯m‚Ìê‡‚Í…•½•ûŒü‚Ì‚İ‰Ÿ‚µo‚µ
-			if (isEnemyVsEnemy)
-			{
-				// …•½•ûŒü‚Ì‰Ÿ‚µo‚µƒxƒNƒgƒ‹
-				VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
-				float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
-
-				if (pushLen > 0.0001f)
-				{
-					// ³‹K‰»‚µ‚Ä‰Ÿ‚µo‚µ—Ê‚ğ“K—p
-					pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
-					trans_.pos = VSub(trans_.pos, pushVec);
-				}
-			}
-			else
-			{
-				// ‚»‚êˆÈŠO‚Í’Êí‚Ì‰Ÿ‚µo‚µi‘S•ûŒüj
-				VECTOR pushVec = VScale(normal, penetration * 0.5f);
-				trans_.pos = VSub(trans_.pos, pushVec);
-			}
-
-			// ƒR[ƒ‹ƒoƒbƒNŒÄ‚Ño‚µ
+			// è¡çªæƒ…å ±ã®ä½œæˆ
 			CollisionInfo info;
 			info.myCollider = mySphere;
 			info.hitCollider = hitSphere;
@@ -468,44 +455,92 @@ void UnitBase::CollisionSphereVsSphere(void)
 			info.penetration = penetration;
 			info.isValid = true;
 
-			OnCollisionStay(info);
+			// â˜…ã€å¤‰æ›´ç‚¹ã€‘ç›¸æ‰‹ãŒæ”»æ’ƒï¼ˆç«ãƒ»æ°´ãƒ»å‰£ï¼‰ã‹ã©ã†ã‹ã‚’åˆ¤å®š
+			bool isAttack = (hitCol->GetTag() == ColliderBase::TAG::FIRE_ATTACK ||
+				hitCol->GetTag() == ColliderBase::TAG::WATER_ATTACK ||
+				hitCol->GetTag() == ColliderBase::TAG::SWORD);
+
+			if (isAttack)
+			{
+				// â˜…æ”»æ’ƒã®å ´åˆï¼šæŠ¼ã—å‡ºã—å‡¦ç†ï¼ˆåº§æ¨™ç§»å‹•ï¼‰ã¯ã—ãªã„ï¼
+				// EnemyBaseãŒã‚ªãƒ¼ãƒãƒ¼ãƒ©ã‚¤ãƒ‰ã—ã¦ã„ã‚‹ OnCollisionEnter ã‚’å‘¼ã¶
+				OnCollisionEnter(info);
+			}
+			else
+			{
+				// â˜…ç‰©ç†è¡çªï¼ˆæ•µåŒå£«ãªã©ï¼‰ã®å ´åˆï¼šæŠ¼ã—å‡ºã—å‡¦ç†ã‚’è¡Œã†
+
+				// ENEMYåŒå£«ã®å ´åˆã¯æ°´å¹³æ–¹å‘ã®ã¿æŠ¼ã—å‡ºã—
+				if (isEnemyVsEnemy)
+				{
+					// æ°´å¹³æ–¹å‘ã®æŠ¼ã—å‡ºã—ãƒ™ã‚¯ãƒˆãƒ«
+					VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
+					float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
+
+					if (pushLen > 0.0001f)
+					{
+						// æ­£è¦åŒ–ã—ã¦æŠ¼ã—å‡ºã—é‡ã‚’é©ç”¨
+						pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
+						trans_.pos = VSub(trans_.pos, pushVec);
+					}
+				}
+				else
+				{
+					// ãã‚Œä»¥å¤–ã¯é€šå¸¸ã®æŠ¼ã—å‡ºã—ï¼ˆå…¨æ–¹å‘ï¼‰
+					VECTOR pushVec = VScale(normal, penetration * 0.5f);
+					trans_.pos = VSub(trans_.pos, pushVec);
+				}
+
+				// ç‰©ç†è¡çªæ™‚ã¯ Stay ã‚’å‘¼ã¶ï¼ˆæ—¢å­˜ã®ã¾ã¾ï¼‰
+				OnCollisionStay(info);
+			}
 		}
 	}
 }
 
 void UnitBase::CollisionWithEnemy(void)
 {
-	// ƒJƒvƒZƒ‹ƒRƒ‰ƒCƒ_[
+	// ã‚«ãƒ—ã‚»ãƒ«ã‚³ãƒ©ã‚¤ãƒ€ãƒ¼
 	int capsuleType = static_cast<int>(COLLIDER_TYPE::CAPSULE);
+	int sphereType = static_cast<int>(COLLIDER_TYPE::SPHERE);
 
-	// ƒJƒvƒZƒ‹ƒRƒ‰ƒCƒ_[‚ª‚ ‚ê‚Î‚»‚ê‚ğ—˜—p‚È‚¯‚ê‚ÎƒXƒtƒBƒA‚ğ—˜—p
+	// ã‚«ãƒ—ã‚»ãƒ«ã‚³ãƒ©ã‚¤ãƒ€ãƒ¼ãŒã‚ã‚Œã°ãã‚Œã‚’åˆ©ç”¨ã€ãªã‘ã‚Œã°ã‚¹ãƒ•ã‚£ã‚¢ã‚’åˆ©ç”¨
 	ColliderBase* myCol = nullptr;
 
 	if (ownColliders_.count(capsuleType) > 0)
 	{
 		myCol = ownColliders_.at(capsuleType);
 	}
-	else if (ownColliders_.count(static_cast<int>(COLLIDER_TYPE::SPHERE)) > 0)
+	else if (ownColliders_.count(sphereType) > 0)
 	{
-		myCol = ownColliders_.at(static_cast<int>(COLLIDER_TYPE::SPHERE));
+		myCol = ownColliders_.at(sphereType);
 	}
 
 	if (myCol == nullptr) { return; }
 
-	// “o˜^‚³‚ê‚Ä‚¢‚éÕ“Ë•¨‚ğ‘S‚Äƒ`ƒFƒbƒN
+
+	// ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹è¡çªç‰©ã‚’å…¨ã¦ãƒã‚§ãƒƒã‚¯
 	for (const auto& hitCol : hitColliders_)
 	{
-		// “Gƒ^ƒOˆÈŠO‚ÍƒXƒLƒbƒv(©•ª‚à“G‚Ìê‡‚Í•Ê‚Ìƒ^ƒO‚Æ”»’è)
-		if (hitCol->GetTag() != ColliderBase::TAG::ENEMY && hitCol->GetTag() != ColliderBase::TAG::PLAYER) { continue; }
+		// â˜…ä¿®æ­£ï¼šç«ãƒ»æ°´æ”»æ’ƒã¯ENEMYã‚¿ã‚°ã®ã¿ãƒã‚§ãƒƒã‚¯
+		if (myCol->GetTag() == ColliderBase::TAG::FIRE_ATTACK ||
+			myCol->GetTag() == ColliderBase::TAG::WATER_ATTACK)
+		{
+			// ç«ãƒ»æ°´æ”»æ’ƒã®å ´åˆã¯ã‚¨ãƒãƒŸãƒ¼ä»¥å¤–ã‚¹ã‚­ãƒƒãƒ—
+			if (hitCol->GetTag() != ColliderBase::TAG::ENEMY) { continue; }
+		}
+		else
+		{
+			// ãã‚Œä»¥å¤–ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãƒ»ã‚¨ãƒãƒŸãƒ¼ï¼‰ã®æ—¢å­˜ãƒ­ã‚¸ãƒƒã‚¯
+			if (hitCol->GetTag() != ColliderBase::TAG::ENEMY && hitCol->GetTag() != ColliderBase::TAG::PLAYER) { continue; }
+			if (hitCol->GetTag() == myCol->GetTag()) { continue; }
+		}
 
-		// ©•ª‚Æ“¯‚¶ƒ^ƒO‚ÍƒXƒLƒbƒv
-		if (hitCol->GetTag() == myCol->GetTag()) { continue; }
-
-		// Õ“Ë”»’è
+		// è¡çªåˆ¤å®š
 		CollisionInfo info;
 		bool isHit = false;
 
-		// ƒJƒvƒZƒ‹“¯m‚ÌÕ“Ë”»’è
+		// ã‚«ãƒ—ã‚»ãƒ«åŒå£«ã®è¡çªåˆ¤å®š
 		if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
@@ -516,8 +551,7 @@ void UnitBase::CollisionWithEnemy(void)
 				isHit = CollisionController::GetInstance().CheckCollision(myCapsule, hitCapsule, info);
 			}
 		}
-		// ‚±‚±‚ğ’Ç‰Á/C³ 
-		// ƒJƒvƒZƒ‹‚Æ‹…‘Ì‚ÌÕ“Ë”»’èi©•ª‚ªƒJƒvƒZƒ‹A‘Šè‚ª‹…‘Ìj
+		// ã‚«ãƒ—ã‚»ãƒ«ã¨çƒä½“ã®è¡çªåˆ¤å®šï¼ˆè‡ªåˆ†ãŒã‚«ãƒ—ã‚»ãƒ«ã€ç›¸æ‰‹ãŒçƒä½“ï¼‰
 		else if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
@@ -525,23 +559,18 @@ void UnitBase::CollisionWithEnemy(void)
 
 			if (myCapsule && hitSphere)
 			{
-				// CheckCollision ‚Í (sphere, capsule) ‚Ì‡‚ÅŒÄ‚Ô•K—v‚ª‚ ‚é
 				isHit = CollisionController::GetInstance().CheckCollision(hitSphere, myCapsule, info);
 
-				// info‚Ì’†g‚ğ“ü‚ê‘Ö‚¦‚éimy‚Æhit‚ª‹t‚É‚È‚Á‚Ä‚¢‚é‚½‚ßj
 				if (isHit)
 				{
-					// myCollider‚ÆhitCollider‚ğ“ü‚ê‘Ö‚¦
 					const ColliderBase* temp = info.myCollider;
 					info.myCollider = info.hitCollider;
 					info.hitCollider = temp;
-
-					// –@ü‚ğ”½“]
 					info.hitNormal = VScale(info.hitNormal, -1.0f);
 				}
 			}
 		}
-		// ‹…‘Ì‚ÆƒJƒvƒZƒ‹‚ÌÕ“Ë”»’èi©•ª‚ª‹…‘ÌA‘Šè‚ªƒJƒvƒZƒ‹j
+		// çƒä½“ã¨ã‚«ãƒ—ã‚»ãƒ«ã®è¡çªåˆ¤å®šï¼ˆè‡ªåˆ†ãŒçƒä½“ã€ç›¸æ‰‹ãŒã‚«ãƒ—ã‚»ãƒ«ï¼‰
 		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
@@ -552,7 +581,7 @@ void UnitBase::CollisionWithEnemy(void)
 				isHit = CollisionController::GetInstance().CheckCollision(mySphere, hitCapsule, info);
 			}
 		}
-		// ‹…‘Ì“¯m‚ÌÕ“Ë”»’è
+		// çƒä½“åŒå£«ã®è¡çªåˆ¤å®š
 		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
@@ -560,9 +589,12 @@ void UnitBase::CollisionWithEnemy(void)
 
 			if (mySphere && hitSphere)
 			{
-				VECTOR diff = VSub(hitSphere->GetPos(), mySphere->GetPos());
+				VECTOR myPos = mySphere->GetPos();
+				VECTOR hitPos = hitSphere->GetPos();
+				VECTOR diff = VSub(hitPos, myPos);
 				float distSq = VDot(diff, diff);
 				float radiusSum = mySphere->GetRadius() + hitSphere->GetRadius();
+
 
 				if (distSq < radiusSum * radiusSum)
 				{
@@ -575,7 +607,9 @@ void UnitBase::CollisionWithEnemy(void)
 					info.penetration = radiusSum - dist;
 					info.isValid = true;
 					isHit = true;
+
 				}
+
 			}
 		}
 
@@ -588,7 +622,7 @@ void UnitBase::CollisionWithEnemy(void)
 
 void UnitBase::CollisionWithCapsule(void)
 {
-	// ‹…‘ÌƒRƒ‰ƒCƒ_
+	// çƒä½“ã‚³ãƒ©ã‚¤ãƒ€
 	int sphereType = static_cast<int>(COLLIDER_TYPE::SPHERE);
 
 	if (ownColliders_.count(sphereType) == 0) return;
@@ -598,10 +632,10 @@ void UnitBase::CollisionWithCapsule(void)
 
 	if (mySphere == nullptr) return;
 
-	// “o˜^‚³‚ê‚Ä‚¢‚éÕ“Ë•¨‚ğ‘S‚Äƒ`ƒFƒbƒN
+	// ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹è¡çªç‰©ã‚’å…¨ã¦ãƒã‚§ãƒƒã‚¯
 	for (const auto& hitCol : hitColliders_)
 	{
-		// ƒJƒvƒZƒ‹ˆÈŠO‚ÍƒXƒLƒbƒv
+		// ã‚«ãƒ—ã‚»ãƒ«ä»¥å¤–ã¯ã‚¹ã‚­ãƒƒãƒ—
 		if (hitCol->GetShape() != ColliderBase::SHAPE::CAPSULE) continue;
 
 		const ColliderCapsule* hitCapsule =
@@ -609,11 +643,11 @@ void UnitBase::CollisionWithCapsule(void)
 
 		if (hitCapsule == nullptr) continue;
 
-		// Õ“Ë”»’è
+		// è¡çªåˆ¤å®š
 		CollisionInfo info;
 		if (CollisionController::GetInstance().CheckCollision(mySphere, hitCapsule, info))
 		{
-			// ƒR[ƒ‹ƒoƒbƒNŒÄ‚Ño‚µ
+			// ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯å‘¼ã³å‡ºã—
 			OnCollisionEnter(info);
 		}
 	}

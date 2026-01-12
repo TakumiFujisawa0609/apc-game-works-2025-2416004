@@ -159,6 +159,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Object\Player\Glider.h" />
+    <ClInclude Include="Src\Object\Player\FireAttack.h" />
+    <ClInclude Include="Src\Object\Stage\SkyDome.h" />
     <ClInclude Include="Src\Object\Stage\EnemySpawner.h" />
     <ClInclude Include="Src\Manager\System\DamageManager.h" />
     <ClInclude Include="Src\Manager\System\CollisionController.h" />
@@ -206,8 +209,13 @@
     <ClInclude Include="Src\Utility\Utility.h" />
     <ClInclude Include="Src\Object\Player\Sword.h" />
     <ClInclude Include="Src\Object\Manager\StageManager.h" />
+    <ClInclude Include="Src\Object\Player\WaterAttack.h" />
+    <ClInclude Include="Src\Object\Stage\Tower.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Object\Player\Glider.cpp" />
+    <ClCompile Include="Src\Object\Player\FireAttack.cpp" />
+    <ClCompile Include="Src\Object\Stage\SkyDome.cpp" />
     <ClCompile Include="Src\Object\Stage\EnemySpawner.cpp" />
     <ClCompile Include="Src\Manager\System\DamageManager.cpp" />
     <ClCompile Include="Src\Manager\System\CollisionController.cpp" />
@@ -260,6 +268,8 @@
     <ClCompile Include="Src\Utility\Utility.cpp" />
     <ClCompile Include="Src\Object\Player\Sword.cpp" />
     <ClCompile Include="Src\Object\Manager\StageManager.cpp" />
+    <ClCompile Include="Src\Object\Player\WaterAttack.cpp" />
+    <ClCompile Include="Src\Object\Stage\Tower.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,14 +4,16 @@
 #include "../Object/Manager/EnemyManager.h"
 #include "../Object/Manager/StageManager.h"
 
+
 class Player;
 class EnemyData;
+class SkyDome;
 
 class SceneGame : public SceneBase
 {
 public:
 	// 制限時間（秒）
-	static constexpr float LIMIT_TIME = 60.0f; // 5分
+	static constexpr float LIMIT_TIME = 999.0f; // 5分
 
 	// コンストラクタ
 	SceneGame(void);
@@ -47,11 +49,16 @@ private:
 	// エネミーデータ
 	std::shared_ptr<EnemyData> enemyData_;
 
+	// スカイドーム
+	std::shared_ptr<SkyDome> skyDome_;
+
 	// エネミーマネージャー
 	std::unique_ptr<EnemyManager> enemyManager_;
 
 	// ステージマネージャー
 	std::unique_ptr<StageManager> stageManager_;
+
+
 
 	// スタート時のフォント表示フラグ
 	bool isStartFont_;

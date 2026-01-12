@@ -1,17 +1,22 @@
-﻿  Application.cpp
-  Player.cpp
+﻿  Player.cpp
   Sword.cpp
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(26,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(84,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(190,36): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(41,17): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(195,32): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
-  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(243,56): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(247,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(815,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
   
   コード生成しています。
-  8 of 4540 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
+  20 of 5002 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     17 functions had inline decision re-evaluated but remain unchanged
   コード生成が終了しました。

@@ -1,2 +1,2 @@
 type,hp,maxHp,attack,defense,speed,level,maxLevel,jumpPower,radius
-SLIME,50,50,10,10,3,1,10,0,40
+SLIME,100,100,10,10,3,1,10,0,40

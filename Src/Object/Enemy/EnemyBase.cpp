@@ -1,12 +1,12 @@
-#include "EnemyBase.h"
+ï»¿#include "EnemyBase.h"
 #include "../../Utility/Utility.h"
 #include "../../Collider/ColliderSphere.h"
 #include "../../Collider/ColliderLine.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Manager/Generic/SceneManager.h"
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
-EnemyBase::EnemyBase(void) 
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+EnemyBase::EnemyBase(void)
     : hp_(0.0f)
     , lastHitTime_(0.0f)
     , maxHp_(0.0f)
@@ -21,18 +21,20 @@ EnemyBase::EnemyBase(void)
     , type_("")
     , isChasing_(false)
     , isInView_(false)
-    
+    , currentStatus_(STATUS_EFFECT::NONE)
+    , statusTimer_(0.0f)
+    , burnTickTimer_(0.0f)
 {
 }
 
-// “Ç‚İ‚İ
+// èª­ã¿è¾¼ã¿
 void EnemyBase::Load(int modelId)
 {
     trans_.modelId = modelId;
     trans_.SetModel(trans_.modelId);
 }
 
-// ‰Šú‰»
+// åˆæœŸåŒ–
 void EnemyBase::Init(const VECTOR& startPos)
 {
     trans_.pos = startPos;
@@ -42,21 +44,26 @@ void EnemyBase::Init(const VECTOR& startPos)
     jumpPow_ = Utility::VECTOR_ZERO;
     currentAnim_ = ANIM::NONE;
 
-    // ƒRƒ‰ƒCƒ_‰Šú‰»
+    // çŠ¶æ…‹ç•°å¸¸ã®åˆæœŸåŒ–
+    currentStatus_ = STATUS_EFFECT::NONE;
+    statusTimer_ = 0.0f;
+    burnTickTimer_ = 0.0f;
+
+    // ã‚³ãƒ©ã‚¤ãƒ€åˆæœŸåŒ–
     InitCollider();
 
-    // CollisionController‚É“o˜^
+    // CollisionControllerã«ç™»éŒ²
     CollisionController::GetInstance().RegisterUnit(this);
 }
 
-// ƒRƒ‰ƒCƒ_‰Šú‰»
+// ã‚³ãƒ©ã‚¤ãƒ€åˆæœŸåŒ–
 void EnemyBase::InitCollider(void)
 {
-    // ‹…‘ÌƒRƒ‰ƒCƒ_‚Ìì¬i“G“¯mEƒvƒŒƒCƒ„[‚Æ‚ÌÕ“Ë—pj
+    // çƒä½“ã‚³ãƒ©ã‚¤ãƒ€ã®ä½œæˆï¼ˆæ•µåŒå£«ãƒ»ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¨ã®è¡çªç”¨ï¼‰
     ColliderSphere* colSphere = new ColliderSphere(
         ColliderBase::TAG::ENEMY,
         &trans_,
-        Utility::VECTOR_ZERO,  // ƒ[ƒJƒ‹À•Wi’†Sj
+        Utility::VECTOR_ZERO,
         radius_
     );
     ownColliders_.emplace(
@@ -64,7 +71,7 @@ void EnemyBase::InitCollider(void)
         colSphere
     );
 
-    // ü•ªƒRƒ‰ƒCƒ_‚Ìì¬i’n–Ê”»’è—pj
+    // ç·šåˆ†ã‚³ãƒ©ã‚¤ãƒ€ã®ä½œæˆï¼ˆåœ°é¢åˆ¤å®šç”¨ï¼‰
     ColliderLine* colLine = new ColliderLine(
         ColliderBase::TAG::ENEMY,
         &trans_,
@@ -77,66 +84,143 @@ void EnemyBase::InitCollider(void)
     );
 }
 
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 void EnemyBase::Update(void)
 {
-    // ƒqƒbƒg”»’è‚ÌƒN[ƒ‹ƒ^ƒCƒ€XV
+    float deltaTime = SceneManager::GetInstance().GetDeltaTime();
+
+    // ãƒ’ãƒƒãƒˆåˆ¤å®šã®ã‚¯ãƒ¼ãƒ«ã‚¿ã‚¤ãƒ æ›´æ–°
     if (lastHitTime_ > 0.0f)
     {
-        lastHitTime_ -= SceneManager::GetInstance().GetDeltaTime();
+        lastHitTime_ -= deltaTime;
         if (lastHitTime_ < 0.0f)
         {
             lastHitTime_ = 0.0f;
         }
     }
 
-    // ‰Ÿ‚µo‚µ‘O‚ÌˆÊ’u‚ğ•Û‘¶
+    // çŠ¶æ…‹ç•°å¸¸ã®æ›´æ–°
+    UpdateStatusEffect(deltaTime);
+
+    // æŠ¼ã—å‡ºã—å‰ã®ä½ç½®ã‚’ä¿å­˜
     preCollisionPos_ = trans_.pos;
 
-    // UnitBase‚ÌXVid—ÍEÕ“Ë”»’è‚ğŠÜ‚Şj
+    // UnitBaseã®æ›´æ–°ï¼ˆé‡åŠ›ãƒ»è¡çªåˆ¤å®šã‚’å«ã‚€ï¼‰
     UnitBase::Update();
 
-    // ƒXƒe[ƒWŠO‚Éo‚½ê‡‚ÍŒ³‚ÌˆÊ’u‚É–ß‚·
+    // ã‚¹ãƒ†ãƒ¼ã‚¸å¤–ã«å‡ºãŸå ´åˆã¯å…ƒã®ä½ç½®ã«æˆ»ã™
     if (!IsOnStage(trans_.pos))
     {
-        // ‘OƒtƒŒ[ƒ€‚ÌˆÊ’u‚É–ß‚·
         trans_.pos = preCollisionPos_;
-
-        // ˆÚ“®‚ğƒLƒƒƒ“ƒZƒ‹
         movePow_ = Utility::VECTOR_ZERO;
-
     }
-
-#ifdef _DEBUG
-    // ƒfƒoƒbƒOî•ñ
-    //printfDx("Enemy Y: %.2f, JumpPow.y: %.2f\n", trans_.pos.y, jumpPow_.y);
-    //printfDx("Enemy HitColliders: %d\n", hitColliders_.size());
-#endif
 }
 
-// ƒXƒe[ƒWã‚É‚¢‚é‚©ƒ`ƒFƒbƒN
+// çŠ¶æ…‹ç•°å¸¸ã®æ›´æ–°
+void EnemyBase::UpdateStatusEffect(float deltaTime)
+{
+    if (currentStatus_ == STATUS_EFFECT::NONE) return;
+
+    // çŠ¶æ…‹ç•°å¸¸ã®ã‚¿ã‚¤ãƒãƒ¼æ›´æ–°
+    statusTimer_ -= deltaTime;
+
+    // ã‚„ã‘ã©çŠ¶æ…‹ã®ç¶™ç¶šãƒ€ãƒ¡ãƒ¼ã‚¸
+    if (currentStatus_ == STATUS_EFFECT::BURN)
+    {
+        burnTickTimer_ += deltaTime;
+
+        // 1ç§’ã”ã¨ã«ãƒ€ãƒ¡ãƒ¼ã‚¸
+        if (burnTickTimer_ >= 1.0f)
+        {
+            TakeDamage(BURN_DAMAGE_PER_SEC);
+            burnTickTimer_ = 0.0f;
+
+        }
+    }
+
+    // çŠ¶æ…‹ç•°å¸¸ãŒåˆ‡ã‚ŒãŸã‚‰ã‚¯ãƒªã‚¢
+    if (statusTimer_ <= 0.0f)
+    {
+        ClearStatusEffect();
+    }
+}
+
+// çŠ¶æ…‹ç•°å¸¸ã‚’é©ç”¨
+void EnemyBase::ApplyStatusEffect(STATUS_EFFECT status)
+{
+    currentStatus_ = status;
+    burnTickTimer_ = 0.0f;
+
+    switch (status)
+    {
+    case STATUS_EFFECT::AMMONIUM_NITRATE:
+        statusTimer_ = AMMONIUM_NITRATE_DURATION;
+        break;
+
+    case STATUS_EFFECT::FROZEN:
+        statusTimer_ = FROZEN_DURATION;
+        break;
+
+    case STATUS_EFFECT::BURN:
+        statusTimer_ = BURN_DURATION;
+        break;
+
+    case STATUS_EFFECT::WET:
+        statusTimer_ = WET_DURATION;
+        break;
+
+    case STATUS_EFFECT::EXPLODED:
+        // çˆ†ç™ºã¯å³åº§ã«çµ‚äº†
+        statusTimer_ = 0.0f;
+        break;
+
+    default:
+        break;
+    }
+}
+
+// çŠ¶æ…‹ç•°å¸¸ã‚’ã‚¯ãƒªã‚¢
+void EnemyBase::ClearStatusEffect(void)
+{
+    currentStatus_ = STATUS_EFFECT::NONE;
+    statusTimer_ = 0.0f;
+    burnTickTimer_ = 0.0f;
+}
+
+// ç¾åœ¨ã®ç§»å‹•é€Ÿåº¦å€ç‡ã‚’å–å¾—
+float EnemyBase::GetSpeedMultiplier(void) const
+{
+    switch (currentStatus_)
+    {
+    case STATUS_EFFECT::FROZEN:
+        return FROZEN_SPEED_MULTIPLIER;  // 0.0fï¼ˆå®Œå…¨åœæ­¢ï¼‰
+
+    case STATUS_EFFECT::WET:
+        return WET_SPEED_MULTIPLIER;     // 0.5fï¼ˆ50%æ¸›ï¼‰
+
+    default:
+        return 1.0f;  // é€šå¸¸é€Ÿåº¦
+    }
+}
+
+// ã‚¹ãƒ†ãƒ¼ã‚¸ä¸Šã«ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 bool EnemyBase::IsOnStage(const VECTOR& pos) const
 {
-    // GroundManager‚Ìƒ^ƒCƒ‹”ÍˆÍ‚ğQÆ
     const float TILE_COUNT = 100.0f;
     const float TILE_SIZE = 100.0f;
     const float HALF_STAGE_SIZE = (TILE_COUNT * TILE_SIZE) * 0.5f;
-
-    // ƒXƒe[ƒW‚Ì”ÍˆÍ“à‚©ƒ`ƒFƒbƒNiƒ}[ƒWƒ“‚ğ‚½‚¹‚éj
     const float MARGIN = 100.0f;
     const float MAX_X = HALF_STAGE_SIZE - MARGIN;
     const float MIN_X = -HALF_STAGE_SIZE + MARGIN;
     const float MAX_Z = HALF_STAGE_SIZE - MARGIN;
     const float MIN_Z = -HALF_STAGE_SIZE + MARGIN;
 
-    // ”ÍˆÍƒ`ƒFƒbƒN
     if (pos.x < MIN_X || pos.x > MAX_X ||
         pos.z < MIN_Z || pos.z > MAX_Z)
     {
         return false;
     }
 
-    // YÀ•W‚ªˆÙí‚É’á‚¢ê‡‚àfalse
     if (pos.y < -500.0f)
     {
         return false;
@@ -145,32 +229,31 @@ bool EnemyBase::IsOnStage(const VECTOR& pos) const
     return true;
 }
 
-// •`‰æˆ—
+// æç”»å‡¦ç†
 void EnemyBase::Draw(void) const
 {
-    // ƒ‚ƒfƒ‹•`‰æiUnitBase‚Ì•`‰æj
+    // ãƒ¢ãƒ‡ãƒ«æç”»ï¼ˆUnitBaseã®æç”»ï¼‰
     UnitBase::Draw();
 
-    // HPƒo[‚Ì•\¦
-    VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 80, 0)));
-    int barWidth = 60;
-    int barHeight = 8;
-    int barX = static_cast<int>(screenPos.x) - barWidth / 2;
-    int barY = static_cast<int>(screenPos.y);
+    //// çŠ¶æ…‹ç•°å¸¸ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆæç”»
+    //DrawStatusEffect();
 
-    float hpRate = hp_ / maxHp_;
-    int hpBarWidth = static_cast<int>(barWidth * hpRate);
+    //// HPãƒãƒ¼ã®è¡¨ç¤º
+    //VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 80, 0)));
+    //int barWidth = 60;
+    //int barHeight = 8;
+    //int barX = static_cast<int>(screenPos.x) - barWidth / 2;
+    //int barY = static_cast<int>(screenPos.y);
 
-    // ˜g
-    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
-    // HP
-    DrawBox(barX, barY, barX + hpBarWidth, barY + barHeight, GetColor(0, 255, 0), true);
+    //float hpRate = hp_ / maxHp_;
+    //int hpBarWidth = static_cast<int>(barWidth * hpRate);
+
+    //DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
+    //DrawBox(barX, barY, barX + hpBarWidth, barY + barHeight, GetColor(0, 255, 0), true);
 
 #ifdef _DEBUG
-    // “–‚½‚è”»’è‰Â‹‰»i‹…‘Ìj
     DrawCapsule3D(trans_.pos, trans_.pos, radius_, 12, 0xff0000, 0xff0000, false);
 
-    // ü•ªƒRƒ‰ƒCƒ_‚Ì‰Â‹‰»
     auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::LINE));
     if (it != ownColliders_.end())
     {
@@ -184,13 +267,95 @@ void EnemyBase::Draw(void) const
             DrawSphere3D(end, 5.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
         }
     }
-#endif // _DEBUG
+
+    // çŠ¶æ…‹ç•°å¸¸ã®ãƒ†ã‚­ã‚¹ãƒˆè¡¨ç¤º
+    VECTOR statusScreenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 100, 0)));
+    const char* statusText = "";
+    unsigned int statusColor = GetColor(255, 255, 255);
+
+    switch (currentStatus_)
+    {
+    case STATUS_EFFECT::AMMONIUM_NITRATE:
+        statusText = "ç¡é…¸ã‚¢ãƒ³ãƒ¢ãƒ‹ã‚¦ãƒ ";
+        statusColor = GetColor(255, 255, 0);
+        break;
+    case STATUS_EFFECT::FROZEN:
+        statusText = "å‡çµ";
+        statusColor = GetColor(100, 200, 255);
+        break;
+    case STATUS_EFFECT::BURN:
+        statusText = "ã‚„ã‘ã©";
+        statusColor = GetColor(255, 100, 0);
+        break;
+    case STATUS_EFFECT::WET:
+        statusText = "æ¹¿æ½¤";
+        statusColor = GetColor(0, 150, 255);
+        break;
+    default:
+        break;
+    }
+
+    if (currentStatus_ != STATUS_EFFECT::NONE)
+    {
+        DrawFormatString(
+            static_cast<int>(statusScreenPos.x) - 30,
+            static_cast<int>(statusScreenPos.y),
+            statusColor,
+            "%s (%.1fs)", statusText, statusTimer_
+        );
+    }
+#endif
 }
 
-// EnemyBase.cpp
+// çŠ¶æ…‹ç•°å¸¸ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆæç”»
+void EnemyBase::DrawStatusEffect(void) const
+{
+    if (currentStatus_ == STATUS_EFFECT::NONE) return;
+
+    float time = statusTimer_;
+    VECTOR effectPos = VAdd(trans_.pos, VGet(0, 40, 0));
+
+    switch (currentStatus_)
+    {
+    case STATUS_EFFECT::AMMONIUM_NITRATE:
+        // é»„è‰²ã®ç²’å­ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
+        DrawSphere3D(effectPos, radius_ * 0.8f, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), FALSE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        break;
+
+    case STATUS_EFFECT::FROZEN:
+        // é’ç™½ã„æ°·ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
+        DrawSphere3D(trans_.pos, radius_ * 1.1f, 12, GetColor(150, 200, 255), GetColor(150, 200, 255), FALSE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        break;
+
+    case STATUS_EFFECT::BURN:
+        // ç‚ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+    {
+        float flameOffset = sinf(time * 10.0f) * 5.0f;
+        SetDrawBlendMode(DX_BLENDMODE_ADD, 120);
+        DrawSphere3D(VAdd(effectPos, VGet(0, flameOffset, 0)), 15.0f, 8, GetColor(255, 100, 0), GetColor(255, 100, 0), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    }
+    break;
+
+    case STATUS_EFFECT::WET:
+        // æ°´æ»´ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
+        DrawSphere3D(effectPos, radius_ * 0.6f, 8, GetColor(50, 150, 255), GetColor(50, 150, 255), TRUE);
+        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        break;
+
+    default:
+        break;
+    }
+}
+
+// è§£æ”¾å‡¦ç†
 void EnemyBase::Release(void)
 {
-    // 1. ƒRƒ‰ƒCƒ_‚ğ–³Œø‰»
     for (auto& pair : ownColliders_)
     {
         if (pair.second != nullptr)
@@ -199,14 +364,11 @@ void EnemyBase::Release(void)
         }
     }
 
-    // 2. CollisionController‚©‚ç“o˜^‰ğœ
     CollisionController::GetInstance().UnregisterUnit(this);
-
-    // 3. UnitBase‚Ì‰ğ•úiƒRƒ‰ƒCƒ_íœj
     UnitBase::Release();
 }
 
-// CSVƒf[ƒ^‚ğ“K—p
+// CSVãƒ‡ãƒ¼ã‚¿ã‚’é©ç”¨
 void EnemyBase::ApplyData(const EnemyInfo& info)
 {
     type_ = info.type;
@@ -219,55 +381,127 @@ void EnemyBase::ApplyData(const EnemyInfo& info)
     level_ = info.param.level;
 }
 
-// Õ“Ë‚ÌƒR[ƒ‹ƒoƒbƒN
+// å‰£æ”»æ’ƒã‚’å—ã‘ãŸæ™‚ã®å‡¦ç†
+void EnemyBase::OnSwordHit(void)
+{
+    TakeDamage(SWORD_DAMAGE);
+
+    // ç¡é…¸ã‚¢ãƒ³ãƒ¢ãƒ‹ã‚¦ãƒ çŠ¶æ…‹ã‚’ä»˜ä¸
+    ApplyStatusEffect(STATUS_EFFECT::AMMONIUM_NITRATE);
+
+    lastHitTime_ = HIT_COOLDOWN;
+}
+
+// ç«æ”»æ’ƒã‚’å—ã‘ãŸæ™‚ã®å‡¦ç†
+void EnemyBase::OnFireHit(void)
+{
+    if (currentStatus_ == STATUS_EFFECT::AMMONIUM_NITRATE)
+    {
+        // ç¡é…¸ã‚¢ãƒ³ãƒ¢ãƒ‹ã‚¦ãƒ çŠ¶æ…‹ã§ç«æ”»æ’ƒ â†’ çˆ†ç™ºï¼
+        TakeDamage(EXPLOSION_DAMAGE);
+        ApplyStatusEffect(STATUS_EFFECT::EXPLODED);
+
+        // çˆ†ç™ºã‚¨ãƒ•ã‚§ã‚¯ãƒˆï¼ˆç°¡æ˜“ç‰ˆï¼‰
+        VECTOR explosionPos = trans_.pos;
+        for (int i = 0; i < 8; i++)
+        {
+            float angle = (i * DX_TWO_PI_F) / 8.0f;
+            VECTOR particlePos = VAdd(explosionPos, VGet(cosf(angle) * 50.0f, 30.0f, sinf(angle) * 50.0f));
+            // å®Ÿéš›ã®ã‚²ãƒ¼ãƒ ã§ã¯ãƒ‘ãƒ¼ãƒ†ã‚£ã‚¯ãƒ«ã‚·ã‚¹ãƒ†ãƒ ã‚’ä½¿ç”¨
+        }
+    }
+    else if (currentStatus_ == STATUS_EFFECT::WET || currentStatus_ == STATUS_EFFECT::FROZEN)
+    {
+        // æ¹¿æ½¤çŠ¶æ…‹ã¾ãŸã¯å‡çµçŠ¶æ…‹ã«ç«æ”»æ’ƒ â†’ çŠ¶æ…‹ç•°å¸¸ã‚’æ‰“ã¡æ¶ˆã™
+        TakeDamage(FIRE_DAMAGE);
+        ClearStatusEffect();
+    }
+    else
+    {
+        // é€šå¸¸ã®ç«æ”»æ’ƒ â†’ ã‚„ã‘ã©çŠ¶æ…‹
+        TakeDamage(FIRE_DAMAGE);
+        ApplyStatusEffect(STATUS_EFFECT::BURN);
+    }
+
+    lastHitTime_ = HIT_COOLDOWN;
+}
+
+// æ°´æ”»æ’ƒã‚’å—ã‘ãŸæ™‚ã®å‡¦ç†
+void EnemyBase::OnWaterHit(void)
+{
+    if (currentStatus_ == STATUS_EFFECT::AMMONIUM_NITRATE)
+    {
+        // ç¡é…¸ã‚¢ãƒ³ãƒ¢ãƒ‹ã‚¦ãƒ çŠ¶æ…‹ã§æ°´æ”»æ’ƒ â†’ å‡çµ
+        TakeDamage(WATER_DAMAGE);
+        ApplyStatusEffect(STATUS_EFFECT::FROZEN);
+    }
+    else if (currentStatus_ == STATUS_EFFECT::BURN)
+    {
+        // ã‚„ã‘ã©çŠ¶æ…‹ã«æ°´æ”»æ’ƒ â†’ çŠ¶æ…‹ç•°å¸¸ã‚’æ‰“ã¡æ¶ˆã™
+        TakeDamage(WATER_DAMAGE);
+        ClearStatusEffect();
+
+    }
+    else
+    {
+        // é€šå¸¸ã®æ°´æ”»æ’ƒ â†’ æ¹¿æ½¤çŠ¶æ…‹ï¼ˆéˆè¶³ï¼‰
+        TakeDamage(WATER_DAMAGE);
+        ApplyStatusEffect(STATUS_EFFECT::WET);
+    }
+
+    lastHitTime_ = HIT_COOLDOWN;
+}
+
+// è¡çªæ™‚ã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
 void EnemyBase::OnCollisionEnter(const CollisionInfo& info)
 {
-    // Œ•‚Æ‚ÌÕ“ËiSWORDƒ^ƒOAƒJƒvƒZƒ‹ƒRƒ‰ƒCƒ_j
+
+    if (lastHitTime_ > 0.0f)
+    {
+        return;
+    }
+
+    // å‰£ã¨ã®è¡çª
     if (info.hitCollider->GetTag() == ColliderBase::TAG::SWORD &&
         info.hitCollider->GetShape() == ColliderBase::SHAPE::CAPSULE)
     {
+        OnSwordHit();
+    }
 
-        // ƒqƒbƒg”»’è‚ÌƒN[ƒ‹ƒ^ƒCƒ€’†‚Íƒ_ƒ[ƒW‚ğó‚¯‚È‚¢
-        if (lastHitTime_ > 0.0f)
-        {
-            return;
-        }
+    // ç«æ”»æ’ƒã¨ã®è¡çª
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::FIRE_ATTACK)
+    {
+        OnFireHit();
+    }
 
-        // ƒ_ƒ[ƒW‚ğó‚¯‚é
-        float oldHp = hp_;
-        TakeDamage(SWORD_DAMAGE);
-
-        // ƒqƒbƒg”»’è‚ÌƒN[ƒ‹ƒ^ƒCƒ€‚ğİ’è
-        lastHitTime_ = HIT_COOLDOWN;
-
+    // æ°´æ”»æ’ƒã¨ã®è¡çª
+    if (info.hitCollider->GetTag() == ColliderBase::TAG::WATER_ATTACK)
+    {
+        OnWaterHit();
     }
 }
 
-// ‘O•ûŒü‚ğİ’è
+// ãã®ä»–ã®ãƒ¡ã‚½ãƒƒãƒ‰ï¼ˆå¤‰æ›´ãªã—ï¼‰
 void EnemyBase::SetForward(const VECTOR& forward)
 {
     forward_ = forward;
 }
 
-// ‹–ìŠp‚ğİ’è
 void EnemyBase::SetViewAngle(float angle)
 {
     viewAngle_ = angle;
 }
 
-// ‘Ì—Í‚ğİ’è
 void EnemyBase::SetHp(float hp)
 {
     hp_ = std::clamp(hp, 0.0f, maxHp_);
 }
 
-// ‘Ì—Í‚ğæ“¾
 float EnemyBase::GetHp(void) const
 {
     return hp_;
 }
 
-// ƒ_ƒ[ƒWˆ—
 void EnemyBase::TakeDamage(float damage)
 {
     hp_ -= damage;
@@ -277,56 +511,43 @@ void EnemyBase::TakeDamage(float damage)
     }
 }
 
-// ƒ^ƒCƒv‚ğæ“¾
 const std::string& EnemyBase::GetType(void) const
 {
     return type_;
 }
 
-// ƒŒƒxƒ‹‚ğİ’è
 void EnemyBase::SetLevel(int level)
 {
     level_ = level;
-
     ApplyLevelParams();
 }
 
-// ƒŒƒxƒ‹‚ğæ“¾
 int EnemyBase::GetLevel(void) const
 {
     return level_;
 }
 
-// ƒŒƒxƒ‹ƒ{[ƒiƒX‚ğ“K—p
 void EnemyBase::ApplyLevelParams(void)
 {
     if (level_ <= 1) { return; }
 
     int levelDiff = level_ - 1;
-
-    // ƒpƒ‰ƒ[ƒ^ã¸
     maxHp_ += LEVEL_UP_STAT * levelDiff;
-
     hp_ = maxHp_;
-
     attack_ += LEVEL_UP_STAT * levelDiff;
-
     defense_ += LEVEL_UP_STAT * levelDiff;
 }
 
-// Œ‚”j‚ÌŒoŒ±’l•ñV
 int EnemyBase::GetExpReward(void) const
 {
     return BASE_EXP_REWARD * level_;
 }
 
-// UŒ‚—Í‚ğæ“¾
 float EnemyBase::GetAttack(void) const
 {
     return attack_;
 }
 
-// –hŒä—Í‚ğæ“¾
 float EnemyBase::GetDefense(void) const
 {
     return defense_;

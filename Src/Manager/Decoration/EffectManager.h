@@ -24,8 +24,11 @@ public:
     /// </summary>
     enum class EFFECT
     {
-		EFFECT_ALCHENY,   /// <summary>錬金エフェクト</summary>
-        EFFECT_BLAST,     /// <summary>爆発エフェクト</summary>
+        FIRE,        // 火のエフェクト
+        WATER,       // 水のエフェクト
+        BLAST,       // 爆発エフェクト
+        FREEZE,      // 凍結エフェクト
+        LEVER_UP     // レベルアップエフェクト
     };
 
     /// <summary>

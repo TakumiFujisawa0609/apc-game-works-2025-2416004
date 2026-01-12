@@ -6,6 +6,7 @@
 #include <DxLib.h>
 
 class EnemyManager;
+class Tower;
 
 class StageManager
 {
@@ -38,6 +39,9 @@ public:
     void SetSpawnerSettings(float spawnRange, const std::string& enemyType,
         float activationRange, float spawnInterval, int maxEnemies);
 
+    // タワーを生成（グリッド座標指定）
+    void CreateTower(int gridX, int gridZ);
+
     // 動的レベル設定を有効化
     void EnableDynamicLevel(bool enable, float distancePerLevel = 1000.0f);
 
@@ -59,8 +63,14 @@ private:
         bool isActive;         // アクティブ状態
     };
 
+    struct TowerInfo
+    {
+        VECTOR gridPos;
+        int towerIndex; // towers_リストのインデックス
+    };
+
     // スポナーの間隔（グリッド単位）
-    static constexpr float SPAWNER_INTERVAL = 2000.0f;
+    static constexpr float SPAWNER_INTERVAL = 3000.0f;
 
     // スポナーの登録範囲（プレイヤーからの距離）
     static constexpr float REGISTER_RANGE = 3000.0f;
@@ -90,6 +100,10 @@ private:
     int CalculateEnemyLevelByDistance(const VECTOR& spawnPos) const;
 
 private:
+
+    // タワーの配置間隔設定
+    static constexpr int TOWER_PLACE_GRID_INTERVAL = 1000;
+
     EnemyManager* enemyManager_;                              // EnemyManagerへの参照
 
     bool isLoaded_;                                           // 読み込み済みフラグ
@@ -111,7 +125,15 @@ private:
     std::unordered_map<int, SpawnerInfo> spawners_;          // 生成済みスポナー（キー: グリッドキー）
     std::unordered_set<int> activeSpawners_;                  // アクティブなスポナーのキー
 
+    // タワー管理
+    std::unordered_map<int, TowerInfo> placedTowers_;         // 配置済みタワー（キー: グリッドキー）
+    std::vector<std::unique_ptr<Tower>> towers_;             // タワーインスタンスのリスト
+    int towerModelId_;
+
     // 最適化用
     VECTOR lastPlayerPos_;                                    // 前回のプレイヤー座標
     float updateTimer_;                                       // 更新タイマー
+
+    // タワー配置ロジック
+    void UpdateTowerPlacement(const VECTOR& playerPos);
 };

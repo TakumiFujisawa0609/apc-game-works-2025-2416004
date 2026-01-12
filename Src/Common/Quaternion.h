@@ -276,6 +276,17 @@ public:
 	/// </summary>
 	void ToAngleAxis(float* angle, VECTOR* axis);
 
+	/// <summary>
+	/// 回転軸と角度（ラジアン）からクォータニオンを生成する静的メソッド
+	/// </summary>
+	/// <param name="axis">回転軸となるVECTOR</param>
+	/// <param name="angleRad">回転角度（ラジアン）</param>
+	static Quaternion Axis(const VECTOR& axis, float angleRad);
+
+	/// <summary>
+	/// クォータニオン同士の乗算
+	/// </summary>
+	Quaternion operator*(const Quaternion& q) const;
 private:
 
 	/// <summary>

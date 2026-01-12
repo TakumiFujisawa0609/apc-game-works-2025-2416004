@@ -6,6 +6,17 @@
 class EnemyBase : public UnitBase
 {
 public:
+    // 状態異常の種類
+    enum class STATUS_EFFECT
+    {
+        NONE,               // なし
+        AMMONIUM_NITRATE,   // 硝酸アンモニウム状態（剣攻撃後）
+        FROZEN,             // 凍結（硝酸アンモニウム状態で水攻撃）
+        BURN,               // やけど（通常時に火攻撃）
+        WET,                // 湿潤・鈍足（通常時に水攻撃）
+        EXPLODED,           // 爆発済み（硝酸アンモニウム状態で火攻撃）
+    };
+
     // コンストラクタ
     EnemyBase(void);
 
@@ -76,12 +87,25 @@ protected:
     // 地面からのオフセット
     static constexpr float GROUND_OFFSET = 2.0f;
 
-    // 剣からのダメージ量
-    static constexpr float SWORD_DAMAGE = 35.0f;
+    // ダメージ量
+    static constexpr float SWORD_DAMAGE = 35.0f;           // 剣のダメージ
+    static constexpr float FIRE_DAMAGE = 50.0f;            // 火のダメージ（通常）
+    static constexpr float WATER_DAMAGE = 40.0f;           // 水のダメージ（通常）
+    static constexpr float EXPLOSION_DAMAGE = 150.0f;      // 爆発ダメージ（硝酸アンモニウム+火）
+    static constexpr float BURN_DAMAGE_PER_SEC = 10.0f;    // やけどの継続ダメージ（秒間）
+
+    // 状態異常の持続時間
+    static constexpr float AMMONIUM_NITRATE_DURATION = 8.0f;  // 硝酸アンモニウム状態
+    static constexpr float FROZEN_DURATION = 3.0f;            // 凍結
+    static constexpr float BURN_DURATION = 5.0f;              // やけど
+    static constexpr float WET_DURATION = 4.0f;               // 湿潤
+
+    // 状態異常の効果
+    static constexpr float WET_SPEED_MULTIPLIER = 0.5f;       // 湿潤時の移動速度倍率（50%減）
+    static constexpr float FROZEN_SPEED_MULTIPLIER = 0.0f;    // 凍結時の移動速度倍率（完全停止）
 
     // ヒット判定のクールタイム
     static constexpr float HIT_COOLDOWN = 0.3f;
-
 
     // レベルアップ時の上昇値
     static constexpr int LEVEL_UP_STAT = 10;
@@ -134,6 +158,11 @@ protected:
     // タイプ
     std::string type_;
 
+    // 状態異常関連
+    STATUS_EFFECT currentStatus_;      // 現在の状態異常
+    float statusTimer_;                 // 状態異常の残り時間
+    float burnTickTimer_;               // やけどのダメージ間隔タイマー
+
     // ステージ上にいるかチェック
     bool IsOnStage(const VECTOR& pos) const;
 
@@ -142,4 +171,28 @@ protected:
 
     // レベル事のパラメータ計算
     void ApplyLevelParams(void);
+
+    // 状態異常の更新
+    void UpdateStatusEffect(float deltaTime);
+
+    // 状態異常を適用
+    void ApplyStatusEffect(STATUS_EFFECT status);
+
+    // 状態異常をクリア
+    void ClearStatusEffect(void);
+
+    // 現在の移動速度倍率を取得（状態異常による影響を含む）
+    float GetSpeedMultiplier(void) const;
+
+    // 状態異常のエフェクトを描画
+    void DrawStatusEffect(void) const;
+
+    // 剣攻撃を受けた時の処理
+    void OnSwordHit(void);
+
+    // 火攻撃を受けた時の処理
+    void OnFireHit(void);
+
+    // 水攻撃を受けた時の処理
+    void OnWaterHit(void);
 };

@@ -21,6 +21,7 @@ void EnemyManager::Load(void)
 {
     auto& res = ResourceManager::GetInstance();
     res.LoadModelDuplicate(ResourceManager::SRC::MODEL_SLIME);
+    
 }
 
 // 初期化
@@ -142,7 +143,7 @@ void EnemyManager::Draw(void)
 void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
 {
     // カリング設定
-    const float cullDistance = 5000.0f;          // 描画距離制限
+    const float cullDistance = 8000.0f;          // 描画距離制限
     const float viewAngleCos = cosf(Utility::Deg2RadF(100.0f));  // 視野角100度
 
     int drawnEnemies = 0;
@@ -181,8 +182,6 @@ void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
         drawnEnemies++;
     }
 
-    // スポナーの描画（カリング適用・デバッグのみ）
-#ifdef _DEBUG
     int drawnSpawners = 0;
     int culledSpawners = 0;
 
@@ -220,6 +219,10 @@ void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
         drawnSpawners++;
     }
 
+    // スポナーの描画（カリング適用・デバッグのみ）
+#ifdef _DEBUG
+ 
+
     // カリング情報表示
     DrawFormatString(10, 100, GetColor(255, 255, 255),
         "Enemies: %d (Drawn: %d, Culled: %d)",
@@ -242,9 +245,17 @@ void EnemyManager::Release(void)
 // スポナーを追加
 void EnemyManager::AddSpawner(const VECTOR& position, float spawnRange, const std::string& enemyType, int level)
 {
-    auto spawner = std::make_unique<EnemySpawner>(position, spawnRange, enemyType);
-    spawner->SetEnemyLevel(level);  // レベルを設定
-    spawners_.push_back(std::move(spawner));
+    // 1. 新しいスポナーオブジェクトを生成
+    auto newSpawner = std::make_unique<EnemySpawner>(position, spawnRange, enemyType);
+
+    int modelId = ResourceManager::GetInstance().LoadModelDuplicate(ResourceManager::SRC::MODEL_ENEMYSPAWNER);
+    newSpawner->SetModelId(modelId); // 新しいスポナーに対してのみ実行
+
+    // 3. レベルを設定
+    newSpawner->SetEnemyLevel(level);
+
+    // 4. リストに追加
+    spawners_.push_back(std::move(newSpawner));
 }
 
 // スポナーを削除
@@ -463,20 +474,20 @@ std::vector<const ColliderBase*> EnemyManager::GetAllEnemyColliders(void) const
 }
 
 // プレイヤーのコライダを設定
-void EnemyManager::SetPlayerColliders(const std::vector<const ColliderBase*>& colliders)
-{
-    // 全敵にプレイヤーコライダを登録
-    for (auto& enemy : enemies_)
-    {
-        if (!enemy) continue;
-
-        enemy->ClearHitCollider();
-        for (const auto& col : colliders)
-        {
-            enemy->AddHitCollider(col);
-        }
-    }
-}
+//void EnemyManager::SetPlayerColliders(const std::vector<const ColliderBase*>& colliders)
+//{
+//    // 全敵にプレイヤーコライダを登録
+//    for (auto& enemy : enemies_)
+//    {
+//        if (!enemy) continue;
+//
+//        enemy->ClearHitCollider();
+//        for (const auto& col : colliders)
+//        {
+//            enemy->AddHitCollider(col);
+//        }
+//    }
+//}
 
 // 保留中の経験値報酬を取得してクリア
 std::vector<int> EnemyManager::GetAndClearExpRewards(void)

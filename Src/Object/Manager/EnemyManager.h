@@ -68,7 +68,7 @@ public:
 
     std::vector<const ColliderBase*> GetAllEnemyColliders(void) const;
 
-    void SetPlayerColliders(const std::vector<const ColliderBase*>& colliders);
+    //void SetPlayerColliders(const std::vector<const ColliderBase*>& colliders);
 
     // 保留中の経験値報酬を取得してクリア
     std::vector<int> GetAndClearExpRewards(void);

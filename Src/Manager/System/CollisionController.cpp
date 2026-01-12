@@ -1,4 +1,4 @@
-#include "CollisionController.h"
+ï»¿#include "CollisionController.h"
 #include "../../Object/UnitBase.h"
 #include "../../Collider/ColliderLine.h"
 #include "../../Collider/ColliderSphere.h"
@@ -9,7 +9,6 @@
 
 CollisionController* CollisionController::instance_ = nullptr;
 
-// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ì¶¬
 void CollisionController::CreateInstance(void)
 {
     if (instance_ == nullptr)
@@ -19,20 +18,17 @@ void CollisionController::CreateInstance(void)
     }
 }
 
-// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ìæ“¾
 CollisionController& CollisionController::GetInstance(void)
 {
     return *instance_;
 }
 
-// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ìíœ
 void CollisionController::Destroy(void)
 {
     delete instance_;
     instance_ = nullptr;
 }
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
 CollisionController::CollisionController(void)
     : enableDistanceCulling_(true)
     , cullingDistance_(DEFAULT_CULLING_DISTANCE)
@@ -40,128 +36,102 @@ CollisionController::CollisionController(void)
 {
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
 CollisionController::~CollisionController(void)
 {
 }
 
-// ‰Šú‰»
 void CollisionController::Init(void)
 {
     actors_.clear();
     updateTimer_ = 0.0f;
 }
 
-// XVi‘S‚Ä‚ÌÕ“Ë”»’è‚ğÀsj
 void CollisionController::Update(void)
 {
-    // ƒ^ƒCƒ}[XV
     updateTimer_ += SceneManager::GetInstance().GetDeltaTime();
 
-    // ˆê’èŠÔŠu‚Å‚Ì‚İÕ“Ë‘Šè‚ÌXV
     if (updateTimer_ >= UPDATE_INTERVAL)
     {
         updateTimer_ = 0.0f;
+        UpdateCollisionPairs();
+    }
+}
 
-        // ‘SActor‚ÌƒRƒ‰ƒCƒ_‘Šè‚ğƒNƒŠƒA
-        for (auto& actor : actors_)
+// ã‚³ãƒ©ã‚¤ãƒ€ãƒšã‚¢ã®æ›´æ–°å‡¦ç†ã‚’åˆ†é›¢
+void CollisionController::UpdateCollisionPairs(void)
+{
+    // å…¨Actorã®ã‚³ãƒ©ã‚¤ãƒ€ç›¸æ‰‹ã‚’ã‚¯ãƒªã‚¢
+    for (auto& actor : actors_)
+    {
+        actor->ClearHitCollider();
+    }
+
+    size_t n = actors_.size();
+    const float CULL_DISTANCE_SQ = cullingDistance_ * cullingDistance_;
+
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        auto& actor1 = actors_[i];
+        VECTOR pos1 = actor1->GetPos();
+        const auto& colliders1 = actor1->GetOwnColliders();
+
+        for (size_t j = i + 1; j < n; ++j)
         {
-            actor->ClearHitCollider();
-        }
+            auto& actor2 = actors_[j];
+            VECTOR pos2 = actor2->GetPos();
 
-        // ‘SActorŠÔ‚ÅÕ“Ë”»’è‚Ì€”õ
-        size_t n = actors_.size();
-
-        // ‹——£ƒJƒŠƒ“ƒO—p
-        const float CULL_DISTANCE_SQ = cullingDistance_ * cullingDistance_;
-
-#ifdef _DEBUG
-        int enemyPairRegistered = 0;  // ENEMY“¯m‚Ì“o˜^”
-        int totalPairRegistered = 0;   // ‘SƒyƒA‚Ì“o˜^”
-#endif
-
-        for (size_t i = 0; i < n; ++i)
-        {
-            auto& actor1 = actors_[i];
-            VECTOR pos1 = actor1->GetPos();
-            const auto& colliders1 = actor1->GetOwnColliders();
-
-            for (size_t j = i + 1; j < n; ++j)
+            // è·é›¢ã‚«ãƒªãƒ³ã‚°
+            if (enableDistanceCulling_)
             {
-                auto& actor2 = actors_[j];
-                VECTOR pos2 = actor2->GetPos();
+                float dx = pos2.x - pos1.x;
+                float dz = pos2.z - pos1.z;
+                float distSq = dx * dx + dz * dz;
 
-                // ‹——£ƒJƒŠƒ“ƒOi‘ŠúƒŠƒ^[ƒ“j
-                if (enableDistanceCulling_)
+
+                if (distSq > CULL_DISTANCE_SQ)
                 {
-                    float dx = pos2.x - pos1.x;
-                    float dz = pos2.z - pos1.z;
-                    float distSq = dx * dx + dz * dz;
-
-                    if (distSq > CULL_DISTANCE_SQ)
-                    {
-                        continue;
-                    }
+                    continue;
                 }
+            }
 
-                const auto& colliders2 = actor2->GetOwnColliders();
+            const auto& colliders2 = actor2->GetOwnColliders();
 
-                // Œİ‚¢‚ÌƒRƒ‰ƒCƒ_‚ğ“o˜^
-                for (const auto& pair1 : colliders1)
+            for (const auto& pair1 : colliders1)
+            {
+                auto col1 = pair1.second;
+
+                for (const auto& pair2 : colliders2)
                 {
-                    auto col1 = pair1.second;
+                    auto col2 = pair2.second;
 
-                    for (const auto& pair2 : colliders2)
+                    if (CanCollide(col1->GetTag(), col2->GetTag()))
                     {
-                        auto col2 = pair2.second;
+                        actor1->AddHitCollider(col2);
+                        actor2->AddHitCollider(col1);
 
-                        // ƒ^ƒO‚ÅÕ“Ë‰Â”\‚©ƒ`ƒFƒbƒN
-                        if (CanCollide(col1->GetTag(), col2->GetTag()))
-                        {
-                            actor1->AddHitCollider(col2);
-                            actor2->AddHitCollider(col1);
-
-#ifdef _DEBUG
-                            totalPairRegistered++;
-
-                            // ENEMY“¯m‚ÌƒyƒA‚ğƒJƒEƒ“ƒg
-                            if (col1->GetTag() == ColliderBase::TAG::ENEMY &&
-                                col2->GetTag() == ColliderBase::TAG::ENEMY)
-                            {
-                                enemyPairRegistered++;
-                            }
-#endif
-                        }
                     }
                 }
             }
         }
-
-#ifdef _DEBUG
-        // ƒfƒoƒbƒOî•ñ‚ğ‰æ–Ê‚É•\¦
-        DrawFormatString(10, 100, GetColor(255, 255, 255), "Total Actors: %d", n);
-        DrawFormatString(10, 120, GetColor(255, 255, 255), "Total Pairs: %d", totalPairRegistered);
-        DrawFormatString(10, 140, GetColor(255, 255, 0), "Enemy Pairs: %d", enemyPairRegistered);
-        DrawFormatString(10, 160, GetColor(0, 255, 255), "Culling Distance: %.1f", cullingDistance_);
-#endif
     }
+
 }
 
-// ƒ†ƒjƒbƒg‚Ì“o˜^
 void CollisionController::RegisterUnit(UnitBase* actor)
 {
     if (actor == nullptr) return;
 
-    // d•¡ƒ`ƒFƒbƒN
     for (const auto& a : actors_)
     {
         if (a == actor) return;
     }
 
     actors_.push_back(actor);
+
+    UpdateCollisionPairs();
 }
 
-// ƒ†ƒjƒbƒg‚Ì“o˜^‰ğœ
 void CollisionController::UnregisterUnit(UnitBase* actor)
 {
     actors_.erase(
@@ -170,13 +140,11 @@ void CollisionController::UnregisterUnit(UnitBase* actor)
     );
 }
 
-// ‘Sƒ†ƒjƒbƒg‚ÌƒNƒŠƒA
 void CollisionController::Clear(void)
 {
     actors_.clear();
 }
 
-// 2‚Â‚ÌƒRƒ‰ƒCƒ_ŠÔ‚ÌÕ“Ë”»’è
 bool CollisionController::CheckCollision(const ColliderBase* col1, const ColliderBase* col2, CollisionInfo& outInfo)
 {
     if (!col1 || !col2) return false;
@@ -184,7 +152,6 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
     auto shape1 = col1->GetShape();
     auto shape2 = col2->GetShape();
 
-    // ü•ª‚Æƒ‚ƒfƒ‹
     if (shape1 == ColliderBase::SHAPE::LINE && shape2 == ColliderBase::SHAPE::MODEL)
     {
         return CheckLineVsModel(col1, col2, outInfo);
@@ -194,13 +161,11 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
         return CheckLineVsModel(col2, col1, outInfo);
     }
 
-    // ‹…‘Ì“¯m
     if (shape1 == ColliderBase::SHAPE::SPHERE && shape2 == ColliderBase::SHAPE::SPHERE)
     {
         return CheckSphereVsSphere(col1, col2, outInfo);
     }
 
-    // ‹…‘Ì‚ÆƒJƒvƒZƒ‹
     if (shape1 == ColliderBase::SHAPE::SPHERE && shape2 == ColliderBase::SHAPE::CAPSULE)
     {
         return CheckSphereVsCapsule(col1, col2, outInfo);
@@ -213,7 +178,6 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
     return false;
 }
 
-// ü•ª‚Æƒ‚ƒfƒ‹‚ÌÕ“Ë”»’è
 bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
 {
     const ColliderLine* line = dynamic_cast<const ColliderLine*>(lineCol);
@@ -233,7 +197,7 @@ bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const Co
         outInfo.myCollider = lineCol;
         outInfo.hitCollider = modelCol;
         outInfo.hitPosition = hit.HitPosition;
-        outInfo.hitNormal = VGet(0, 1, 0); // ‰¼‚Ì–@üiãŒü‚«j
+        outInfo.hitNormal = VGet(0, 1, 0);
         outInfo.penetration = 0.0f;
         outInfo.isValid = true;
         return true;
@@ -242,7 +206,6 @@ bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const Co
     return false;
 }
 
-// ‹…‘Ì“¯m‚ÌÕ“Ë”»’è
 bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphere1, const ColliderBase* sphere2, CollisionInfo& outInfo)
 {
     const ColliderSphere* s1 = dynamic_cast<const ColliderSphere*>(sphere1);
@@ -275,7 +238,6 @@ bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphere1, const
     return false;
 }
 
-// ‹…‘Ì‚ÆƒJƒvƒZƒ‹‚ÌÕ“Ë”»’è
 bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const ColliderBase* capsule, CollisionInfo& outInfo)
 {
     const ColliderSphere* s = dynamic_cast<const ColliderSphere*>(sphere);
@@ -289,14 +251,12 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     VECTOR cEnd = c->GetPosEnd();
     float cRadius = c->GetRadius();
 
-    // ƒJƒvƒZƒ‹ü•ªã‚ÌÅ‹ß“_‚ğ‹‚ß‚é
     VECTOR capVec = VSub(cEnd, cStart);
     VECTOR toSphere = VSub(sPos, cStart);
     float capLen = Utility::MagnitudeF(capVec);
 
     if (capLen < 0.0001f)
     {
-        // ƒJƒvƒZƒ‹‚ª“_‚Ìê‡
         capVec = VGet(0, 1, 0);
         capLen = 1.0f;
     }
@@ -304,7 +264,6 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     VECTOR capDir = VScale(capVec, 1.0f / capLen);
     float t = VDot(toSphere, capDir);
 
-    // ƒNƒ‰ƒ“ƒv
     if (t < 0.0f) t = 0.0f;
     if (t > capLen) t = capLen;
 
@@ -327,13 +286,10 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     return false;
 }
 
-// Õ“Ë‰Â”\‚©‚Ç‚¤‚©‚Ì”»’è
 bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const
 {
-    // “¯‚¶ƒ^ƒO“¯m‚ÍŠî–{“I‚ÉÕ“Ë‚µ‚È‚¢iENEMY‚Í—áŠOj
     if (tagA == tagB)
     {
-        // šENEMY“¯m‚ÍÕ“Ë‚·‚é
         if (tagA == ColliderBase::TAG::ENEMY)
         {
             return true;
@@ -341,57 +297,62 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
         return false;
     }
 
-    // ƒvƒŒƒCƒ„[‚Æ’n–Ê
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::GROUND) ||
         (tagA == ColliderBase::TAG::GROUND && tagB == ColliderBase::TAG::PLAYER))
     {
         return true;
     }
 
-    // ƒvƒŒƒCƒ„[‚ÆƒXƒe[ƒW
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::STAGE) ||
         (tagA == ColliderBase::TAG::STAGE && tagB == ColliderBase::TAG::PLAYER))
     {
         return true;
     }
 
-    // “G‚Æ’n–Ê
     if ((tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::GROUND) ||
         (tagA == ColliderBase::TAG::GROUND && tagB == ColliderBase::TAG::ENEMY))
     {
         return true;
     }
 
-    // “G‚ÆƒXƒe[ƒW
     if ((tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::STAGE) ||
         (tagA == ColliderBase::TAG::STAGE && tagB == ColliderBase::TAG::ENEMY))
     {
         return true;
     }
 
-    // ƒvƒŒƒCƒ„[‚Æ“G
     if ((tagA == ColliderBase::TAG::PLAYER && tagB == ColliderBase::TAG::ENEMY) ||
         (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::PLAYER))
     {
         return true;
     }
 
-    // ƒJƒƒ‰‚Æ’n–Ê
     if ((tagA == ColliderBase::TAG::CAMERA && tagB == ColliderBase::TAG::GROUND) ||
         (tagA == ColliderBase::TAG::GROUND && tagB == ColliderBase::TAG::CAMERA))
     {
         return true;
     }
 
-    // ƒJƒƒ‰‚Æ•Ç
     if ((tagA == ColliderBase::TAG::CAMERA && tagB == ColliderBase::TAG::WALL) ||
         (tagA == ColliderBase::TAG::WALL && tagB == ColliderBase::TAG::CAMERA))
     {
         return true;
     }
-     // Œ•‚Æ“G
+
     if ((tagA == ColliderBase::TAG::SWORD && tagB == ColliderBase::TAG::ENEMY) ||
         (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::SWORD))
+    {
+        return true;
+    }
+
+    if ((tagA == ColliderBase::TAG::WATER_ATTACK && tagB == ColliderBase::TAG::ENEMY) ||
+        (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::WATER_ATTACK))
+    {
+        return true;
+    }
+
+    if ((tagA == ColliderBase::TAG::FIRE_ATTACK && tagB == ColliderBase::TAG::ENEMY) ||
+        (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::FIRE_ATTACK))
     {
         return true;
     }
@@ -399,7 +360,6 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
     return false;
 }
 
-// ‹——£ƒJƒŠƒ“ƒO‚Ìƒ`ƒFƒbƒN
 bool CollisionController::IsInCullingRange(const VECTOR& pos1, const VECTOR& pos2) const
 {
     float dx = pos2.x - pos1.x;

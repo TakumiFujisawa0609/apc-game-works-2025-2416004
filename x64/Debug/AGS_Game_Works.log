@@ -1,2 +1,17 @@
-﻿  SceneGame.cpp
+﻿  Player.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(84,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(29,17): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(210,56): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(214,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(780,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/Object/Player/Player.cpp')
+  
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

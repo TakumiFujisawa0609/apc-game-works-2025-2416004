@@ -27,22 +27,12 @@ public:
 		//ここに使用する音楽や効果音などを羅列
 		NONE,
 		BGM_TITLE,      // タイトル画面BGM
-		BGM_GAME,       // ゲームプレイ中BGM
-		BGM_GAMEOVER,   // ゲームオーバー時BGM
-		BGM_GAMECLEAR,  // ゲームクリア時BGM
-		BGM_GARDEN_DAY, //ガーデンの朝昼BGM
-		BGM_GARDEN_NIGHT, //ガーデンの夕方夜BGM
-		BGM_ATELIER,    //アトリエBGM
-		BGM_GUILD,      //ギルドのBGM
-
-		SE_PUSH,        // ボタン押下時効果音
-		SE_CANCEL,              //キャンセル音
-		SE_SELECT,      // カーソル移動
-		SE_DAMAGE,      // ダメージ受けた時効果音
-		SE_GET,         // アイテム取得時効果音
-		SE_ALCHEMY,     // 錬金時効果音	
-		SE_ALCHEMY_FAIL, //錬金失敗効果音
-		SE_ALCHEMY_SUCCESS, //錬金成功効果音
+		BGM_GAME,       // ゲーム画面BGM
+		BGM_FAITE,      // 戦闘BGM
+		BGM_SCORE,      // スコア画面BGM
+		SE_CANCEL,      // キャンセル音
+		SE_SELECT,      // 選択音
+		SE_PUSH         // 決定音 
 	};
 
 	/// <summary>
@@ -86,6 +76,12 @@ public:
 	/// </summary>
 	/// <param name="_sound">停止する音声データ</param>
 	void Stop(const SOUND _sound);
+
+	/// <summary>
+	/// すべてのBGMを停止する
+	/// BGMとして登録されている音声データを停止します。
+	/// </summary>
+	void StopAllBGM(void);
 
 	/// <summary>
 	/// 音声データの解放処理

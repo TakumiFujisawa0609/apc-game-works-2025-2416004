@@ -3,6 +3,7 @@
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Decoration/SoundManager.h"
+#include "../Manager/System/Loading.h"
 #include "../Scene/SceneTitle.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Application.h"
@@ -24,7 +25,25 @@ void SceneScore::Load(void)
     SceneBase::Load();
     // 時間カウントリセット
     TimeManager::GetInstance().Reset();
-    EndLoad();
+
+    ResourceManager::GetInstance().InitGameClear();
+
+    Loading::GetInstance()->SetProgress(25.0f);
+
+    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_SCORE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_SCORE).handleId_);
+
+    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_SCORE, 30);
+
+    Loading::GetInstance()->SetProgress(45.0f);
+
+    Loading::GetInstance()->SetProgress(60.0f);
+
+    Loading::GetInstance()->SetProgress(80.0f);
+
+    Loading::GetInstance()->SetProgress(100.0f);
+
+    // サウンドのリソース読み込み
+    
 }
 
 void SceneScore::EndLoad(void)
@@ -35,11 +54,10 @@ void SceneScore::EndLoad(void)
 void SceneScore::Init(void)
 {
     // サウンド
-    auto& sound = SoundManager::GetInstance();
     auto& res = ResourceManager::GetInstance();
 
     // 初期BGM
-    sound.Play(SoundManager::SOUND::BGM_TITLE);
+    //SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_SCORE);
 
     // SceneManagerからゲーム統計を取得
     auto& sceneMgr = SceneManager::GetInstance();
