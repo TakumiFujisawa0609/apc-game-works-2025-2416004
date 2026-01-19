@@ -7,6 +7,7 @@
 #include "../Scene/SceneTitle.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Application.h"
+#include "../DrawUI/Font.h"
 
 SceneScore::SceneScore(void)
     : playerDistance_(0.0f)
@@ -16,7 +17,9 @@ SceneScore::SceneScore(void)
     , totalScore_(0)
     , scoreDisplayTimer_(0.0f)
     , displayedScore_(0)
-    , countUpSpeed_(50.0f)  // 1秒あたり50点ずつカウントアップ
+    , countUpSpeed_(50.0f)
+    , bgHandle_(-1)
+    , bgMovieId_(-1)
 {
 }
 
@@ -33,6 +36,12 @@ void SceneScore::Load(void)
     SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_SCORE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_SCORE).handleId_);
 
     SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_SCORE, 30);
+
+    bgHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::GAMECLERA_LOGO).handleId_;
+
+    bgMovieId_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::BG_MOVIE).handleId_;
+
+
 
     Loading::GetInstance()->SetProgress(45.0f);
 
@@ -57,7 +66,7 @@ void SceneScore::Init(void)
     auto& res = ResourceManager::GetInstance();
 
     // 初期BGM
-    //SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_SCORE);
+    SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_SCORE);
 
     // SceneManagerからゲーム統計を取得
     auto& sceneMgr = SceneManager::GetInstance();
@@ -79,10 +88,22 @@ void SceneScore::Update(void)
     auto& input = InputManager::GetInstance();
     auto& sceneMgr = SceneManager::GetInstance();
 
+    // 動画のループ処理
+    if (bgMovieId_ != -1)
+    {
+        // 動画の再生状態をチェック
+        if (GetMovieStateToGraph(bgMovieId_) == 0) // 0 = 再生停止中
+        {
+            // 動画が終了したら最初から再生
+            SeekMovieToGraph(bgMovieId_, 0);
+            PlayMovieToGraph(bgMovieId_);
+        }
+    }
+
     // スコアアニメーション更新
     UpdateScoreAnimation();
 
-    if (input.IsTrgDown(KEY_INPUT_SPACE))
+    if (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsClickMouseLeft())
     {
         // 決定音
         sound.Play(SoundManager::SOUND::SE_PUSH);
@@ -101,66 +122,102 @@ void SceneScore::Update(void)
 
 void SceneScore::Draw(void)
 {
-    // 画面サイズ
+    // 背景動画の描画（画面全体に拡大表示）
+    if (bgMovieId_ != -1)
+    {
+        // 動画のサイズを取得
+        int movieWidth, movieHeight;
+        GetGraphSize(bgMovieId_, &movieWidth, &movieHeight);
+
+        // 画面サイズに合わせて拡大率を計算
+        float scaleX = static_cast<float>(Application::SCREEN_SIZE_X) / movieWidth;
+        float scaleY = static_cast<float>(Application::SCREEN_SIZE_Y) / movieHeight;
+        float scale = (scaleX > scaleY) ? scaleX : scaleY; // アスペクト比を保ちながら画面を埋める
+
+        // 中央配置で描画
+        int centerX = Application::SCREEN_SIZE_X / 2;
+        int centerY = Application::SCREEN_SIZE_Y / 2;
+
+        DrawRotaGraph3(centerX, centerY,
+            movieWidth / 2, movieHeight / 2,  // 動画の中心
+            scale, scale, 0.0,
+            bgMovieId_, true);
+    }
+
+    // インスタンス取得
+    auto& font = Font::GetInstance();
     const int SCREEN_W = Application::SCREEN_SIZE_X;
     const int SCREEN_H = Application::SCREEN_SIZE_Y;
-    const int CENTER_X = SCREEN_W / 2;
 
-    // 背景を暗くする
-    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 200);
-    DrawBox(0, 0, SCREEN_W, SCREEN_H, GetColor(0, 0, 0), TRUE);
-    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+    // 【変更】画面の左側 25% の位置を基準にする (1280pxなら 320px地点)
+    const int LEFT_QUARTER_X = static_cast<int>(SCREEN_W * 0.25f);
+    const int CONTENT_WIDTH = 400; // コンテンツの横幅
+    const int DRAW_X = LEFT_QUARTER_X - (CONTENT_WIDTH / 2); // 25%地点を中央にする
 
-    // タイトル
-    const char* title = "GAME RESULT";
-    DrawFormatString(CENTER_X - 150, 100, GetColor(255, 255, 0), title);
+    // --- レイアウト設定 ---
+    int drawY = 160;
 
-    // 区切り線
-    DrawLine(CENTER_X - 300, 150, CENTER_X + 300, 150, GetColor(255, 255, 255));
+    // 背景画像の描画
+    DrawRotaGraph3(0, 0, 0, 0, 1.0f, 1.0f, 0.0f, bgHandle_, true);
 
-    // 移動距離の表示
-    DrawFormatString(CENTER_X - 250, 200, GetColor(200, 200, 200), "Distance:");
-    DrawFormatString(CENTER_X + 50, 200, GetColor(255, 255, 255), "%.2f m", playerDistance_);
-    DrawFormatString(CENTER_X - 250, 230, GetColor(200, 200, 200), "Distance Score:");
-    DrawFormatString(CENTER_X + 50, 230, GetColor(255, 255, 255), "%d pts", distanceScore_);
+    // --- 配色設定（白背景用） ---
+    unsigned int titleColor = GetColor(20, 20, 20);     // ほぼ黒
+    unsigned int labelColor = GetColor(50, 50, 50);     // 濃い灰色
+    unsigned int valueColor = GetColor(0, 50, 150);     // 鮮やかな紺
+    unsigned int scoreAddColor = GetColor(0, 120, 0);   // 濃い緑
+    unsigned int lineColor = GetColor(150, 150, 150);   // 中間の灰色
 
-    // 撃破数の表示
-    DrawFormatString(CENTER_X - 250, 280, GetColor(200, 200, 200), "Enemies Defeated:");
-    DrawFormatString(CENTER_X + 50, 280, GetColor(255, 255, 255), "%d", enemyDeathCount_);
-    DrawFormatString(CENTER_X - 250, 310, GetColor(200, 200, 200), "Kill Score:");
-    DrawFormatString(CENTER_X + 50, 310, GetColor(255, 255, 255), "%d pts", killScore_);
+    // 1. タイトル
+    font.DrawDefaultText(DRAW_X, drawY, "ゲームリザルト", titleColor, 48, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 80;
 
-    // 区切り線
-    DrawLine(CENTER_X - 300, 360, CENTER_X + 300, 360, GetColor(255, 255, 255));
+    drawY += 50;
 
-    // 合計スコアの表示（アニメーション付き）
-    DrawFormatString(CENTER_X - 250, 400, GetColor(255, 255, 0), "TOTAL SCORE:");
+    // 2. 移動距離
+    font.DrawDefaultText(DRAW_X, drawY, "移動距離", labelColor, 24, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    char distStr[64], distScoreStr[64];
+    sprintf_s(distStr, "%.2f m", playerDistance_);
+    sprintf_s(distScoreStr, "+ %d pts", distanceScore_);
 
-    // カウントアップアニメーション
-    int displayScore = displayedScore_;
-    if (displayScore >= totalScore_)
-    {
-        displayScore = totalScore_;
-        // スコア確定時に文字を大きく表示
-        DrawFormatString(CENTER_X + 50, 395, GetColor(255, 255, 0), "%d", displayScore);
-    }
-    else
-    {
-        DrawFormatString(CENTER_X + 50, 400, GetColor(255, 255, 255), "%d", displayScore);
-    }
+    font.DrawDefaultText(DRAW_X + 200, drawY, distStr, valueColor, 26, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 35;
+    font.DrawDefaultText(DRAW_X + 200, drawY, distScoreStr, scoreAddColor, 22, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 70;
 
-    // ★ランク表示
+    // 3. 撃破数
+    font.DrawDefaultText(DRAW_X, drawY, "エネミー討伐数", labelColor, 24, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    char killStr[64], killScoreStr[64];
+    sprintf_s(killStr, "%d", enemyDeathCount_);
+    sprintf_s(killScoreStr, "+ %d pts", killScore_);
+
+    font.DrawDefaultText(DRAW_X + 200, drawY, killStr, valueColor, 26, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 35;
+    font.DrawDefaultText(DRAW_X + 200, drawY, killScoreStr, scoreAddColor, 22, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 90;
+
+    // 4. 合計スコア
+    font.DrawDefaultText(DRAW_X, drawY, "TOTAL SCORE", GetColor(0, 0, 0), 32, Font::FONT_TYPE_ANTIALIASING_EDGE);
+
+    char totalStr[64];
+    sprintf_s(totalStr, "%d", displayedScore_);
+    unsigned int totalDisplayColor = (displayedScore_ >= totalScore_) ? GetColor(180, 130, 0) : GetColor(0, 0, 0);
+    font.DrawDefaultText(DRAW_X + 400, drawY, totalStr, totalDisplayColor, 44, Font::FONT_TYPE_ANTIALIASING_EDGE);
+    drawY += 90;
+
+    // 5. ランク表示
     if (displayedScore_ >= totalScore_)
     {
         const char* rank = GetRank();
-        DrawFormatString(CENTER_X - 100, 470, GetColor(255, 200, 0), "RANK: %s", rank);
+        unsigned int rankColor = GetColor(40, 40, 40);
+        if (rank[0] == 'S') rankColor = GetColor(180, 0, 180);
+        else if (rank[0] == 'A') rankColor = GetColor(200, 80, 0);
+
+        font.DrawDefaultText(DRAW_X + 20, drawY + 15, "RANK", GetColor(80, 80, 80), 30, Font::FONT_TYPE_ANTIALIASING_EDGE);
+        font.DrawDefaultText(DRAW_X + 150, drawY - 10, rank, rankColor, 80, Font::FONT_TYPE_ANTIALIASING_EDGE);
     }
 
-    // 区切り線
-    DrawLine(CENTER_X - 300, 520, CENTER_X + 300, 520, GetColor(255, 255, 255));
-
-    // 操作説明
-    DrawFormatString(CENTER_X - 150, 580, GetColor(150, 150, 150), "Press SPACE to Title");
+    // 6. 操作説明
+    font.DrawDefaultText(DRAW_X + 30, SCREEN_H - 120, "CLICK or SPACE TO TITLE", GetColor(100, 100, 100), 22, Font::FONT_TYPE_ANTIALIASING_EDGE);
 
 #ifdef _DEBUG
     DrawDebug();

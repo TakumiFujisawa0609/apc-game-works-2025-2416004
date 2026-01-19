@@ -6,10 +6,17 @@
 #include "../../Application.h"
 
 PauseMenu::PauseMenu(void)
-    : currentIndex_(0), visible_(false), decisionMade_(false),
-      howToPlayIndex_(0), howToPlayPage_(0), mode_(MODE_POUSE::SELECT),
-      controlHandle_(-1), reninHandle_(-1), mokihiHandle_(-1),
-      atelierHandle_(-1), guildHandle_(-1), gardenHandle_(-1)
+    : currentIndex_(0)
+    , visible_(false)
+    , decisionMade_(false)
+    , howToPlayPage_(0)
+    , mode_(MODE_POUSE::SELECT)
+    , controlHandle_(-1)
+    , reninHandle_(-1)
+    , mokihiHandle_(-1)
+    , atelierHandle_(-1)
+    , guildHandle_(-1)
+    , gardenHandle_(-1)
 {
     // メインメニュー
     menuItems_ = {
@@ -17,16 +24,6 @@ PauseMenu::PauseMenu(void)
         "遊び方",
         "操作説明",
         "ゲーム終了"
-    };
-
-    // サブメニュー
-    howToPlayItems_ = {
-        "目標について",
-        "戦闘について",
-        "能力反応",
-        "スコア",
-        "た",
-        "戻る"
     };
 }
 
@@ -36,6 +33,7 @@ void PauseMenu::Show(void)
     currentIndex_ = 0;
     decisionMade_ = false;
     mode_ = MODE_POUSE::SELECT;
+    SetMouseDispFlag(TRUE);
 }
 
 void PauseMenu::Hide(void)
@@ -43,6 +41,8 @@ void PauseMenu::Hide(void)
     visible_ = false;
     decisionMade_ = false;
     mode_ = MODE_POUSE::SELECT;
+    SetMouseDispFlag(FALSE);
+    SetMousePoint(Application::SCREEN_SIZE_X / 2, Application::SCREEN_SIZE_Y / 2);
 }
 
 bool PauseMenu::IsVisible(void) const
@@ -73,76 +73,63 @@ void PauseMenu::Init(void)
 
 void PauseMenu::Update(void)
 {
+    if (!visible_) return;
+
     SoundManager& sound = SoundManager::GetInstance();
     auto& input = InputManager::GetInstance();
 
-    if (mode_ == MODE_POUSE::SELECT)
+    // 説明ページ表示中の処理
+    if (mode_ == MODE_POUSE::HOW_TO_PLAY_PAGE || mode_ == MODE_POUSE::CONTROL)
     {
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex_ = (currentIndex_ + menuItems_.size() - 1) % menuItems_.size();
-        }
-        if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex_ = (currentIndex_ + 1) % menuItems_.size();
-        }
-
-        if (input.IsTrgDown(KEY_INPUT_SPACE ))
+        if (input.IsTrgDown(KEY_INPUT_ESCAPE) || input.IsTrgMouseLeft())
         {
-            sound.Play(SoundManager::SOUND::SE_PUSH);
-            if (currentIndex_ == 0) {           // 続ける
-                visible_ = false;
-            }
-            else if (currentIndex_ == 1) {      // 遊び方
-                mode_ = MODE_POUSE::HOW_TO_PLAY_MENU;
-                howToPlayIndex_ = 0;
-            }
-            else if (currentIndex_ == 2) {      // 操作説明
-                mode_ = MODE_POUSE::CONTROL;
-            }
-            else if (currentIndex_ == 3) {      // ゲーム終了
-                SceneManager::GetInstance().GameEnd();
-               
-                // ポーズメニューを非表示に
-                visible_ = false; 
-            }
-        }
-    }
-    else if (mode_ == MODE_POUSE::HOW_TO_PLAY_MENU)
-    {
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            howToPlayIndex_ = (howToPlayIndex_ + howToPlayItems_.size() - 1) % howToPlayItems_.size();
-        }
-        if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            howToPlayIndex_ = (howToPlayIndex_ + 1) % howToPlayItems_.size();
-        }
-        if (input.IsTrgDown(KEY_INPUT_SPACE)) {
-            if (howToPlayIndex_ == howToPlayItems_.size() - 1) {
-                mode_ = MODE_POUSE::SELECT; // 戻る
-            } else {
-                howToPlayPage_ = howToPlayIndex_ + 1;
-                mode_ = MODE_POUSE::HOW_TO_PLAY_PAGE;
-            }
-        }
-        if (input.IsTrgDown(KEY_INPUT_ESCAPE)) {
             sound.Play(SoundManager::SOUND::SE_CANCEL);
             mode_ = MODE_POUSE::SELECT;
         }
+        return;
     }
-    else if (mode_ == MODE_POUSE::HOW_TO_PLAY_PAGE)
-    {
-        if (input.IsTrgDown(KEY_INPUT_ESCAPE)) {
-            sound.Play(SoundManager::SOUND::SE_CANCEL);
-            mode_ = MODE_POUSE::HOW_TO_PLAY_MENU;
+
+    // ----- メインメニュー操作 -----
+    // マウス判定
+    Vector2 mousePos = input.GetMousePos();
+    const int screenW = Application::SCREEN_SIZE_X;
+    const int screenH = Application::SCREEN_SIZE_Y;
+    const int boxW = 400;
+    const int itemHeight = 50;
+    const int boxH = static_cast<int>(menuItems_.size()) * itemHeight + 40;
+    const int startX = (screenW - boxW) / 2;
+    const int startY = (screenH - boxH) / 2 + 20;
+
+    for (int i = 0; i < menuItems_.size(); ++i) {
+        int rectTop = startY + i * itemHeight;
+        if (mousePos.x >= startX && mousePos.x <= startX + boxW &&
+            mousePos.y >= rectTop && mousePos.y <= rectTop + itemHeight) {
+            if (currentIndex_ != i) {
+                sound.Play(SoundManager::SOUND::SE_SELECT);
+                currentIndex_ = i;
+            }
         }
     }
-    else if (mode_ == MODE_POUSE::CONTROL)
+
+    // キー入力
+    if (input.IsTrgDown(KEY_INPUT_UP)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex_ = (currentIndex_ + menuItems_.size() - 1) % menuItems_.size();
+    }
+    if (input.IsTrgDown(KEY_INPUT_DOWN)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex_ = (currentIndex_ + 1) % menuItems_.size();
+    }
+
+    // 決定
+    if (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsTrgMouseLeft())
     {
-        if (input.IsTrgDown(KEY_INPUT_ESCAPE)) {
-            sound.Play(SoundManager::SOUND::SE_CANCEL);
-            mode_ = MODE_POUSE::SELECT;
+        sound.Play(SoundManager::SOUND::SE_PUSH);
+        switch (currentIndex_) {
+        case 0: visible_ = false; break;          // 続ける
+        case 1: mode_ = MODE_POUSE::HOW_TO_PLAY_PAGE; howToPlayPage_ = 1; break;
+        case 2: mode_ = MODE_POUSE::CONTROL;break;
+        case 3: SceneManager::GetInstance().GameEnd(); visible_ = false; break;
         }
     }
 }
@@ -154,107 +141,47 @@ void PauseMenu::Draw(void)
     const int screenW = Application::SCREEN_SIZE_X;
     const int screenH = Application::SCREEN_SIZE_Y;
 
-    // --- 「遊び方」サブメニュー ---
-    if (mode_ == MODE_POUSE::HOW_TO_PLAY_MENU)
+    // --- 各種説明ページ（背景黒） ---
+    if (mode_ == MODE_POUSE::HOW_TO_PLAY_PAGE || mode_ == MODE_POUSE::CONTROL)
     {
         DrawBox(0, 0, screenW, screenH, GetColor(0, 0, 0), TRUE);
-
-        const int fontSize = 32;
-        const int startY = screenH / 2 - (howToPlayItems_.size() * (fontSize + 20)) / 2;
-
-        for (int i = 0; i < howToPlayItems_.size(); ++i) {
-            int itemY = startY + i * (fontSize + 25);
-            int textWidth = Font::GetInstance().GetDefaultTextWidth(howToPlayItems_[i]);
-            int textX = (screenW / 2) - textWidth;
-            const int marginX = 75; // ← 横の余白を増やす
-            const int marginY = 8;  // ← 縦の余白も少し広げる
-
-            if (i == howToPlayIndex_) {
-                int boxW = textWidth + marginX * 2;
-                int boxX = (screenW - boxW) / 2;
-                DrawBox(boxX, itemY - marginY,
-                    boxX + boxW, itemY + fontSize + marginY,
-                    0xFFFF00, FALSE);
+        int handle = -1;
+        if (mode_ == MODE_POUSE::CONTROL) handle = controlHandle_;
+        else {
+            switch (howToPlayPage_) {
+            case 1: handle = mokihiHandle_; break;
+            case 2: handle = reninHandle_; break;
+            case 3: handle = atelierHandle_; break;
+            case 4: handle = guildHandle_; break;
+            case 5: handle = gardenHandle_; break;
             }
-
-            // フォントクラスを使って描画
-            Font::GetInstance().DrawDefaultText(
-                textX,
-                itemY,
-                howToPlayItems_[i].c_str(),
-                GetColor(255, 255, 255),
-                fontSize,
-                Font::FONT_TYPE_ANTIALIASING_EDGE
-            );
         }
-
-        Font::GetInstance().DrawDefaultText(
-            50,
-            screenH - 50,
-            "SPACEで決定 / ESCで戻る",
-            GetColor(200, 200, 200),
-            24,
-            Font::FONT_TYPE_ANTIALIASING_EDGE
-        );
-
-        return;
-    }
-
-
-    // --- 「遊び方」個別ページ ---
-    if (mode_ == MODE_POUSE::HOW_TO_PLAY_PAGE)
-    {
-        DrawBox(0, 0, screenW, screenH, GetColor(0, 0, 0), TRUE);
-
-        if (howToPlayPage_ == 1) {
-            DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, mokihiHandle_, TRUE);
-        }
-        else if (howToPlayPage_ == 2) {
-            DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, reninHandle_, TRUE);
-        }
-        else if (howToPlayPage_ == 3) {
-            DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, atelierHandle_, TRUE);
-        }
-        else if (howToPlayPage_ == 4) {
-            DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, guildHandle_, TRUE);
-        }
-        else if (howToPlayPage_ == 5) {
-            DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, gardenHandle_, TRUE);
-        }
-
-        DrawString(50, screenH - 30, "ESCキーで戻る", GetColor(200, 200, 200));
-        return;
-    }
-
-    // --- 操作説明 ---
-    if (mode_ == MODE_POUSE::CONTROL)
-    {
-        DrawBox(0, 0, screenW, screenH, GetColor(0, 0, 0), TRUE);
-        DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, controlHandle_, TRUE);
-        DrawString(50, screenH - 30, "ESCキーで戻る", GetColor(200, 200, 200));
+        if (handle != -1) DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, handle, TRUE);
+        DrawString(50, screenH - 30, "ESCまたはクリックで戻る", GetColor(200, 200, 200));
         return;
     }
 
     // --- 通常のポーズメニュー ---
     const int boxW = 400;
-    const int boxH = static_cast<int>(menuItems_.size()) * 50 + 40;
-
+    const int itemHeight = 50;
+    const int boxH = static_cast<int>(menuItems_.size()) * itemHeight + 40;
     const int x = (screenW - boxW) / 2;
     const int y = (screenH - boxH) / 2;
 
-    DrawBox(x, y, x + boxW, y + boxH, GetColor(0, 0, 0), TRUE);   // 背景
-    DrawBox(x, y, x + boxW, y + boxH, GetColor(255, 255, 255), FALSE); // 枠
+    DrawBox(x, y, x + boxW, y + boxH, GetColor(0, 0, 0), TRUE);
+    DrawBox(x, y, x + boxW, y + boxH, GetColor(255, 255, 255), FALSE);
 
     for (int i = 0; i < menuItems_.size(); ++i)
     {
-        int itemY = y + 20 + i * 50;
+        int itemY = y + 20 + i * itemHeight;
         if (i == currentIndex_) {
-            DrawBox(x + 10, itemY - 5, x + boxW - 10, itemY + 30, 0xFFFF00, false);
+            DrawBox(x + 10, itemY - 5, x + boxW - 10, itemY + 35, 0xFFFF00, FALSE);
         }
-        Font::GetInstance().DrawDefaultText(x + 150, itemY, menuItems_[i].c_str(),
-            0xffffff, 24, Font::FONT_TYPE_ANTIALIASING_EDGE);
+        Font::GetInstance().DrawDefaultText(x + (boxW / 2) - (Font::GetInstance().GetDefaultTextWidth(menuItems_[i]) / 2),
+            itemY, menuItems_[i].c_str(), 0xffffff, 24, Font::FONT_TYPE_ANTIALIASING_EDGE);
     }
 }
+
 
 void PauseMenu::Release(void)
 {

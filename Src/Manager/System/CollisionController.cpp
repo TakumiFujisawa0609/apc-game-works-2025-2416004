@@ -152,6 +152,24 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
     auto shape1 = col1->GetShape();
     auto shape2 = col2->GetShape();
 
+    if (shape1 == ColliderBase::SHAPE::CAPSULE && shape2 == ColliderBase::SHAPE::MODEL)
+    {
+        return CheckCapsuleVsModel(col1, col2, outInfo);
+    }
+    else if (shape1 == ColliderBase::SHAPE::MODEL && shape2 == ColliderBase::SHAPE::CAPSULE)
+    {
+        bool result = CheckCapsuleVsModel(col2, col1, outInfo);
+        if (result)
+        {
+            // コライダーの順序を入れ替え
+            const ColliderBase* temp = outInfo.myCollider;
+            outInfo.myCollider = outInfo.hitCollider;
+            outInfo.hitCollider = temp;
+            outInfo.hitNormal = VScale(outInfo.hitNormal, -1.0f);
+        }
+        return result;
+    }
+
     if (shape1 == ColliderBase::SHAPE::LINE && shape2 == ColliderBase::SHAPE::MODEL)
     {
         return CheckLineVsModel(col1, col2, outInfo);
@@ -286,6 +304,82 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     return false;
 }
 
+bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
+{
+    const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>(capsuleCol);
+    const ColliderModel* model = dynamic_cast<const ColliderModel*>(modelCol);
+
+    if (!capsule || !model) return false;
+
+    VECTOR capsuleStart = capsule->GetPosStart();
+    VECTOR capsuleEnd = capsule->GetPosEnd();
+    float capsuleRadius = capsule->GetRadius();
+
+    // カプセルの中心を計算
+    VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
+
+    int modelId = model->GetFollow()->modelId;
+    if (modelId < 0) return false;
+
+    // モデルとの球体衝突判定（カプセル中心から検索）
+    MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(
+        modelId, -1, capsuleCenter, capsuleRadius + 50.0f
+    );
+
+    if (hitResult.HitNum > 0)
+    {
+        float minDist = FLT_MAX;
+        VECTOR nearestPoint = capsuleCenter;
+        VECTOR nearestNormal = VGet(0.0f, 1.0f, 0.0f);
+        bool hasHit = false;
+
+        for (int i = 0; i < hitResult.HitNum; i++)
+        {
+            MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
+
+            // 除外フレームチェック
+            if (model->IsExcludeFrame(poly.FrameIndex)) continue;
+
+            // ポリゴンの中心
+            VECTOR polyCenter = VScale(
+                VAdd(VAdd(poly.Position[0], poly.Position[1]), poly.Position[2]),
+                1.0f / 3.0f
+            );
+
+            // カプセル中心からポリゴン中心への距離
+            VECTOR diff = VSub(capsuleCenter, polyCenter);
+            float dist = VSize(diff);
+
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearestPoint = polyCenter;
+                nearestNormal = poly.Normal;
+                hasHit = true;
+            }
+        }
+
+        MV1CollResultPolyDimTerminate(hitResult);
+
+        if (hasHit && minDist < capsuleRadius + 50.0f)
+        {
+            outInfo.myCollider = capsuleCol;
+            outInfo.hitCollider = modelCol;
+            outInfo.hitPosition = nearestPoint;
+            outInfo.hitNormal = nearestNormal;
+            outInfo.penetration = (capsuleRadius + 50.0f) - minDist;
+            outInfo.isValid = true;
+            return true;
+        }
+    }
+    else
+    {
+        MV1CollResultPolyDimTerminate(hitResult);
+    }
+
+    return false;
+}
+
 bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const
 {
     if (tagA == tagB)
@@ -353,6 +447,12 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
 
     if ((tagA == ColliderBase::TAG::FIRE_ATTACK && tagB == ColliderBase::TAG::ENEMY) ||
         (tagA == ColliderBase::TAG::ENEMY && tagB == ColliderBase::TAG::FIRE_ATTACK))
+    {
+        return true;
+    }
+
+    if ((tagA == ColliderBase::TAG::GROUND && tagB == ColliderBase::TAG::STAGE) ||
+        (tagA == ColliderBase::TAG::STAGE && tagB == ColliderBase::TAG::GROUND))
     {
         return true;
     }

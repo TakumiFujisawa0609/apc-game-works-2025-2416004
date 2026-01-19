@@ -16,21 +16,22 @@
 #include "../../Collider/ColliderLine.h"
 #include "../../Collider/ColliderCapsule.h"
 #include "../../Application.h"
+#include "../../Collider/ColliderModel.h"
 
 // コンストラクタ
 Player::Player(void)
-    // モデルIDの初期化
+// モデルIDの初期化
     : modelId_(-1)
 
     // 剣オブジェクト生成
     , sword_(std::make_unique<Sword>())
-    
+
     // 火攻撃オブジェクト生成
     , fireAttack_(std::make_unique<FireAttack>())
-    
+
     // 水攻撃オブジェクト生成
     , waterAttack_(std::make_unique<WaterAttack>())
-    
+
     // グライダーオブジェクト生成
     , glider_(std::make_unique<Glider>())
 
@@ -46,6 +47,10 @@ Player::Player(void)
     , invincibleTime_(0)
     , lastHitEnemyTime_(0)
     , experience_(0)
+    , iconFire_(-1)
+    , iconFireCD_(-1)
+    , iconWater_(-1)
+    , iconWaterCD_(-1)
     , isGround_(true)
     , isMoving_(false)
     , movementEnabled_(true)
@@ -96,11 +101,16 @@ void Player::Load(void)
     modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
     trans_.SetModel(modelId_);
 
+    iconFire_ = res.Load(ResourceManager::SRC::IMG_FIRE_SUKILL).handleId_;
+    iconFireCD_ = res.Load(ResourceManager::SRC::IMG_FIRE_SUKILL_CD).handleId_;
+    iconWater_ = res.Load(ResourceManager::SRC::IMG_WATER_SUKILL).handleId_;
+    iconWaterCD_ = res.Load(ResourceManager::SRC::IMG_WATER_SUKILL_CD).handleId_;
+
     anim_ = std::make_unique<AnimationController>(modelId_);
     anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_IDEL), 35.0f);
     anim_->AddExternal(static_cast<int>(ANIM::WALK), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_WALK), 30.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_ATTACK), 50.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::JUMP), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_JAMP), 10.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_ATTACK), 40.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::JUMP), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_JAMP), 50.0f);
     anim_->AddExternal(static_cast<int>(ANIM::GLIDE), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_GLIDE), 30.0f);
 
     EffectManager::GetInstance().Add(EffectManager::EFFECT::FIRE, res.Load(ResourceManager::SRC::EFFECT_FIRE).handleId_);
@@ -249,9 +259,12 @@ void Player::Update(void)
 
     if (sword_)
     {
-        sword_->SetPlayerRotation(trans_.quaRotLocal);
-        VECTOR swordFrame = MV1GetFramePosition(modelId_, 26);
-        sword_->SetFramePos(swordFrame);
+        // 手のフレーム（27番）の行列（位置・回転・スケール全て）を取得
+        MATRIX handMatrix = MV1GetFrameLocalWorldMatrix(modelId_, 27);
+
+        // 剣に行列を渡す（この後、Swordクラスにこの関数を作ります）
+        sword_->SetHandMatrix(handMatrix);
+
         sword_->SetAttacking(isAttacking_);
         sword_->Update();
     }
@@ -375,7 +388,7 @@ void Player::UpdateAnimation(void)
 
     if (isAttack_) return;
 
-    // 2. ★最優先：グライド中かどうかの判定
+    // 2. 最優先：グライド中かどうかの判定
     if (isGliding_)
     {
         // まだグライドアニメーションになっていないなら再生開始
@@ -396,10 +409,23 @@ void Player::UpdateAnimation(void)
     // 3. 空中にいる場合（純粋な落下）
     else if (!isGround_)
     {
-        // ここが ANIM::IDEL になっていたのを、適切な落下アニメ（JUMPなど）に変更
-        if (anim_->GetPlayType() != static_cast<int>(ANIM::IDEL))
+        if (jumpPow_.y > 0.0f)
         {
-            PlayAnim(ANIM::IDEL, false, 0.2f);
+            // 上昇中（ジャンプ）
+            if (anim_->GetPlayType() != static_cast<int>(ANIM::JUMP))
+            {
+                // ジャンプの出だしはループさせず(false)、勢いを見せる
+                PlayAnim(ANIM::JUMP, false, 0.1f);
+            }
+        }
+        else
+        {
+            // 落下中
+            if (anim_->GetPlayType() != static_cast<int>(ANIM::IDEL))
+            {
+                // 落下は着地まで続くのでループ(true)させる
+                PlayAnim(ANIM::IDEL, true, 0.2f);
+            }
         }
     }
     // 4. 地面にいる場合
@@ -473,8 +499,10 @@ void Player::Draw(void) const
     {
         glider_->Draw();
     }
-   // DrawHpBar();
-   // DrawLevelInfo();
+    DrawHpBar();
+    DrawLevelInfo();
+    DrawSkillUI();
+    DrawDistanceUI();
 
 #ifdef _DEBUG
 #endif
@@ -588,6 +616,8 @@ void Player::ProcessMove(void)
 {
     if (!movementEnabled_) return;
     if (isAttacking_) return;
+    if (fireAttack_->IsActive()) return;
+    if (waterAttack_->IsActive()) return;
 
     auto& input = InputManager::GetInstance();
     auto camera = SceneManager::GetInstance().GetCamera();
@@ -704,6 +734,38 @@ void Player::DrawCollisionCapsuleDebug(void) const
     }
 }
 
+void Player::DrawSkillUI(void) const
+{
+    int screenH = Application::SCREEN_SIZE_Y;
+    int startX = 0;  // 描画開始位置
+    int startY = 0;
+    int iconSize = 64;
+    int spacing = 80; // アイコン同士の間隔
+
+    auto& font = Font::GetInstance();
+
+    // --- スキル1: 火攻撃 ---
+    int fireX = startX;
+    if (fireAttackCoolTime_ > 0.0f) {
+        // クールタイム中
+        DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconFireCD_, true);
+    }
+    else {
+        // 使用可能
+        DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconFire_, true);
+    }
+
+    // --- スキル2: 水攻撃 ---
+    if (waterAttackCoolTime_ > 0.0f) {
+        // クールタイム中
+        DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconWaterCD_, true);
+    }
+    else {
+        // 使用可能
+        DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconWater_, true);
+    }
+}
+
 void Player::OnCollisionEnter(const CollisionInfo& info)
 {
     if (info.hitCollider->GetTag() == ColliderBase::TAG::ENEMY)
@@ -739,9 +801,102 @@ void Player::OnCollisionStay(const CollisionInfo& info)
     }
 }
 
+void Player::CollisionWithModel(void)
+{
+    // カプセルコライダーを取得
+    int capsuleType = static_cast<int>(COLLIDER_TYPE::CAPSULE);
+
+    if (ownColliders_.count(capsuleType) == 0) return;
+
+    ColliderCapsule* myCapsule = dynamic_cast<ColliderCapsule*>(ownColliders_.at(capsuleType));
+    if (!myCapsule) return;
+
+    // カプセルの中心座標と半径を取得
+    VECTOR capsuleStart = myCapsule->GetPosStart();
+    VECTOR capsuleEnd = myCapsule->GetPosEnd();
+    VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
+    float capsuleRadius = myCapsule->GetRadius();
+
+    // 登録されている衝突物をチェック
+    for (const auto& hitCol : hitColliders_)
+    {
+        // STAGEタグのモデルコライダーのみ処理
+        if (hitCol->GetTag() != ColliderBase::TAG::STAGE) continue;
+        if (hitCol->GetShape() != ColliderBase::SHAPE::MODEL) continue;
+
+        const ColliderModel* hitModel = dynamic_cast<const ColliderModel*>(hitCol);
+        if (!hitModel) continue;
+
+        // モデルとの衝突判定
+        int modelId = hitModel->GetFollow()->modelId;
+        if (modelId < 0) continue;
+
+        // モデルとの球体衝突判定
+        MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(
+            modelId, -1, capsuleCenter, capsuleRadius + 50.0f
+        );
+
+        if (hitResult.HitNum > 0)
+        {
+            // 最も近いポリゴンを見つける
+            float minDist = FLT_MAX;
+            VECTOR nearestHitPos = capsuleCenter;
+            VECTOR nearestNormal = Utility::DIR_U;
+
+            for (int i = 0; i < hitResult.HitNum; i++)
+            {
+                MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
+
+                // 除外フレームチェック
+                if (hitModel->IsExcludeFrame(poly.FrameIndex)) continue;
+
+                // ポリゴンの中心を計算
+                VECTOR polyCenter = VScale(
+                    VAdd(VAdd(poly.Position[0], poly.Position[1]), poly.Position[2]),
+                    1.0f / 3.0f
+                );
+
+                VECTOR diff = VSub(capsuleCenter, polyCenter);
+                float dist = VSize(diff);
+
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestHitPos = polyCenter;
+                    nearestNormal = poly.Normal;
+                }
+            }
+
+            // 衝突している場合、押し返す
+            if (minDist < capsuleRadius + 50.0f)
+            {
+                // 水平方向の押し返しのみ（Y軸は無視）
+                VECTOR pushNormal = VGet(nearestNormal.x, 0.0f, nearestNormal.z);
+
+                if (VSquareSize(pushNormal) > 0.0001f)
+                {
+                    pushNormal = VNorm(pushNormal);
+
+                    // 押し返し距離を計算
+                    float pushDist = (capsuleRadius + 50.0f) - minDist;
+                    VECTOR pushVec = VScale(pushNormal, pushDist);
+
+                    // プレイヤーを押し返す
+                    trans_.pos = VAdd(trans_.pos, pushVec);
+                }
+            }
+        }
+
+        // 検出したポリゴン情報を解放
+        MV1CollResultPolyDimTerminate(hitResult);
+    }
+}
+
 void Player::Collision(void)
 {
     UnitBase::Collision();
+
+    CollisionWithModel();
 
     bool wasJumping = (jumpPow_.y != 0.0f);
 
@@ -870,39 +1025,47 @@ void Player::DrawLevelInfo(void) const
 {
     auto& font = Font::GetInstance();
 
-    int levelX = 20;
-    int levelY = Application::SCREEN_SIZE_Y - 150;
+    // 左下からのオフセット位置
+    // 画面サイズ X:20, Y:下から80ピクセルの位置（お好みで調整してください）
+    int levelX = 40;
+    int levelY = Application::SCREEN_SIZE_Y - 80;
 
     char levelStr[64];
-    sprintf_s(levelStr, "Level: %d", param_.level);
-    font.DrawDefaultText(levelX, levelY, levelStr, GetColor(255, 255, 255), 20);
+    // Lv.15 のような形式
+    sprintf_s(levelStr, "Lv.%d", param_.level);
 
-    if (param_.level < param_.maxLevel)
+    // 最大レベルの場合は色をゴールド(255, 215, 0)に、それ以外は白にする
+    unsigned int color = (param_.level >= param_.maxLevel) ?
+        GetColor(255, 215, 0) : GetColor(255, 255, 255);
+
+    // サイズを48と大きくし、縁取り(EDGE)を有効にして視認性を高める
+    font.DrawDefaultText(levelX, levelY, levelStr, color, 48, Font::FONT_TYPE_ANTIALIASING_EDGE);
+
+    // MAX LEVEL の場合のみ、さらに横に小さく「MAX」と添えるとおしゃれです（任意）
+    if (param_.level >= param_.maxLevel)
     {
-        int barWidth = 200;
-        int barHeight = 15;
-        int barX = levelX;
-        int barY = levelY + 30;
-
-        int required = GetRequireExp();
-        float expRate = (float)experience_ / required;
-        expRate = std::clamp(expRate, 0.0f, 1.0f);
-
-        int expBarWidth = (int)(barWidth * expRate);
-
-        DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(50, 50, 50), true);
-        DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(255, 255, 255), false);
-        DrawBox(barX, barY, barX + expBarWidth, barY + barHeight, GetColor(100, 200, 255), true);
-
-        char expStr[64];
-        sprintf_s(expStr, "%d / %d", experience_, required);
-        int textWidth = font.GetDefaultTextWidth(expStr);
-        int textX = barX + (barWidth / 2) - (textWidth / 2);
-        int textY = barY + 1;
-        font.DrawDefaultText(textX, textY, expStr, GetColor(255, 255, 255), 14);
+        font.DrawDefaultText(levelX + 160, levelY + 20, "MAX", color, 20, Font::FONT_TYPE_ANTIALIASING_EDGE);
     }
-    else
-    {
-        font.DrawDefaultText(levelX, levelY + 30, "MAX LEVEL", GetColor(255, 215, 0), 18);
-    }
+}
+
+void Player::DrawDistanceUI(void) const
+{
+    auto& font = Font::GetInstance();
+
+    // 1. 距離を取得 (XZ平面での原点からの距離)
+    float distance = GetDistanceFromOriginXZ();
+
+    // 2. 表示用文字列の作成
+    char distStr[64];
+    sprintf_s(distStr, "現在の移動距離: %.1f m", distance);
+
+    // 3. 描画座標の計算
+    // 画面中央上部
+    int textWidth = font.GetDefaultTextWidth(distStr);
+    int drawX = (Application::SCREEN_SIZE_X / 2) - textWidth;
+    int drawY = 30; // 画面の一番上から少し下げた位置（お好みで調整）
+
+    // 4. 描画 (視認性を高めるために縁取りフォントを使用)
+    unsigned int color = GetColor(255, 255, 255); // 白
+    font.DrawDefaultText(drawX, drawY, distStr, color, 42, Font::FONT_TYPE_ANTIALIASING_EDGE);
 }

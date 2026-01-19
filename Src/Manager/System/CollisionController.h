@@ -102,6 +102,8 @@ private:
     // 球体とカプセルの衝突判定
     bool CheckSphereVsCapsule(const ColliderBase* sphere, const ColliderBase* capsule, CollisionInfo& outInfo);
 
+    bool CheckCapsuleVsModel(const ColliderBase* capsuleCol, const ColliderBase* modelCol, CollisionInfo& outInfo);
+
     // 衝突可能かどうかの判定
     bool CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const;
 

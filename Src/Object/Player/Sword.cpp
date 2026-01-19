@@ -31,6 +31,9 @@ void Sword::Init(void)
     // カプセルコライダの半径
     radius_ = CAPSULE_RADIUS;
 
+
+    trans_.scl = SOWRD_SCALE;
+
     InitCollider();
 
     // CollisionControllerに登録
@@ -43,40 +46,33 @@ void Sword::Init(void)
 // 更新処理
 void Sword::Update(void)
 {
-    // スケール
+    // 1. スケール設定
     trans_.scl = SOWRD_SCALE;
 
-    // フレーム位置から少し上にオフセット
-    trans_.pos = VAdd(framePos_, VGet(0.0f, POSITION_OFFSET_Y, 0.0f));
+    // 2. 手の基本位置と回転を取得
+    VECTOR handPos = VGet(handMatrix_.m[3][0], handMatrix_.m[3][1], handMatrix_.m[3][2]);
+    Quaternion handRot = Quaternion::GetRotation(handMatrix_);
+    handRot.Normalize();
 
-    if (isAttacking_) // 攻撃時
-    {
-        // 剣を縦向きにするための回転 (Z軸周りに-90度: モデルを縦に起こす)
-        Quaternion verticalRotation = Quaternion::Axis(VGet(0.0f, 0.0f, 1.0f), Utility::Deg2RadF(-90.0f));
+    // 3. 【重要】手に対するローカルオフセットを設定
+    // VGet(右, 上, 前) です。ここの数値を調整して「握り位置」を合わせます。
+    // 手のひらから少し上に上げたい場合は Y を増やします。
+    VECTOR localOffset = POSITION_OFFSET_Y;
 
-        // 剣のデフォルトの傾き（X軸周り: SWORD_TILT_ANGLE = 30.0f）
-        Quaternion tiltRotation = Quaternion::Axis(VGet(1.0f, 0.0f, 0.0f), Utility::Deg2RadF(SWORD_TILT_ANGLE));
+    // 4. ローカルオフセットを手の回転に合わせて変換
+    // これにより、手が横を向いていても「手にとっての上」に計算されます
+    VECTOR worldOffset = handRot.PosAxis(localOffset);
 
-        // ローカル回転は「縦向き」と「傾き」を合成
-        // Z軸回転 * X軸回転 の順序で合成します。
-        // ※Quaternion::Axis()とoperator*()が実装されている前提です。
-        trans_.quaRotLocal = verticalRotation * tiltRotation;
-    }
-    else // 通常時
-    {
-        // 剣を縦向きにするための回転 (Z軸周りに-90度: モデルを縦に起こす)
-        Quaternion verticalRotation = Quaternion::Axis(VGet(0.0f, 0.0f, 1.0f), Utility::Deg2RadF(-90.0f));
+    // 5. 最終的な座標を適用
+    trans_.pos = VAdd(handPos, worldOffset);
 
-        // 剣のデフォルトの傾き（X軸周り: SWORD_TILT_ANGLE = 30.0f）
-        Quaternion tiltRotation = Quaternion::Axis(VGet(1.0f, 0.0f, 0.0f), Utility::Deg2RadF(SWORD_TILT_ANGLE));
+    // 6. 回転の適用（前回同様）
+    trans_.quaRot = handRot;
 
-        // ローカル回転は「縦向き」と「傾き」を合成
-        // Z軸回転 * X軸回転 の順序で合成します。
-        // ※Quaternion::Axis()とoperator*()が実装されている前提です。
-        trans_.quaRotLocal = verticalRotation * tiltRotation;
-    }
+    // 剣を握っている角度の微調整（モデルに合わせて X, Y, Z を調整）
+    Quaternion adjust = Quaternion::Axis(VGet(1.0f, 0.0f, 0.0f), Utility::Deg2RadF(90.0f));
+    trans_.quaRotLocal = adjust;
 
-    // UnitBaseの更新（コライダ更新など）
     UnitBase::Update();
 }
 
@@ -166,26 +162,12 @@ bool Sword::IsAttacking(void) const
 // コライダーの初期化
 void Sword::InitCollider(void)
 {
-    // カプセルコライダの作成
-    // ローカル座標で剣の刃の部分を指定 
-
-    // 剣の柄の位置（基準点から少し下、Z方向に傾ける）
-    VECTOR localStart = VGet(0.0f, -10.0f, -35.0f);
-
-    // 剣の先端位置（基準点から上方向、Z方向に傾ける）
-    VECTOR localEnd = VGet(0.0f, 90.0f, -65.0f);
+    VECTOR localStart = CAPSULE_STATE_POS;
+    // Y ではなく X に数値を入れる
+    VECTOR localEnd = CAPSULE_END_POS;
 
     ColliderCapsule* colCapsule = new ColliderCapsule(
-        ColliderBase::TAG::SWORD,
-        &trans_,
-        localStart,
-        localEnd,
-        CAPSULE_RADIUS
+        ColliderBase::TAG::SWORD, &trans_, localStart, localEnd, CAPSULE_RADIUS
     );
-
-    ownColliders_.emplace(
-        static_cast<int>(COLLIDER_TYPE::CAPSULE),
-        colCapsule
-    );
-
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::CAPSULE), colCapsule);
 }

@@ -44,6 +44,9 @@ void ResourceManager::Init(void)
 	// 決定音
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_130310");
 	resourcesMap_.emplace(SRC::SE_PUSH, res);
+
+	// チュートリアルシーン用リソースの初期化
+	InitTutorial();
 }
 // タイトルシーン用リソースの初期化
 void ResourceManager::InitTitle(void)
@@ -106,12 +109,34 @@ void ResourceManager::InitGameClear(void)
 	Resource res;
 
 	// ゲームクリアロゴ画像を登録
-	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "score.png");
 	resourcesMap_.emplace(SRC::GAMECLERA_LOGO, res);
 
 	// BGM登録
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1528820.mp3");
 	resourcesMap_.emplace(SRC::BGM_SCORE, res);
+
+	// 背景映像
+	res = Resource(Resource::TYPE::IMG, Application::PATH_MOVIE + "BgMovie.mp4");
+	resourcesMap_.emplace(SRC::BG_MOVIE, res);
+}
+
+// チュートリアルシーン用リソースの初期化
+void ResourceManager::InitTutorial(void)
+{
+	Resource res;
+
+	// チュートリアル画像1
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tutorial1.png");
+	resourcesMap_.emplace(SRC::IMG_TUTORIAL_1, res);
+
+	// チュートリアル画像2
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tutorial2.png");
+	resourcesMap_.emplace(SRC::IMG_TUTORIAL_2, res);
+
+	// チュートリアル画像3
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tutorial3.png");
+	resourcesMap_.emplace(SRC::IMG_TUTORIAL_3, res);
 }
 
 
@@ -132,7 +157,7 @@ void ResourceManager::ResourcePlayer(void)
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/glide.mv1");
 	resourcesMap_.emplace(SRC::MODEL_GLIDER, res);
 
-	// プレイヤーの歩くアニメーション
+	// プレイヤーの待機アニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_IDEL, res);
 
@@ -163,6 +188,22 @@ void ResourceManager::ResourcePlayer(void)
 	// レベルアップのエフェクト
 	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "LevelUp/levelUp.efkefc");
 	resourcesMap_.emplace(SRC::EFFECT_LEVER_UP, res);
+
+	// 火のスキルアイコン
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "fire.png");
+	resourcesMap_.emplace(SRC::IMG_FIRE_SUKILL, res);
+
+	// 火のスキルアイコン(クールダウン中)
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "fireCool.png");
+	resourcesMap_.emplace(SRC::IMG_FIRE_SUKILL_CD, res);
+
+	// 水のスキルアイコン
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "water.png");
+	resourcesMap_.emplace(SRC::IMG_WATER_SUKILL, res);
+
+	// 水のスキルアイコン(クールダウン中)
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "waterCool.png");
+	resourcesMap_.emplace(SRC::IMG_WATER_SUKILL_CD, res);
 }
 
 // 敵用リソース初期化
@@ -172,6 +213,9 @@ void ResourceManager::ResourceEnemy(void)
 
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Enemy/sulim.mv1");
 	resourcesMap_.emplace(SRC::MODEL_SLIME, res);
+
+	// 凍結エフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "")
 }
 
 // 全リソースの解放処理

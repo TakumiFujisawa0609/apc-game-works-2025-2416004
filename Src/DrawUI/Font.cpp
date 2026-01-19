@@ -60,39 +60,38 @@ void Font::Init(void)
 //フォントの追加
 bool Font::AddFont(const std::string& fontId, const std::string& internalFontName, const std::string& fontPath, int fontSize, int fontWeight, int fontType)
 {
-	int fontFileSize = FileRead_size(fontPath.c_str());
-	int fontFileHandle = FileRead_open(fontPath.c_str());
+	// 1. フォントファイルをシステムに一時登録する
+	// これを行わないと、ファイルパスがあっても「内部フォント名」で作成できない場合があります
+	if (fontPath != "") {
+		if (AddFontResourceEx(fontPath.c_str(), FR_PRIVATE, NULL) > 0) {
+			// 登録成功（OSがinternalFontNameを認識できる状態になった）
+		}
+		else {
+			// ファイルからの読み込み失敗
+			return false;
+		}
+	}
 
-	if (fontFileSize <= 0 || fontFileHandle == -1)
+	// 2. フォントハンドルの作成
+	// 日本語名が含まれても良いように、DXライブラリの文字コード設定に準拠
+	int handle = CreateFontToHandle(internalFontName.c_str(), fontSize, fontWeight, fontType);
+
+	if (handle == -1)
 	{
-		OutputDebugString("フォントファイルが見つかりません\n");
 		return false;
 	}
 
-	void* buffer = new char[fontFileSize];
-	FileRead_read(buffer, fontFileSize, fontFileHandle);
-	FileRead_close(fontFileHandle);
+	// マップに保存
+	fontHandles_[fontId][{fontSize, fontType}] = handle;
 
-	DWORD fontNum = 0;
-	if (AddFontMemResourceEx(buffer, fontFileSize, NULL, &fontNum) == 0)
+	// デフォルトフォントが空なら設定
+	if (defaultFont_ == "")
 	{
-		OutputDebugString("AddFontMemResourceEx 失敗\n");
-		delete[] buffer;
-		return false;
+		defaultFont_ = fontId;
 	}
 
-	delete[] buffer;
-
-	fontNameMap_[fontId] = internalFontName;
-
-	int fontHandle = CreateFontToHandle(internalFontName.c_str(), fontSize, fontWeight, fontType);
-	if (fontHandle == -1)
-	{
-		OutputDebugString("フォントハンドル作成失敗\n");
-		return false;
-	}
-
-	fontHandles_[fontId][std::make_pair(fontSize, fontType)] = fontHandle;
+	// 内部で使用する名前を保存（動的生成用）
+	fontIdToInternalName_[fontId] = internalFontName;
 
 	return true;
 }

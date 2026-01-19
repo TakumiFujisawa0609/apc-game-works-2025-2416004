@@ -28,6 +28,9 @@ public:
         WATER,       // 水のエフェクト
         BLAST,       // 爆発エフェクト
         FREEZE,      // 凍結エフェクト
+        FIRE_BURN,   // やけどエフェクト
+        WET,         // 湿潤エフェクト
+        AMMONIUM,    // 硝酸アンモニウムエフェクト
         LEVER_UP     // レベルアップエフェクト
     };
 

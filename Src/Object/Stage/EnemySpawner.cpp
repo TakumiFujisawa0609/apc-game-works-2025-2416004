@@ -1,9 +1,13 @@
 #include "EnemySpawner.h"
 #include "../../Utility/Utility.h"
+#include "../../Collider/ColliderModel.h"
+#include "../../Manager/System/CollisionController.h"
+#include "../../Collider/ColliderLine.h"
 
 // コンストラクタ
 EnemySpawner::EnemySpawner(const VECTOR& position, float spawnRange, const std::string& enemyType)
-    : position_(position)
+    : UnitBase()
+    , position_(position)
     , spawnRange_(spawnRange)
     , enemyType_(enemyType)
     , spawnInterval_(5.0f)
@@ -16,23 +20,61 @@ EnemySpawner::EnemySpawner(const VECTOR& position, float spawnRange, const std::
     , enemyLevel_(1)
     , modelId_(-1)
 {
+    trans_.pos = position;
+    trans_.scl = VGet(6.0f, 6.0f, 6.0f);
 }
 
-// 更新処理
+void EnemySpawner::Init(void)
+{
+    UnitBase::Init();
+
+    trans_.Update();
+
+    InitCollider();
+
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
+}
+
+void EnemySpawner::InitCollider(void)
+{
+    // 地面判定用のラインコライダー
+    ColliderLine* colLine = new ColliderLine(
+        ColliderBase::TAG::STAGE,
+        &trans_,
+        COL_LINE_START_LOCAL_POS,
+        COL_LINE_END_LOCAL_POS
+    );
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::LINE), colLine);
+
+    // モデルコライダーを追加（プレイヤーの押し返し用）
+    ColliderModel* colModel = new ColliderModel(ColliderBase::TAG::STAGE, &trans_);
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::MODEL), colModel);
+}
+
+void EnemySpawner::Update(void)
+{
+    if (!isActive_) return;
+
+    // 地面判定もUnitBase::Collision()で自動的に行われる
+    UnitBase::Update();
+}
+
+// 更新処理（deltaTime版）
 void EnemySpawner::Update(float deltaTime)
 {
     if (!isActive_) return;
 
-    // スポーンタイマーを進める
     spawnTimer_ += deltaTime;
+
+    Update();
 }
 
 // 描画処理（デバッグ用）
 void EnemySpawner::Draw(void) const
 {
-    MV1SetScale(modelId_, VGet(5.0f, 5.0f, 5.0f));
-    MV1SetPosition(modelId_, position_);
-    MV1DrawModel(modelId_);
+    UnitBase::Draw();
+
 #ifdef _DEBUG
     // レベルに応じた色（レベルが高いほど赤く）
     int colorR = 100 + (enemyLevel_ * 15);
@@ -89,7 +131,7 @@ void EnemySpawner::Draw(void) const
         }
     }
 
-    // スポナー情報を画面に表示（★レベル情報を追加）
+    // スポナー情報を画面に表示（レベル情報を追加）
     VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(position_, VGet(0, 50, 0)));
     if (screenPos.z > 0.0f && screenPos.z < 1.0f)
     {
@@ -107,6 +149,18 @@ void EnemySpawner::Draw(void) const
         );
     }
 #endif
+}
+
+void EnemySpawner::Release(void)
+{
+    // CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
+
+    // UnitBaseの解放
+    UnitBase::Release();
+
+    // モデルの解放（ResourceManagerが管理）
+    modelId_ = -1;
 }
 
 // スポーン座標をランダムに生成
@@ -249,7 +303,23 @@ bool EnemySpawner::IsPlayerInRange(const VECTOR& playerPos) const
     return distanceSq <= rangeSq;
 }
 
-void EnemySpawner::SetModelId(int modedlId)
+void EnemySpawner::CalcGravityPow(void)
 {
-    modelId_ = modedlId;
+}
+
+void EnemySpawner::SetModelId(int modelId)
+{
+    modelId_ = modelId;
+    trans_.modelId = modelId;
+    trans_.Update();
+}
+
+void EnemySpawner::OnCollisionEnter(const CollisionInfo& info)
+{
+    // プレイヤーとの衝突処理（必要に応じて実装）
+}
+
+void EnemySpawner::OnCollisionStay(const CollisionInfo& info)
+{
+    // 継続的な衝突処理（必要に応じて実装）
 }

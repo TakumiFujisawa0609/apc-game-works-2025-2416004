@@ -39,6 +39,15 @@ public:
     void SetEnemyPos(const std::vector<VECTOR>& positions);
 
 private:
+
+    // 座標を識別するための構造体
+    struct GridPos {
+        int x, z;
+        bool operator<(const GridPos& other) const {
+            return x < other.x || (x == other.x && z < other.z);
+        }
+    };
+
     // 地面の最大数
     static constexpr int TILE_COUNT = 160;
 
@@ -50,6 +59,13 @@ private:
 
     // 登録範囲の二乗
     static constexpr float REGISTER_RANGE_SQ = REGISTER_RANGE * REGISTER_RANGE;
+
+
+    // 生成・削除を判定する距離（描画距離より少し長めに設定）
+    static constexpr float SPAWN_RANGE = 12000.0f;
+
+    // 現在生成されているタイル（座標 -> インスタンス）
+    std::map<GridPos, std::shared_ptr<Ground>> activeGrounds_;
 
     // 地面部品
     std::vector<std::shared_ptr<Ground>> grounds_;

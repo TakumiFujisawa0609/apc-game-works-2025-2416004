@@ -12,7 +12,9 @@
 #include "../Object/Enemy/EnemyData.h"
 #include "../Object/Stage/SkyDome.h"
 #include "../Scene/SceneScore.h"
+#include "../Scene/SceneTutorial.h"
 #include "../Manager/System/Loading.h"
+#include "../DrawUI/Font.h"
 
 // コンストラクタ
 SceneGame::SceneGame(void)
@@ -128,6 +130,12 @@ void SceneGame::Init()
 
 	// エネミースポナーの配置設定
 	SetupEnemySpawners();
+
+	// サウンド再生
+	SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_GAME);
+
+	// チュートリアルシーンを挟む
+	SceneManager::GetInstance().PushScene(std::make_shared<SceneTutorial>());
 }
 
 // エネミースポナーの配置設定
@@ -226,30 +234,45 @@ void SceneGame::Update(void)
 	groundManager_->SetEnemyPos(enemyManager_->GetAllEnemyPositions());
 }
 
-// 描画処理
 void SceneGame::Draw(void)
 {
 	auto camera = SceneManager::GetInstance().GetCamera();
 
-	//ステージの描画
+	// --- 3D描画 ---
 	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVec());
-
-	// スカイドームの描画
 	skyDome_->Draw();
-
-	//プレイヤーの描画
+	stageManager_->Draw(player_->GetPos(), camera->GetFrontVec());
+	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVec());
 	player_->Draw();
 
-	// ステージマネージャーの描画（カリング対応・デバッグ表示）
-	stageManager_->Draw(camera->GetPos(), camera->GetFrontVec());
+	// --- UI描画 (2D) ---
+	auto& font = Font::GetInstance();
+	auto& time = TimeManager::GetInstance();
 
-	// 敵の描画（カリング対応）
-	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVec());
+	// 1. 残り時間の計算
+	float remainingTime = LIMIT_TIME - time.GetGameTime();
+	if (remainingTime < 0.0f) remainingTime = 0.0f;
+
+	// 2. 表示用文字列の作成
+	char timeStr[64];
+	sprintf_s(timeStr, "残り時間: %.1f", remainingTime); // "TIME:" を付けると分かりやすくなります
+
+	// 3. 座標の計算 (右上)
+	int textWidth = font.GetDefaultTextWidth(timeStr);
+
+	// 右端から 40ピクセル 離れた位置に配置
+	int drawX = Application::SCREEN_SIZE_X - textWidth - 240;
+	// 上端から 30ピクセル 離れた位置
+	int drawY = 30;
+
+	// 4. 描画
+	unsigned int timeColor = (remainingTime <= 5.0f) ? GetColor(255, 50, 50) : GetColor(255, 255, 255);
+
+	font.DrawDefaultText(drawX, drawY, timeStr, timeColor, 40, Font::FONT_TYPE_ANTIALIASING_EDGE);
 
 #ifdef _DEBUG
-	//デバック表示
-	DrawDebug();
-#endif // _DEBUG
+	// デバッグ情報など
+#endif
 }
 
 // 解放処理

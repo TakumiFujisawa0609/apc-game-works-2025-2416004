@@ -33,6 +33,10 @@ private:
     int killScore_;             // 撃破スコア
     int totalScore_;            // 合計スコア
 
+    // スコア描画用背景
+    int bgHandle_;              // スコア背景画像ハンドル
+    int bgMovieId_;             // 背景映像
+
     // スコア計算用の定数
     static constexpr float DISTANCE_SCORE_RATE = 0.1f;  // 1mあたり10点
     static constexpr int KILL_SCORE_RATE = 100;          // 1体あたり100点

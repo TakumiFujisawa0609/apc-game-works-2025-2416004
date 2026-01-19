@@ -76,6 +76,8 @@ public:
 	bool IsTeleportUIActive(void) const;
 	ActiveUI GetActiveUI(void) const;
 
+	PauseMenu* GetPauseMenu(void) const { return pauseMenu_; }
+
 private:
 
 	//性的インスタンス

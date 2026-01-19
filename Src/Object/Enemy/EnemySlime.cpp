@@ -33,28 +33,26 @@ void EnemySlime::Init(const VECTOR& startPos)
 // コライダのオフセットを更新
 void EnemySlime::UpdateColliderOffset(void)
 {
+    // 既存の球体コライダーを探す
     auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::SPHERE));
     if (it != ownColliders_.end())
     {
-        ColliderSphere* sphere = dynamic_cast<ColliderSphere*>(it->second);
-        if (sphere)
-        {
-            delete sphere;
-            ownColliders_.erase(it);
-
-            VECTOR newOffset = VGet(0.0f, 30.0f, 0.0f);
-            ColliderSphere* newSphere = new ColliderSphere(
-                ColliderBase::TAG::ENEMY,
-                &trans_,
-                newOffset,
-                radius_
-            );
-            ownColliders_.emplace(
-                static_cast<int>(COLLIDER_TYPE::SPHERE),
-                newSphere
-            );
-        }
+        // 一旦削除して作り直す（または座標更新関数があればそれを使う）
+        delete it->second;
+        ownColliders_.erase(it);
     }
+
+    // 新しいオフセット位置（0, COLLISION_HEIGHT_OFFSET, 0）でコライダーを作成
+    // VGet の 2番目の引数（Y座標）にオフセットを入れます
+    ColliderSphere* sphere = new ColliderSphere(
+        ColliderBase::TAG::ENEMY,              // 自分のタグ
+        &trans_,                               // Transformへのポインタ
+        VGet(0.0f, COLLISION_HEIGHT_OFFSET, 0.0f), // ここで上に上げる
+        radius_                                // 半径
+    );
+
+    // コライダーリストに再登録
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::SPHERE), sphere);
 }
 
 // 追従対象

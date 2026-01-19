@@ -106,13 +106,10 @@ void StageManager::Draw(void) const
 }
 
 // 描画処理（カリング対応）
-// StageManager.cpp の StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const 関数全体
-
 void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
 {
-    // カリング設定
-    const float cullDistance = 5000.0f;
-    const float viewAngleCos = cosf(Utility::Deg2RadF(100.0f));
+    // カリング距離を大きくする
+    const float cullDistance = 10000.0f;  // プレイヤーから10000.0f以上離れたら非表示
 
     // カウンタの初期化 (デバッグ情報用)
     int drawnTowers = 0;
@@ -122,10 +119,13 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
     {
         if (!tower) continue;
 
-        VECTOR towerPos = tower->GetPos(); // UnitBase::GetPos()を使用
-        VECTOR toTower = VSub(towerPos, cameraPos);
+        VECTOR towerPos = tower->GetPos();
 
+        //プレイヤー位置（camearPos）からの距離をXZ平面のみで計算（高さを無視）
+        VECTOR toTower = VSub(towerPos, cameraPos);
+        toTower.y = 0.0f;  // Y軸を無視して水平距離のみ計算
         float distSq = VSquareSize(toTower);
+        float dist = sqrtf(distSq);
 
         // 距離カリング
         if (distSq > cullDistance * cullDistance)
@@ -134,45 +134,26 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
             continue;
         }
 
-        // 視野カリング
-        if (distSq > 100.0f)
-        {
-            // ★【重要修正】カメラからタワーへのベクトル (toTower) を正規化する
-            // 以前の VNorm(towerPos) はタワーのワールド座標を正規化しており、誤りでした。
-            VECTOR toTowerNorm = VNorm(toTower);
-            float dot = VDot(cameraDir, toTowerNorm);
-
-            if (dot < viewAngleCos)
-            {
-                culledTowers++;
-                continue;
-            }
-        }
-
         // 描画
         tower->Draw();
         drawnTowers++;
 
-        // ----------------------------------------------------
-        // ★【追加】タワー位置のデバッグ描画
-        // ----------------------------------------------------
 #ifdef _DEBUG
-        // タワー位置に円を描画（スポナーと区別するため、緑色の球体: 半径50.0f）
+        // タワー位置に緑色の球体を描画
         DrawSphere3D(towerPos, 50.0f, 8, GetColor(0, 200, 50), GetColor(0, 255, 0), TRUE);
+
+        // 最も近いタワーの距離を表示
+        static float nearestDist = FLT_MAX;
+        if (dist < nearestDist)
+        {
+            nearestDist = dist;
+        }
 #endif
-        // ----------------------------------------------------
     }
 
 #ifdef _DEBUG
-    // 既存のスポナーデバッグ表示の前に、タワーのデバッグ情報を追加
-
-    printfDx("=== Tower Debug Info ===\n");
-    printfDx("Total Towers: %d, Drawn: %d, Culled: %d\n", (int)towers_.size(), drawnTowers, culledTowers);
-    printfDx("------------------------\n");
 
     // スポナー位置を可視化（カリング適用）
-    // NOTE: 元のコードで culledSpawners の初期化がこのブロックの外にあるため、
-    // ここで一旦初期化し直します（または既存のスポナーコードから drawnSpawners/culledSpawners の初期化を削除）。
     int drawnSpawners = 0;
     int culledSpawners = 0;
 
@@ -180,7 +161,9 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
     {
         const auto& info = pair.second;
 
+        // プレイヤー位置からの距離をXZ平面のみで計算（高さを無視）
         VECTOR toSpawner = VSub(info.gridPos, cameraPos);
+        toSpawner.y = 0.0f;  // Y軸を無視して水平距離のみ計算
         float distSq = VSquareSize(toSpawner);
 
         // 距離カリング
@@ -188,20 +171,6 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
         {
             culledSpawners++;
             continue;
-        }
-
-        // 視野カリング
-        if (distSq > 100.0f)
-        {
-            // スポナーの視野カリングは toSpawner を正規化しており、ロジックは正しい
-            VECTOR toSpawnerNorm = VNorm(toSpawner);
-            float dot = VDot(cameraDir, toSpawnerNorm);
-
-            if (dot < viewAngleCos)
-            {
-                culledSpawners++;
-                continue;
-            }
         }
 
         // 描画
@@ -218,10 +187,6 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
 
         drawnSpawners++;
     }
-
-    printfDx("=== Spawner Debug Info ===\n");
-    printfDx("Total Spawners: %d, Drawn: %d, Culled: %d\n", (int)spawners_.size(), drawnSpawners, culledSpawners);
-    printfDx("--------------------------\n");
 
 #endif // _DEBUG
 }
@@ -317,8 +282,11 @@ std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& cent
 
             // 実際の距離チェック
             VECTOR gridWorldPos = GridToWorld(gridX, gridZ);
-            VECTOR diff = VSub(gridWorldPos, centerPos);
-            float distSq = VSquareSize(diff);
+
+            float dx_val = gridWorldPos.x - centerPos.x;
+            float dz_val = gridWorldPos.z - centerPos.z;
+
+            float distSq = (dx_val * dx_val) + (dz_val * dz_val);
 
             if (distSq <= range * range)
             {
@@ -515,7 +483,7 @@ void StageManager::CreateTower(int gridX, int gridZ)
         return;
     }
 
-    // ★【修正】ワールド座標を計算（オフセット適用）
+    // ワールド座標を計算（オフセット適用）
     // 元のグリッド座標からワールド座標を取得
     VECTOR baseWorldPos = GridToWorld(gridX, gridZ);
 
@@ -529,10 +497,12 @@ void StageManager::CreateTower(int gridX, int gridZ)
     // タワーを生成
     auto tower = std::make_unique<Tower>(worldPos);
 
-    // モデルIDを設定
-    tower->Load(towerModelId_);
-    tower->Init();
+    // マスターの towerModelId_ から「自分専用」をさらに複製する
+    int myModelId = MV1DuplicateModel(towerModelId_);
 
+    // 自分専用のIDを渡す
+    tower->Load(myModelId);
+    tower->Init();
     // リストに追加
     int towerIndex = static_cast<int>(towers_.size());
     towers_.push_back(std::move(tower));
@@ -544,8 +514,6 @@ void StageManager::CreateTower(int gridX, int gridZ)
     placedTowers_[key] = info;
 
 #ifdef _DEBUG
-    printfDx("Tower created at Grid(%d, %d) -> World(%.1f, %.1f, %.1f)\n",
-        gridX, gridZ, worldPos.x, worldPos.y, worldPos.z);
 #endif
 }
 

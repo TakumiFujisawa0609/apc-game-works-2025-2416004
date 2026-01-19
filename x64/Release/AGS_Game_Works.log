@@ -1,24 +1,92 @@
-﻿  Player.cpp
+﻿  pch.cpp
+  SceneTutorial.cpp
+  Glider.cpp
+  FireAttack.cpp
+  SkyDome.cpp
+  EnemySpawner.cpp
+  DamageManager.cpp
+  CollisionController.cpp
+  ColliderModel.cpp
+  ColliderCapsule.cpp
+  ColliderSphere.cpp
+  ColliderLine.cpp
+  ColliderBase.cpp
+  FpsController.cpp
+  EnemyData.cpp
+  EnemyManager.cpp
+  EnemySlime.cpp
+  EnemyBase.cpp
+  GroundManager.cpp
+  Ground.cpp
+  Loading.cpp
+  SceneUi.cpp
+  Application.cpp
+  Easing.cpp
+  IntVector3.cpp
+  Quaternion.cpp
+  Vector2.cpp
+  Font.cpp
+  PauseMenu.cpp
+  main.cpp
+  EffectManager.cpp
+  SoundManager.cpp
+  Camera.cpp
+  InputManager.cpp
+  Resource.cpp
+  ResourceManager.cpp
+  SceneManager.cpp
+  DateTimeManager.cpp
+  TimeManager.cpp
+  AnimationController.cpp
+  Transform.cpp
+  Grid.cpp
+  Player.cpp
+  UnitBase.cpp
+  SceneBase.cpp
+  SceneGame.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(84,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  SceneScore.cpp
+  (compiling source file '/Src/Object/Common/AnimationController.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(179,40): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/DrawUI/Font.cpp')
+  
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\Font.cpp(179,37): warning C4244: '引数': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (compiling source file '/Src/DrawUI/Font.cpp')
+  
+  SceneTitle.cpp
+D:\AGSdeta\AGS_Game_Works\Src\DrawUI\SceneUI\PauseMenu.cpp(117,65): warning C4267: '=': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
+  (compiling source file '/Src/DrawUI/SceneUI/PauseMenu.cpp')
+  
+  Utility.cpp
   Sword.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.cpp(481,28): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (compiling source file '/Src/Object/Common/AnimationController.cpp')
+  
+  StageManager.cpp
+  WaterAttack.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(84,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (compiling source file '/Src/Object/UnitBase.cpp')
+  
+  Tower.cpp
 D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(84,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
   (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(41,17): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(42,17): warning C4244: '初期化中': 'int' から 'float' への変換です。データが失われる可能性があります。
   (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(243,56): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(253,56): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(247,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(257,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (compiling source file '/Src/Object/Player/Player.cpp')
   
-D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(815,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(970,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
   (compiling source file '/Src/Object/Player/Player.cpp')
   
   コード生成しています。
-  20 of 5002 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    17 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB not found, fall back to full compilation.
+  All 5257 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   コード生成が終了しました。
 EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj) : warning LNK4099: PDB 'EffekseerForDXLib_vs2019_x64.pdb' が 'EffekseerForDXLib_vs2019_x64.lib(EffekseerForDXLib.obj)' で、または 'D:\AGSdeta\AGS_Game_Works\x64\Release\EffekseerForDXLib_vs2019_x64.pdb' に見つかりません。デバッグ情報がないものとして、オブジェクトにリンクします。
   AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Release\AGS_Game_Works.exe

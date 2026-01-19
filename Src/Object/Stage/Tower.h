@@ -2,6 +2,7 @@
 #pragma once
 
 #include "../UnitBase.h"
+#include "../../Manager/System/CollisionController.h"
 
 // タワー固有のデータ
 struct TowerData
@@ -27,7 +28,7 @@ public:
     virtual void Init(void) override;
 
     // 更新処理
-    virtual void Update(void) override; // ★ 修正箇所
+    virtual void Update(void) override;
 
     // 描画処理 (モデル描画を実装)
     virtual void Draw(void) const override;
@@ -44,15 +45,19 @@ public:
     // 地面との接触フラグを取得
     bool IsGround(void) const { return isGround_; }
 
-protected:
-    // 衝突イベントのオーバーライド
-    virtual void OnCollisionEnter(const CollisionInfo& info) override;
-    virtual void OnCollisionStay(const CollisionInfo& info) override;
+    void CalcGravityPow(void) override;
 
+protected:
+
+    // 衝突開始
+    void OnCollisionEnter(const CollisionInfo& info) override;
+
+    // 衝突継続
+    void OnCollisionStay(const CollisionInfo& info) override;
 private:
 
     // コライダー関連
-    static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 100.0f, 0.0f };  // ラインライダー開始位置
+    static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 1000.0f, 0.0f };  // ラインライダー開始位置
     static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };  // ラインコライダー終了位置
 
     TowerData data_;

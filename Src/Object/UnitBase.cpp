@@ -57,6 +57,7 @@ void UnitBase::Load(void)
 
 void UnitBase::Init(void)
 {
+
 }
 
 // 更新処理
@@ -365,7 +366,7 @@ void UnitBase::CollisionGravity(void)
 				continue;
 			}
 
-			// ★最もY座標が高い衝突点を採用
+			// 最もY座標が高い衝突点を採用
 			if (hit.HitPosition.y > maxY)
 			{
 				maxY = hit.HitPosition.y;
@@ -379,7 +380,7 @@ void UnitBase::CollisionGravity(void)
 
 		if (isGrounded)
 		{
-			// ★【追加】ジャンプ上昇中は地面判定を無視
+			// ジャンプ上昇中は地面判定を無視
 			if (jumpPow_.y > 0.1f)
 			{
 				continue;
@@ -391,8 +392,7 @@ void UnitBase::CollisionGravity(void)
 			// ジャンプリセット
 			jumpPow_ = Utility::VECTOR_ZERO;
 
-			// ★【追加】地面フラグを立てる（Playerクラスで使用）
-			// ※UnitBaseにはisGround_が無いため、派生クラスで設定する必要がある
+			// 地面フラグを立てる（Playerクラスで使用)
 		}
 	}
 }
@@ -421,13 +421,14 @@ void UnitBase::CollisionSphereVsSphere(void)
 
 		if (hitSphere == nullptr) continue;
 
-		// 同じタグ同士の判定条件
-		bool isSameTag = (hitCol->GetTag() == mySphere->GetTag());
-		bool isEnemyVsEnemy = (mySphere->GetTag() == ColliderBase::TAG::ENEMY &&
-			hitSphere->GetTag() == ColliderBase::TAG::ENEMY);
+		// タグを取得
+		ColliderBase::TAG myTag = mySphere->GetTag();
+		ColliderBase::TAG hitTag = hitSphere->GetTag();
 
-		// 同じタグかつENEMY同士でない場合はスキップ
-		if (isSameTag && !isEnemyVsEnemy) continue;
+		// 攻撃判定かどうかを先にチェック
+		bool isAttackTag = (hitTag == ColliderBase::TAG::FIRE_ATTACK ||
+			hitTag == ColliderBase::TAG::WATER_ATTACK ||
+			hitTag == ColliderBase::TAG::SWORD);
 
 		// 球体同士の衝突判定
 		VECTOR myPos = mySphere->GetPos();
@@ -439,6 +440,7 @@ void UnitBase::CollisionSphereVsSphere(void)
 		float distSq = VDot(diff, diff);
 		float radiusSum = myRadius + hitRadius;
 
+		// 衝突判定
 		if (distSq < radiusSum * radiusSum && distSq > 0.0001f)
 		{
 			// 衝突している
@@ -455,44 +457,58 @@ void UnitBase::CollisionSphereVsSphere(void)
 			info.penetration = penetration;
 			info.isValid = true;
 
-			// ★【変更点】相手が攻撃（火・水・剣）かどうかを判定
-			bool isAttack = (hitCol->GetTag() == ColliderBase::TAG::FIRE_ATTACK ||
-				hitCol->GetTag() == ColliderBase::TAG::WATER_ATTACK ||
-				hitCol->GetTag() == ColliderBase::TAG::SWORD);
-
-			if (isAttack)
+			// ★攻撃判定の場合：押し出し処理なし、OnCollisionEnterのみ
+			if (isAttackTag)
 			{
-				// ★攻撃の場合：押し出し処理（座標移動）はしない！
-				// EnemyBaseがオーバーライドしている OnCollisionEnter を呼ぶ
 				OnCollisionEnter(info);
 			}
+			// ★物理押し出し処理
 			else
 			{
-				// ★物理衝突（敵同士など）の場合：押し出し処理を行う
+				// 同じタグの場合
+				bool isSameTag = (myTag == hitTag);
 
-				// ENEMY同士の場合は水平方向のみ押し出し
-				if (isEnemyVsEnemy)
+				if (isSameTag)
 				{
-					// 水平方向の押し出しベクトル
-					VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
-					float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
-
-					if (pushLen > 0.0001f)
+					// ENEMY同士のみ処理（水平方向のみ押し出し）
+					if (myTag == ColliderBase::TAG::ENEMY)
 					{
-						// 正規化して押し出し量を適用
-						pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
-						trans_.pos = VSub(trans_.pos, pushVec);
+						VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
+						float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
+
+						if (pushLen > 0.0001f)
+						{
+							pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
+							trans_.pos = VSub(trans_.pos, pushVec);
+						}
+
+						OnCollisionStay(info);
 					}
+					// それ以外の同タグはスキップ
 				}
+				// 異なるタグの場合
 				else
 				{
-					// それ以外は通常の押し出し（全方向）
-					VECTOR pushVec = VScale(normal, penetration * 0.5f);
-					trans_.pos = VSub(trans_.pos, pushVec);
-				}
+					// プレイヤー vs 敵の押し出し（水平方向のみ）
+					bool isPlayerVsEnemy =
+						(myTag == ColliderBase::TAG::PLAYER && hitTag == ColliderBase::TAG::ENEMY) ||
+						(myTag == ColliderBase::TAG::ENEMY && hitTag == ColliderBase::TAG::PLAYER);
 
-				// 物理衝突時は Stay を呼ぶ（既存のまま）
-				OnCollisionStay(info);
+					if (isPlayerVsEnemy)
+					{
+						// 水平方向のみ押し出し
+						VECTOR pushVec = VGet(normal.x, 0.0f, normal.z);
+						float pushLen = sqrtf(pushVec.x * pushVec.x + pushVec.z * pushVec.z);
+
+						if (pushLen > 0.0001f)
+						{
+							pushVec = VScale(pushVec, (penetration * 0.5f) / pushLen);
+							trans_.pos = VSub(trans_.pos, pushVec);
+						}
+
+						OnCollisionStay(info);
+					}
+				}
 			}
 		}
 	}
@@ -522,7 +538,7 @@ void UnitBase::CollisionWithEnemy(void)
 	// 登録されている衝突物を全てチェック
 	for (const auto& hitCol : hitColliders_)
 	{
-		// ★修正：火・水攻撃はENEMYタグのみチェック
+		// 火・水攻撃はENEMYタグのみチェック
 		if (myCol->GetTag() == ColliderBase::TAG::FIRE_ATTACK ||
 			myCol->GetTag() == ColliderBase::TAG::WATER_ATTACK)
 		{
@@ -616,6 +632,25 @@ void UnitBase::CollisionWithEnemy(void)
 		if (isHit)
 		{
 			OnCollisionEnter(info);
+
+			if (myCol->GetTag() == ColliderBase::TAG::ENEMY && hitCol->GetTag() == ColliderBase::TAG::PLAYER)
+			{
+				// info.hitNormal が「EnemyからPlayer」への向きになっている場合、
+				// Enemyを戻すには「PlayerからEnemy」への向き（逆向き）に動かす必要があります。
+
+				VECTOR pushVec = VGet(info.hitNormal.x, 0.0f, info.hitNormal.z);
+				float pushLen = VSize(pushVec);
+
+				if (pushLen > 0.0001f)
+				{
+					// VSub ではなく VAdd にするか、法線を反転させる
+					// ここでは VAdd を使い、めり込み分だけ「外側」へ戻るようにします
+					VECTOR finalPush = VScale(pushVec, info.penetration / pushLen);
+
+					// もし反対側に飛ぶなら、ここを VAdd と VSub で入れ替えて試してください
+					trans_.pos = VAdd(trans_.pos, finalPush);
+				}
+			}
 		}
 	}
 }

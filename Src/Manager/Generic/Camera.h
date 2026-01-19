@@ -3,6 +3,7 @@
 #include "../../Object/UnitBase.h"
 
 class Transform;
+class PauseMenu;
 
 class Camera : public UnitBase
 {
@@ -158,6 +159,7 @@ private:
     // 最低カメラ高度
     static constexpr float MIN_CAMERA_Y = 20.0f;
 
+    PauseMenu* pauseMenu_;
     // モード
     MODE mode_;
 

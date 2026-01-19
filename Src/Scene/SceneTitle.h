@@ -27,8 +27,7 @@ public:
 private:
     Grid* grid_;
 
-    std::unique_ptr<SceneUi> uiMain_;      // メインメニュー
-    std::unique_ptr<SceneUi> uiHowToPlay_; // 遊び方サブメニュー
+    std::unique_ptr<SceneUi> uiMain_;
 
 
     int logo_;
@@ -43,7 +42,6 @@ private:
     int guildHandle_;
     int gardenHandle_;
 
-    bool inHowToPlayMenu_;
     bool isDecided_;
     bool showBlackBackground_;
     bool exitRequested_;

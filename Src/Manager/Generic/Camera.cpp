@@ -7,6 +7,7 @@
 #include "../../Manager/System/CollisionController.h"
 #include "../../Collider/ColliderSphere.h"
 #include "../../Collider/ColliderModel.h"
+#include "../../DrawUI/SceneUI/PauseMenu.h"
 
 // コンストラクタ
 Camera::Camera(void)
@@ -100,6 +101,8 @@ Camera::Camera(void)
 
     // 押し出し前の座標の初期化を追加
     prePos_ = Utility::VECTOR_ZERO;
+
+    pauseMenu_ = Application::GetInstance().GetPauseMenu();
 }
 
 Camera::~Camera(void)
@@ -180,6 +183,7 @@ void Camera::UpdateBeforeCollision(void)
 // 更新処理
 void Camera::Update(void)
 {
+
     // 基底クラスの更新（衝突判定を実行）
     UnitBase::Update();
 
@@ -382,6 +386,7 @@ void Camera::SetBeforeDrawShake(void)
 // マウス自由操作カメラ
 void Camera::SetBeforeDrawFreeMouse(void)
 {
+
     auto& ins = InputManager::GetInstance();
     // マウス座標を取得
     Vector2 mousePos = ins.GetMousePos();
@@ -414,6 +419,23 @@ void Camera::SetBeforeDrawFreeMouse(void)
 // TPSマウス操作カメラ
 void Camera::SetBeforeDrawTPSMouse(void)
 {
+    if (pauseMenu_ != nullptr)
+    {
+        if (pauseMenu_->IsVisible() == true)
+        {
+            return;
+        }
+        else
+        {
+            SetMouseDispFlag(FALSE);
+        }
+    }
+    // もしコンストラクタ時点での取得に失敗している場合を考慮して再取得を試みるのも手です
+    else
+    {
+        pauseMenu_ = Application::GetInstance().GetPauseMenu();
+    }
+
     if (!followTransform_) return;
 
     auto& ins = InputManager::GetInstance();

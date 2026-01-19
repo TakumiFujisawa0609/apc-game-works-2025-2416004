@@ -4,6 +4,7 @@
 #include "../../Collider/ColliderLine.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Manager/Generic/SceneManager.h"
+#include "../../Manager/Decoration/EffectManager.h"
 
 // コンストラクタ
 EnemyBase::EnemyBase(void)
@@ -318,10 +319,8 @@ void EnemyBase::DrawStatusEffect(void) const
     switch (currentStatus_)
     {
     case STATUS_EFFECT::AMMONIUM_NITRATE:
-        // 黄色の粒子エフェクト
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 150);
-        DrawSphere3D(effectPos, radius_ * 0.8f, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), FALSE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
+        EffectManager::GetInstance().Play()
+
         break;
 
     case STATUS_EFFECT::FROZEN:

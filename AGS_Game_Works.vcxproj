@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Scene\SceneTutorial.h" />
     <ClInclude Include="Src\Object\Player\Glider.h" />
     <ClInclude Include="Src\Object\Player\FireAttack.h" />
     <ClInclude Include="Src\Object\Stage\SkyDome.h" />
@@ -213,6 +214,7 @@
     <ClInclude Include="Src\Object\Stage\Tower.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Scene\SceneTutorial.cpp" />
     <ClCompile Include="Src\Object\Player\Glider.cpp" />
     <ClCompile Include="Src\Object\Player\FireAttack.cpp" />
     <ClCompile Include="Src\Object\Stage\SkyDome.cpp" />

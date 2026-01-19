@@ -38,6 +38,9 @@ public:
 	bool IsTimerFinished(const std::string& id) const;
 	void ResetTimer(const std::string& id);
 
+	void SetPaused(bool paused) { isPaused_ = paused; }
+	bool IsPaused() const { return isPaused_; }
+
 private:
 
 	//静的インスタンス
@@ -60,6 +63,8 @@ private:
 
 	//ゲーム内時間の経過時間
 	float gameSpeed_;
+
+	bool isPaused_ = false;
 
 	//前フレームぞ時間
 	std::chrono::steady_clock::time_point prevTime_;

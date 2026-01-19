@@ -241,69 +241,87 @@ std::vector<std::pair<int, VECTOR>> GroundManager::GetNearbyTiles(const VECTOR& 
     return nearbyTiles;
 }
 
-// 更新処理
-void GroundManager::Update(void)
-{
-    // 一定間隔で周辺の地面を再登録
-    static float updateTimer = 0.0f;
-    updateTimer += SceneManager::GetInstance().GetDeltaTime();
+void GroundManager::Update(void) {
+    auto camera = SceneManager::GetInstance().GetCamera();
+    if (!camera) return;
 
-    if (updateTimer >= 0.2f)
-    {
-        updateTimer = 0.0f;
-        RegisterNearbyGrounds();
+    VECTOR camPos = camera->GetPos();
+    VECTOR camDir = camera->GetFrontVec(); // カメラの注視方向
+
+    // 1. プレイヤーやカメラの周囲、一定範囲のグリッドを算出
+    int centerX = static_cast<int>(round(camPos.x / TILE_SIZE));
+    int centerZ = static_cast<int>(round(camPos.z / TILE_SIZE));
+    int radius = static_cast<int>(SPAWN_RANGE / TILE_SIZE);
+
+    std::set<GridPos> requiredIndices;
+
+    for (int z = centerZ - radius; z <= centerZ + radius; ++z) {
+        for (int x = centerX - radius; x <= centerX + radius; ++x) {
+            VECTOR tilePos = VGet(x * TILE_SIZE, 0.0f, z * TILE_SIZE);
+            VECTOR toTile = VSub(tilePos, camPos);
+
+            // 距離チェック
+            if (VSize(toTile) > SPAWN_RANGE) continue;
+
+            // 前方判定（簡易的なカリング：真後ろにあるものは生成しない）
+            float dot = VDot(VNorm(toTile), camDir);
+            if (dot < -0.2f) continue;
+
+            requiredIndices.insert({ x, z });
+        }
+    }
+
+    // 2. 不要なタイルを削除（範囲外になったもの）
+    for (auto it = activeGrounds_.begin(); it != activeGrounds_.end(); ) {
+        if (requiredIndices.find(it->first) == requiredIndices.end()) {
+            // 衝突判定から解除
+            CollisionController::GetInstance().UnregisterUnit(it->second.get());
+            // モデル削除と解放
+            MV1DeleteModel(it->second->GetTransform().modelId);
+            it->second->Release();
+            it = activeGrounds_.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+    // 3. 足りないタイルを生成
+    for (auto& pos : requiredIndices) {
+        if (activeGrounds_.find(pos) == activeGrounds_.end()) {
+            auto ground = std::make_shared<Ground>();
+            int modelId = MV1DuplicateModel(baseModelId_); //
+
+            VECTOR worldPos = VGet(pos.x * TILE_SIZE, 0.0f, pos.z * TILE_SIZE);
+            ground->InitWithoutRegister(worldPos, modelId);
+
+            // 常に衝突判定が必要な範囲なら登録
+            CollisionController::GetInstance().RegisterUnit(ground.get());
+
+            activeGrounds_[pos] = ground;
+        }
     }
 }
 
-// 描画処理
 void GroundManager::Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const VECTOR& cameraDir)
 {
-    // プレイヤーからの描画距離制限
-    const float cullDistance = 10000.0f;
-
-    // 視野80度
-    const float viewAngleCos = cosf(Utility::Deg2RadF(80.0f));
-
-    for (auto& g : grounds_)
+    // 古い grounds_ ではなく、現在アクティブな activeGrounds_ を描画する
+    for (auto& pair : activeGrounds_)
     {
-        VECTOR toGround = VSub(g->GetPos(), centerPos);
+        auto& g = pair.second;
+        if (!g) continue;
 
-        float distSq = VSquareSize(toGround);
+        // すでに Update() の段階で生成範囲（SPAWN_RANGE）や前方判定は行っていますが、
+        // 描画用の細かいカリングが必要であればここで行います。
 
-        // 一定距離外なら描画しない
-        if (distSq > cullDistance * cullDistance) continue;
-
-        // 視野外（カメラ後方）なら描画しない
-        VECTOR toGroundCam = VNorm(VSub(g->GetPos(), cameraPos));
-
-        float dot = VDot(cameraDir, toGroundCam);
-
-        if (dot < viewAngleCos) continue;
-
-        // 表示
+        // 基本的には activeGrounds_ に入っているものは全て描画してOKです
         g->Draw();
     }
 
 #ifdef _DEBUG
-    // 登録済みの地面を赤枠で表示
-    for (auto& g : registeredGrounds_)
-    {
-        VECTOR pos = g->GetPos();
-        VECTOR corners[4] = {
-            VGet(pos.x - TILE_SIZE * 0.5f, pos.y + 5.0f, pos.z - TILE_SIZE * 0.5f),
-            VGet(pos.x + TILE_SIZE * 0.5f, pos.y + 5.0f, pos.z - TILE_SIZE * 0.5f),
-            VGet(pos.x + TILE_SIZE * 0.5f, pos.y + 5.0f, pos.z + TILE_SIZE * 0.5f),
-            VGet(pos.x - TILE_SIZE * 0.5f, pos.y + 5.0f, pos.z + TILE_SIZE * 0.5f),
-        };
-
-        DrawLine3D(corners[0], corners[1], GetColor(255, 0, 0));
-        DrawLine3D(corners[1], corners[2], GetColor(255, 0, 0));
-        DrawLine3D(corners[2], corners[3], GetColor(255, 0, 0));
-        DrawLine3D(corners[3], corners[0], GetColor(255, 0, 0));
+    // デバッグ表示：activeGrounds_ の数を表示するように変更
+    DrawFormatString(10, 200, GetColor(255, 255, 255), "Active Tiles: %d", activeGrounds_.size());
     }
-
-    // デバッグ情報表示
-    DrawFormatString(10, 200, GetColor(255, 255, 255), "Registered Grounds: %d", registeredGrounds_.size());
 #endif
 }
 

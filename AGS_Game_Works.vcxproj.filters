@@ -171,6 +171,9 @@
     <ClInclude Include="Src\Object\Player\Glider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Scene\SceneTutorial.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Src\main.cpp">
@@ -327,6 +330,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Src\Object\Player\Glider.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\SceneTutorial.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

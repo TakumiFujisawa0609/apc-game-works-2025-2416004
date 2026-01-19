@@ -42,7 +42,7 @@ private:
 	static constexpr float VIEW_ANGLE = 60.0f;
 
 	// “–‚½‚è”»’è‚Ì‚‚³
-	static constexpr float COLLISION_HEIGHT_OFFSET = 40.0f;
+	static constexpr float COLLISION_HEIGHT_OFFSET = 100.0f;
 
 	// ˆÚ“®‘¬“x
 	VECTOR targetPos_;

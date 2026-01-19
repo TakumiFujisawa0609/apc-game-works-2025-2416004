@@ -5,6 +5,7 @@
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/Generic/Camera.h"
 #include "../Scene/SceneGame.h"
+#include "../Scene/SceneTutorial.h"
 #include "../Object/Grid.h"
 #include "../Application.h"
 #include "../DrawUI/Font.h"
@@ -28,7 +29,6 @@ SceneTitle::SceneTitle(void)
     atelierHandle_ = -1;
     gardenHandle_ = -1;
     guildHandle_ = -1;
-    inHowToPlayMenu_ = false;
     pauseUiCount_ = 0;
 }
 
@@ -74,29 +74,29 @@ void SceneTitle::Load(void)
     SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_TITLE).handleId_);
 
     //　タイトルBGMの音量調整テスト
-    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_TITLE, 0);
+    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_TITLE, 30);
 
     // キャンセル音
     SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_CANCEL, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_CANCEL).handleId_);
 
     // キャンセル音の音量調整
-    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_CANCEL, 0);
+    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_CANCEL, 50);
 
     // 選択音
     SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SELECT, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_SELECT).handleId_);
 
     // 選択音の音量調整
-    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_SELECT, 0);
+    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_SELECT, 50);
 
     // 決定音
     SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_PUSH, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_PUSH).handleId_);
 
     // 決定音の音量調整
-    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_PUSH, 0);
+    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::SE_PUSH, 50 );
 
     // 音量調整
     Loading::GetInstance()->SetProgress(45.0f);
-
+     
     // ロゴ・操作説明・再生用画像ロード
     Loading::GetInstance()->SetProgress(60.0f);
 
@@ -112,13 +112,6 @@ void SceneTitle::Load(void)
     uiMain_->AddCharctor("ゲーム終了");
     uiMain_->SetCurrentIndex(0);
 
-    uiHowToPlay_ = std::make_unique<SceneUi>();
-    uiHowToPlay_->AddCharctor("目標について");
-    uiHowToPlay_->AddCharctor("戦闘方法");
-    uiHowToPlay_->AddCharctor("化学反応");
-    uiHowToPlay_->AddCharctor("戻る");
-    uiHowToPlay_->SetCurrentIndex(0);
-
     //時間カウントリセット
     TimeManager::GetInstance().Reset();
 
@@ -132,9 +125,11 @@ void SceneTitle::EndLoad(void)
 
 void SceneTitle::Init(void)
 {
+    SetMouseDispFlag(TRUE);
+
     SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_TITLE);
 
-    // ★【追加】動画再生の開始
+    // 動画再生の開始
     if (movieHandle_ != -1)
     {
         // 動画を最初から再生
@@ -151,7 +146,6 @@ void SceneTitle::Init(void)
     grid_->Init();
 
     // --- UI初期化 ---
-    inHowToPlayMenu_ = false;
     howToPlayPage_ = 0;
     showBlackBackground_ = false;
     isDecided_ = false;
@@ -161,12 +155,11 @@ void SceneTitle::Init(void)
 
     // UIはLoadで生成済みなので、ここで初期位置設定
     if (uiMain_) uiMain_->SetCurrentIndex(0);
-    if (uiHowToPlay_) uiHowToPlay_->SetCurrentIndex(0);
 }
 
 void SceneTitle::Update(void)
 {
-    // ★【追加】動画のループ処理
+    // 動画のループ処理
     if (movieHandle_ != -1)
     {
         // 動画の再生状態をチェック
@@ -206,101 +199,93 @@ void SceneTitle::Update(void)
     }
 
     // ----- メインメニュー操作 -----
-    if (!inHowToPlayMenu_)
+    auto ui = uiMain_.get();
+    int currentIndex = ui->GetCurrentIndex();
+    int maxIndex = ui->GetMaxIndex() - 1;
+
+    // --- マウスによる選択更新 ---
+    Vector2 mousePos = input.GetMousePos();
+
+    // 描画基準位置
+    int menuStartY = Application::SCREEN_SIZE_Y / 2 + 80;
+    int itemHeight = 80; // 1項目の高さ
+    int menuWidth = 200; // 判定する横幅
+
+    for (int i = 0; i <= maxIndex; i++)
     {
-        auto ui = uiMain_.get();
-        int currentIndex = ui->GetCurrentIndex();
-        int maxIndex = ui->GetMaxIndex() - 1;
+        int rectLeft = Application::SCREEN_SIZE_X / 2 - (menuWidth / 2);
+        int rectRight = Application::SCREEN_SIZE_X / 2 + (menuWidth / 2);
 
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
-        else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
+        // 修正：判定範囲の基準を上にずらす
+        // i=0のとき、menuStartY を中心とした範囲にするために -20 調整
+        int rectTop = menuStartY + (i * itemHeight) - (itemHeight / 2);
+        int rectBottom = menuStartY + (i * itemHeight) + (itemHeight / 2);
 
-        if (input.IsTrgDown(KEY_INPUT_SPACE))
+        // マウスが項目内にあるか判定
+        if (mousePos.x >= rectLeft && mousePos.x <= rectRight &&
+            mousePos.y >= rectTop && mousePos.y <= rectBottom)
         {
-            Application::GetInstance().SetActiveUI(true);
-            int selected = ui->GetCurrentIndex();
-
-            // ゲーム開始
-            if (selected == 0)
+            if (currentIndex != i)
             {
-                isDecided_ = true;
-
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-
-                auto newScene = std::make_shared<SceneGame>();
-
-                SceneManager::GetInstance().ChangeScene(newScene);
-                return;
-            }
-            else if (selected == 1) { // 遊び方
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-                inHowToPlayMenu_ = true;
-                uiHowToPlay_->SetCurrentIndex(0);
-            }
-            else if (selected == maxIndex) { // ゲーム終了
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-                exitRequested_ = true;
-                SceneManager::GetInstance().GameEnd();
-                return;
-            }
-            else {
-                showBlackBackground_ = true; // 操作説明やクレジットはそのまま黒背景
+                SoundManager::GetInstance().Play(SoundManager::SOUND::SE_SELECT);
+                ui->SetCurrentIndex(i);
             }
         }
     }
-    // ----- サブメニュー操作 -----
-    else
+
+    // 上下入力
+    if (input.IsTrgDown(KEY_INPUT_UP)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
+        ui->SetCurrentIndex(currentIndex);
+    }
+    else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex = (currentIndex + 1) % (maxIndex + 1);
+        ui->SetCurrentIndex(currentIndex);
+    }
+
+    // 決定操作
+    if (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsTrgMouseLeft())
     {
-        auto ui = uiHowToPlay_.get();
-        int currentIndex = ui->GetCurrentIndex();
-        int maxIndex = ui->GetMaxIndex() - 1;
+        Application::GetInstance().SetActiveUI(true);
+        int selected = ui->GetCurrentIndex();
 
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
-        else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
+        switch (selected)
+        {
+        case 0: // 開始
+            isDecided_ = true;
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            SceneManager::GetInstance().ChangeScene(std::make_shared<SceneGame>());
+            break;
 
-        if (input.IsTrgDown(KEY_INPUT_SPACE)) {
-            int selected = ui->GetCurrentIndex();
-            if (selected == 0) { // 目標について
-                howToPlayPage_ = 1;
-            }
-            else if (selected == 1) {
-                howToPlayPage_ = 2;
-            }
-            else if (selected == 2) {
-                howToPlayPage_ = 3;
-            }
-            else if (selected == 3) {
-                howToPlayPage_ = 4;
-            }
-            else if (selected == 4) {
-                howToPlayPage_ = 5;
-            }
-            else if (selected == 5) { // 戻る
-                inHowToPlayMenu_ = false;
-            }
+        case 1: // 遊び方
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneTutorial>());
+            break;
+
+        case 2: // 操作説明
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            showBlackBackground_ = true;
+            break;
+
+        case 3: // クレジット
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            showBlackBackground_ = true;
+            break;
+
+        case 4: // ゲーム終了
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            exitRequested_ = true;
+            SceneManager::GetInstance().GameEnd();
+            break;
         }
     }
 }
 
 void SceneTitle::Draw(void)
 {
-    // ★【修正】背景動画の描画（画面全体に拡大表示）
+    // 背景動画の描画（画面全体に拡大表示）
     if (movieHandle_ != -1)
     {
         // 動画のサイズを取得
@@ -322,134 +307,52 @@ void SceneTitle::Draw(void)
             movieHandle_, TRUE);
     }
 
-    // ---- 遊び方説明ページ表示中 ----
+    // 説明ページ表示
     if (howToPlayPage_ > 0)
     {
         DrawBox(0, 0, Application::SCREEN_SIZE_X, Application::SCREEN_SIZE_Y, GetColor(0, 0, 0), TRUE);
 
-        if (howToPlayPage_ == 1) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, playHandle_, true);
-        }
-        else if (howToPlayPage_ == 2) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, playHandle2_, true);
-        }
-        else if (howToPlayPage_ == 3) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, atelierHandle_, true);
-        }
-        else if (howToPlayPage_ == 4) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, guildHandle_, true);
-        }
-        else if (howToPlayPage_ == 5) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, gardenHandle_, true);
-        }
+        int handle = -1;
+        if (howToPlayPage_ == 1) handle = playHandle_;
+        else if (howToPlayPage_ == 2) handle = playHandle2_;
+        else if (howToPlayPage_ == 3) handle = atelierHandle_; // 適宜画像ハンドルを割り当て
 
+        if (handle != -1) {
+            DrawRotaGraph(Application::SCREEN_SIZE_X / 2, Application::SCREEN_SIZE_Y / 2, 1.0, 0.0, handle, true);
+        }
         DrawString(50, Application::SCREEN_SIZE_Y - 30, "ESCキーで戻る", GetColor(200, 200, 200));
         return;
     }
 
-    // ---- メインメニュー ----
-    if (!inHowToPlayMenu_)
+    // メインメニュー描画
+    if (logo_ != -1)
     {
-        // ★【修正】タイトルロゴの描画（画面中央上部に配置）
-        if (logo_ != -1)
-        {
-            // int logoWidth, logoHeight;
-            // GetGraphSize(logo_, &logoWidth, &logoHeight); // ロゴサイズ取得は不要なためコメントアウト
-
-            // 画面中央上部に配置（Y座標を調整可能）
-            int logoX = Application::SCREEN_SIZE_X / 2;
-            // Y座標を下にずらす: 200px -> 280px
-            int logoY = 450; // 上から280pxの位置 (修正箇所)
-
-            // ロゴを拡大して描画（scale値で大きさ調整可能）
-            float logoScale = 1.0f; // 必要に応じて変更（例: 1.5fで1.5倍）
-
-            DrawRotaGraph(logoX, logoY, logoScale, 0.0, logo_, TRUE);
-        }
-
-        // UIメニューの描画
-        // UIの基準点を画面中央(Y/2)から、さらに80px下にずらす (修正箇所)
-        uiMain_->Draw(Application::SCREEN_SIZE_Y / 2 + 80);
-
-        // 操作説明やクレジットを選んだとき
-        if (showBlackBackground_)
-        {
-            // 黒背景
-            DrawBox(0, 0,
-                Application::SCREEN_SIZE_X,
-                Application::SCREEN_SIZE_Y,
-                GetColor(0, 0, 0), TRUE);
-
-            int selected = uiMain_->GetCurrentIndex();
-            if (selected == 2) // 操作説明
-            {
-                DrawRotaGraph3(50, 50, 0, 0, 1.0f, 1.0f, 0, operationHandle_, true);
-            }
-            else if (selected == 3) // クレジット
-            {
-                auto& font = Font::GetInstance();
-                std::vector<std::string> lines = {
-                    // クレジット情報が空のため、ダミー情報を追加
-                    "DEVELOPER",
-                    "Programming: YOUR NAME",
-                    "Design: YOUR FRIEND'S NAME",
-                    "",
-                    "Powered by DxLib",
-                    // ... 
-                };
-
-                int color = GetColor(255, 255, 255);
-                int fontSize = 28;
-                int fontType = DX_FONTTYPE_ANTIALIASING;
-
-                int centerX = Application::SCREEN_SIZE_X / 2;
-                int centerY = Application::SCREEN_SIZE_Y / 2;
-
-                int lineSpacing = fontSize + 24; // ← 行間を広めに (12px 余白)
-
-                int totalHeight = static_cast<int>(lines.size()) * lineSpacing;
-                int startY = centerY - totalHeight / 2;
-
-                for (size_t i = 0; i < lines.size(); i++)
-                {
-                    int textWidth = font.GetDefaultTextWidth(lines[i]);
-                    int drawX = centerX - textWidth / 2;
-                    int drawY = startY + static_cast<int>(i) * lineSpacing;
-
-                    font.DrawDefaultText(drawX, drawY, lines[i].c_str(), color, fontSize, fontType);
-                }
-            }
-
-        }
-
+        DrawRotaGraph(Application::SCREEN_SIZE_X / 2, 450, 1.0f, 0.0, logo_, TRUE);
     }
-    // ---- 遊び方サブメニュー ----
-    else
+
+    uiMain_->Draw(Application::SCREEN_SIZE_Y / 2 + 80);
+
+    // 操作説明・クレジットの黒背景描画
+    if (showBlackBackground_)
     {
-        DrawBox(0, 0,
-            Application::SCREEN_SIZE_X,
-            Application::SCREEN_SIZE_Y,
-            GetColor(0, 0, 0), TRUE);
+        DrawBox(0, 0, Application::SCREEN_SIZE_X, Application::SCREEN_SIZE_Y, GetColor(0, 0, 0), TRUE);
+        int selected = uiMain_->GetCurrentIndex();
 
-        int centerY = Application::SCREEN_SIZE_Y / 2;
-        int offsetY = centerY - 100;  // 上にずらす
-
-        uiHowToPlay_->Draw(offsetY);
+        if (selected == 4) // 操作説明
+        {
+            DrawRotaGraph3(50, 50, 0, 0, 1.0f, 1.0f, 0, operationHandle_, true);
+        }
+        else if (selected == 5) // クレジット
+        {
+            // クレジット描画処理
+        }
     }
 }
 
 void SceneTitle::Release(void)
 {
+    SetMouseDispFlag(FALSE);
+
     if (operationHandle_ != -1)
     {
         DeleteGraph(operationHandle_);

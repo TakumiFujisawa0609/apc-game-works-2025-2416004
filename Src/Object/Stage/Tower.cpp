@@ -1,9 +1,8 @@
 // Tower.cpp
 #include "Tower.h"
-#include "../../Utility/Utility.h"
-#include "../../Manager/Generic/ResourceManager.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Collider/ColliderLine.h"
+#include "../../Collider/ColliderModel.h"
 
 // コンストラクタ
 Tower::Tower(const VECTOR& position)
@@ -34,42 +33,45 @@ void Tower::Init(void)
     attackTimer_ = 0.0f;
 
     // スケールを初期設定
-    trans_.scl = VGet(15.0f, 15.0f, 15.0f); // モデルの高さは5.0fと仮定
-
+    trans_.scl = VGet(35.0f, 35.0f, 35.0f);
     trans_.Update();
 
     InitCollider(); // コライダーの初期化
-    // ... その他の初期化
+
+    // CollisionControllerに登録
+    CollisionController::GetInstance().RegisterUnit(this);
 }
 
 // 更新処理
 void Tower::Update(void)
 {
-    // ★ UnitBase::Update() のみ。重力落下ロジックは削除し、地面に固定された状態とする。
-    // UnitBase::Update() の中でコライダーの位置更新と衝突判定が走ることを期待する。
-
-    trans_.pos.y = 0.0f;
+    // 地面に固定
     UnitBase::Update();
-
-    // タワーのロジック（例：攻撃タイマーを進める）
-    // attackTimer_ += SceneManager::GetInstance().GetDeltaTime();
 }
 
 // 描画処理
 void Tower::Draw(void) const
 {
     UnitBase::Draw();
-
 #ifdef _DEBUG
+    // モデルコライダーのデバッグ描画
+    int modelType = static_cast<int>(COLLIDER_TYPE::MODEL);
+    const ColliderBase* col = GetOwnCollider(modelType);
+    if (col)
+    {
+        // タワーの位置に緑の球体を描画
+        DrawSphere3D(trans_.pos, 100.0f, 16, GetColor(0, 255, 0), GetColor(0, 255, 0), FALSE);
+    }
 #endif
 }
 
 // 解放処理
 void Tower::Release(void)
 {
-    // モデルを解放
-    if (trans_.modelId >= 0)
-    {
+    // CollisionControllerから登録解除
+    CollisionController::GetInstance().UnregisterUnit(this);
+
+    if (trans_.modelId >= 0) {
         MV1DeleteModel(trans_.modelId);
         trans_.modelId = -1;
     }
@@ -89,32 +91,42 @@ void Tower::SetPosition(const VECTOR& position)
     trans_.pos = position;
 }
 
+void Tower::CalcGravityPow(void)
+{
+}
+
 // コライダー初期化
 void Tower::InitCollider(void)
 {
-    // タワーのスケールは Y=5.0f なので、中心を基準に底面は -2.5f の位置にある
-    const float HALF_HEIGHT = trans_.scl.y / 2.0f; // 2.5f
+    // 地面判定用のライン
+    const float HALF_HEIGHT = trans_.scl.y / 2.0f; // 35.0 / 2 = 17.5
+    const float GROUND_CHECK_OFFSET = 5.0f;       // 少し余裕を持たせてモデル内側から開始
+    const float RAY_LENGTH = 30.0f;               // 地面を突き抜けるのに十分な長さ
 
-    // 地面判定用のラインは、タワーの底面より少し上から下に伸ばす
-    // 始点: Y = -2.0f (底面 -2.5f より 0.5f 上)
-    // 終点: Y = -2.0f - 50.0f (下方向に十分な長さ)
-    const float GROUND_CHECK_OFFSET = 0.5f;
-    const float RAY_LENGTH = 50.0f;
+    // 計算した値を座標として設定
+    const VECTOR localStart = VGet(0.0f, -HALF_HEIGHT + GROUND_CHECK_OFFSET, 0.0f);
+    const VECTOR localEnd = VGet(0.0f, -HALF_HEIGHT - RAY_LENGTH, 0.0f);
 
-    // ローカル座標で線分の始点と終点を定義
-    const VECTOR localStart = VGet(0.0f, -HALF_HEIGHT + GROUND_CHECK_OFFSET, 0.0f); // Y: -2.0f
-    const VECTOR localEnd = VGet(0.0f, -HALF_HEIGHT - RAY_LENGTH, 0.0f);          // Y: -52.0f
-
-    ColliderLine* colLine = new ColliderLine(ColliderBase::TAG::STAGE, &trans_, COL_LINE_START_LOCAL_POS, COL_LINE_END_LOCAL_POS);
+    ColliderLine* colLine = new ColliderLine(
+        ColliderBase::TAG::STAGE,
+        &trans_,
+        localStart,
+        localEnd
+    );
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::LINE), colLine);
+
+    ColliderModel* colModel = new ColliderModel(ColliderBase::TAG::STAGE, &trans_);
+
+    ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::MODEL), colModel);
 }
 
 // 衝突イベント
 void Tower::OnCollisionEnter(const CollisionInfo& info)
 {
-
+ 
 }
 
 void Tower::OnCollisionStay(const CollisionInfo& info)
 {
+    // 継続的な衝突処理が必要な場合はここに記述
 }

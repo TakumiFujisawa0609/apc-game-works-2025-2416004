@@ -17,6 +17,15 @@ public:
 		GAMEOVER_LOGO,			//ゲームオーバー
 		GAMECLERA_LOGO,			//ゲームクリア
 
+		// 画像
+		IMG_FIRE_SUKILL,        // 火のスキルアイコン
+		IMG_FIRE_SUKILL_CD,     // 火のスキルアイコン(クールダウン中)
+		IMG_WATER_SUKILL,       // 水のスキルアイコン
+		IMG_WATER_SUKILL_CD,    // 水のスキルアイコン(クールダウン中)
+		IMG_TUTORIAL_1,         // チュートリアル画像1
+		IMG_TUTORIAL_2,         // チュートリアル画像2
+		IMG_TUTORIAL_3,         // チュートリアル画像3
+
 		// モデル
 		MODEL_PLAYER,			// プレイヤーモデル
 		MODEL_GROUND,			// ステージ地面のモデル
@@ -45,6 +54,9 @@ public:
 		EFFECT_BLAST,           // 爆発エフェクト
 		EFFECT_FREEZE,          // 凍結エフェクト
 		EFFECT_LEVER_UP,        // レベルアップエフェクト
+		FIRE_BURN,              // やけどエフェクト
+		WET,                    // 湿潤エフェクト
+		AMMONIUM,               // 硝酸アンモニウムエフェクト
 
 
 		// アニメーション
@@ -56,6 +68,7 @@ public:
 
 		// 映像
 		TITLE_MOVIE,            // タイトルムービー
+		BG_MOVIE,               // 背景映像
 	};
 
 	//明示的にインスタンスを生成する
@@ -78,6 +91,9 @@ public:
 
 	//ゲームクリアで使うリソース初期化
 	void InitGameClear(void);
+
+	// チュートリアルで使うリソース初期化
+	void InitTutorial(void);
 
 	//プレイヤーが使うリソース初期化
 	void ResourcePlayer(void);

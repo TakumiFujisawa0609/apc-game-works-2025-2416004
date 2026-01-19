@@ -115,6 +115,8 @@ public:
     // レベルUI描画
     void DrawLevelInfo(void) const;
 
+    void DrawDistanceUI(void) const;
+
 protected:
     // コライダーの初期化
     void InitCollider(void) override;
@@ -124,6 +126,8 @@ protected:
 
     // 衝突継続
     void OnCollisionStay(const CollisionInfo& info) override;
+
+    void CollisionWithModel(void);
 
     // 毎フレーム衝突処理
     void Collision(void) override;
@@ -136,8 +140,8 @@ private:
 
     // 攻撃関連
     static constexpr float ATTACK_COOL_TIME_MAX = 0.5f;         // 通常攻撃のクルータイム
-    static constexpr float FIRE_ATTACK_COOL_TIME_MAX = 3.0f;    // 火攻撃のクールタイム
-    static constexpr float WATER_ATTACK_COOL_TIME_MAX = 3.0f;   //　水攻撃のクールタイム
+    static constexpr float FIRE_ATTACK_COOL_TIME_MAX = 8.0f;    // 火攻撃のクールタイム
+    static constexpr float WATER_ATTACK_COOL_TIME_MAX = 5.0f;   //　水攻撃のクールタイム
 
     // 被ダメージ関連
     static constexpr float INVINCIBLE_DURATION = 1.0f;          // 無敵時間
@@ -151,7 +155,7 @@ private:
     // HPバー関連
     static constexpr int HP_BAR_WIDTH = 300;                    // HPバーの幅
     static constexpr int HP_BAR_HEIGHT = 20;                    // HPバーの高さ
-    static constexpr int BAR_Y = 50;                            // HPバーのY位置
+    static constexpr int BAR_Y = 100;                            // HPバーのY位置
     static constexpr float DELAY_SPEED = 2.0f;                  // HPバーの遅延速度
 
     // ジャンプ&グライド関連
@@ -210,6 +214,12 @@ private:
     float invincibleTime_;                      // 無敵時間カウンタ
     float lastHitEnemyTime_;                    // 最後に敵に当たった時間
 
+    // スキルアイコン用ハンドル
+    int iconFire_;
+    int iconWater_;
+    int iconFireCD_;
+    int iconWaterCD_;
+
     // 移動処理
     void ProcessMove(void);
 
@@ -224,4 +234,7 @@ private:
 
     // カプセルデバッグ描画
     void DrawCollisionCapsuleDebug(void) const;
+
+    // 描画用関数
+    void DrawSkillUI(void) const;
 };
