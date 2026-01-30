@@ -1,6 +1,4 @@
 #pragma once
-
-#include <memory>
 #include "SceneBase.h"
 #include "../DrawUI/SceneUI/SceneUi.h"
 
@@ -29,23 +27,13 @@ public:
 private:
     Grid* grid_;
 
-    std::unique_ptr<SceneUi> uiMain_;      // メインメニュー
-    std::unique_ptr<SceneUi> uiHowToPlay_; // 遊び方サブメニュー
+    std::unique_ptr<SceneUi> uiMain_;
 
 
     int logo_;
     int movieHandle_;
-    int operationHandle_;
-    int playHandle_;
-    int playHandle2_;
-    int blackAlpha_;
     int pauseUiCount_;
 
-    int atelierHandle_;
-    int guildHandle_;
-    int gardenHandle_;
-
-    bool inHowToPlayMenu_;
     bool isDecided_;
     bool showBlackBackground_;
     bool exitRequested_;

@@ -1,6 +1,9 @@
 #include "FpsControll.h"
+<<<<<<< HEAD
 #include <DxLib.h>
 #include <math.h>
+=======
+>>>>>>> Collider
 
 // デフォルトコンストラクタ
 Fps::Fps(void)

@@ -51,6 +51,8 @@ void TimeManager::Update(void)
 
 	prevTime_ = now;
 
+	if (isPaused_) return;
+
 	float deltaTime = delta.count();
 
 	gameTime_ += deltaTime * gameSpeed_;

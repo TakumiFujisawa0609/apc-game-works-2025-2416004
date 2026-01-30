@@ -1,853 +1,1026 @@
-#include "Camera.h"
-
-#include <EffekseerForDXLib.h>
-
+ï»¿#include "Camera.h"
 #include "../../Application.h"
 #include "../../Utility/Utility.h"
 #include "SceneManager.h"
 #include "InputManager.h"
 #include "../../Object/Common/Transform.h"
+#include "../../Manager/System/CollisionController.h"
+#include "../../Collider/ColliderSphere.h"
+#include "../../Collider/ColliderModel.h"
+#include "../../DrawUI/SceneUI/PauseMenu.h"
 
-Camera::Camera(void)  
-{  
-   // ƒ‚[ƒh‚Ì‰Šú‰»  
-   mode_ = MODE::NONE;  
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
+Camera::Camera(void)
+{
+    // ãƒ¢ãƒ¼ãƒ‰ã®åˆæœŸåŒ–
+    mode_ = MODE::NONE;
+    currentMode_ = MODE::NONE;
 
-   //currentMode_ ‚Ì‰Šú‰»
-   currentMode_ = MODE::NONE;   
+    // defaultPos_ ã®åˆæœŸåŒ–
+    defaultPos_ = Utility::VECTOR_ZERO;
 
-   // À•W‚Ì‰Šú‰»  
-   pos_ = Utility::VECTOR_ZERO;
+    // è¿½å¾“å¯¾è±¡ã®åº§æ¨™
+    targetPos_ = Utility::VECTOR_ZERO;
 
-   //defaultPos_ ‚Ì‰Šú‰»
-   defaultPos_ = Utility::VECTOR_ZERO;   
+    // ãƒ­ãƒƒã‚¯ã‚ªãƒ³å¯¾è±¡
+    lockonTarget_ = nullptr;
 
-   // ’Ç]‘ÎÛ‚ÌÀ•W  
-   targetPos_ = Utility::VECTOR_ZERO;  
+    // å›è»¢
+    rot_ = Quaternion::Identity();
 
-   //ƒƒbƒNƒIƒ“‘ÎÛ
-   lockonTarget_ = nullptr;
+    // è¿½å¾“å¯¾è±¡
+    followTransform_ = nullptr;
 
-   // ‰ñ“]  
-   rot_ = Quaternion::Identity();  
+    // å·¦å³å›è»¢
+    yaw_ = CAMERA_YAW;
 
-   followTransform_ = nullptr;  
+    // ä¸Šä¸‹å›è»¢
+    pitch_ = CAMERA_PITCH;
 
-   // ¶‰E‰ñ“]  
-   yaw_ = CAMERA_YAW;  
+    // å¯¾è±¡ã¨ã®è·é›¢
+    distance_ = CAMERA_DISTANCE;
 
-   // ã‰º‰ñ“]  
-   pitch_ = CAMERA_PITCH;  
+    // ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘
+    cameraUp_ = { 0.0f, 1.0f, 0.0f };
 
-   // ‘ÎÛ‚Æ‚Ì‹——£  
-   distance_ = CAMERA_DISTANCE;  
+    // ç§»å‹•é–¢é€£ã®åˆæœŸåŒ–
+    moveDIr_ = Utility::VECTOR_ZERO;
+    moveSpeed_ = 0.0f;
 
-   // ƒJƒƒ‰‚Ìã•ûŒü  
-   cameraUp_ = { 0.0f, 1.0f, 0.0f };
+    // ã‚«ãƒ¡ãƒ©æºã‚‰ã—é–¢é€£ã®åˆæœŸåŒ–
+    shakeDir_ = Utility::VECTOR_ZERO;
+    stepShake_ = 0.0f;
 
-   // ˆÚ“®ŠÖ˜A‚Ì‰Šú‰»  
-   moveDIr_ = Utility::VECTOR_ZERO;
+    // ãƒ©ã‚¤ãƒˆé–¢é€£ã®åˆæœŸåŒ–
+    spotLight_ = -1;
 
-   //moveSpeed_ ‚Ì‰Šú‰» 
-   moveSpeed_ = 0.0f;  
+    // é€Ÿåº¦ã®åˆæœŸåŒ–
+    velocity_ = Utility::VECTOR_ZERO;
 
-   // ƒJƒƒ‰—h‚ç‚µŠÖ˜A‚Ì‰Šú‰»  
-   shakeDir_ = Utility::VECTOR_ZERO;
-   
-   // stepShake_ ‚Ì‰Šú‰» 
-   stepShake_ = 0.0f;  
+    // ãƒã‚¦ã‚¹æ„Ÿåº¦
+    sensitivity_ = InputManager::GetInstance().GetMouseSensitivity();
 
-   // ƒ‰ƒCƒgŠÖ˜A‚Ì‰Šú‰»  
-   spotLight_ = -1;
+    // xä¸­å¤®
+    centerX_ = Application::SCREEN_SIZE_X / 2;
 
-   // ‘¬“x‚Ì‰Šú‰»  
-   velocity_ = Utility::VECTOR_ZERO;
+    // yä¸­å¤®
+    centerY_ = Application::SCREEN_SIZE_Y / 2;
 
-   //ƒ}ƒEƒXŠ´“x
-   sensitivity_ = DEFAULT_SENSITIVITY;
+    // xã®ç§»å‹•é‡
+    deltaX_ = 0;
 
-   //x’†‰›
-   centerX_ = Application::DEFA_SCREEN_SIZE_X / 2;
+    // yã®ç§»å‹•é‡
+    deltaY_ = 0;
 
-   //y’†‰›
-   centerY_ = Application::DEFA_SCREEN_SIZE_Y / 2;
+    // ä½ç½®
+    offset_ = Utility::VECTOR_ZERO;
 
-   //x‚ÌˆÚ“®—Ê
-   deltaX_ = 0;
+    // ãƒ­ãƒƒã‚¯ã‚ªãƒ³
+    lockonFlag_ = false;
 
-   //y‚ÌˆÚ“®—Ê
-   deltaY_ = 0;
+    // è¿½å¾“åœæ­¢ã—ã¦ã„ã‚‹ã‹
+    freezeFollow_ = false;
 
-   //ˆÊ’u
-   offset_ = Utility::VECTOR_ZERO;
+    isPitchInverted_ = false;
 
-   //ƒƒbƒNƒIƒ“
-   lockonFlag_ = false;
+    isYawInverted_ = false;
 
-   //’Ç]’â~‚µ‚Ä‚¢‚é‚©
-   freezeFollow_ = false;
+    // å›ºå®šã•ã‚ŒãŸæ³¨è¦–ç‚¹
+    frozenTargetPos_ = Utility::VECTOR_ZERO;
 
-   //ŒÅ’è‚³‚ê‚½’‹“_
-   frozenTargetPos_ = Utility::VECTOR_ZERO;
+    // å›ºå®šã•ã‚ŒãŸã‚«ãƒ¡ãƒ©ä½ç½®
+    frozenCameraPos_ = Utility::VECTOR_ZERO;
 
-   //ŒÅ’è‚³‚ê‚½ƒJƒƒ‰ˆÊ’u
-   frozenCameraPos_ = Utility::VECTOR_ZERO;
+    // å‡çµé–‹å§‹æ™‚ã®yawè§’åº¦
+    initialYaw_ = 0.0f;
 
-   // “€Œ‹ŠJn‚ÌyawŠp“x
-   initialYaw_ = 0.0f;
+    // å‡çµé–‹å§‹æ™‚ã®ã‚«ãƒ¡ãƒ©ã¨ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®è·é›¢
+    initialDistance_ = 0.0f;
 
-   // “€Œ‹ŠJn‚ÌƒJƒƒ‰‚ÆƒvƒŒƒCƒ„[‚Ì‹——£
-   initialDistance_ = 0.0f;
+    // ã‚­ãƒ¼å…¥åŠ›ã«ã‚ˆã‚‹å›è»¢é€Ÿåº¦
+    keyRotateSpeed_ = 0.0f;
 
-   // ƒL[“ü—Í‚É‚æ‚é‰ñ“]‘¬“x
-   keyRotateSpeed_ = 0.0f;
+    // å‡çµé–‹å§‹æ™‚ã®Yè»¸ã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    initialHeightOffset_ = 0.0f;
+
+    // æŠ¼ã—å‡ºã—å‰ã®åº§æ¨™ã®åˆæœŸåŒ–ã‚’è¿½åŠ 
+    prePos_ = Utility::VECTOR_ZERO;
+
+    pauseMenu_ = Application::GetInstance().GetPauseMenu();
 }
 
 Camera::~Camera(void)
 {
-
 }
 
-//‰Šú‰»ˆ—
+// åˆæœŸåŒ–å‡¦ç†
 void Camera::Init(void)
 {
-	//ŠÖ”ƒ|ƒCƒ“ƒ^‚Ìİ’è
+    // é–¢æ•°ãƒã‚¤ãƒ³ã‚¿ã®è¨­å®š
+    setBeforeDrawMode_.emplace(MODE::NONE, std::bind(&Camera::SetBeforeDrawFollow, this));
+    setBeforeDrawMode_.emplace(MODE::FIXED_POINT, std::bind(&Camera::SetBeforeDrawFixedPoint, this));
+    setBeforeDrawMode_.emplace(MODE::FREE, std::bind(&Camera::SetBeforeDrawFree, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW, std::bind(&Camera::SetBeforeDrawFollow, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
+    setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
+    setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
+    setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
+    setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
+    setBeforeDrawMode_.emplace(MODE::VERSATILITY_LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
 
-	//‰½‚à‚È‚¢
-	setBeforeDrawMode_.emplace(MODE::NONE, std::bind(&Camera::SetBeforeDrawFollow, this));
+    // ã‚«ãƒ¡ãƒ©ã®åˆæœŸè¨­å®š
+    SetDefault();
 
-	//’è“_ƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FIXED_POINT, std::bind(&Camera::SetBeforeDrawFixedPoint, this));
+    // ã‚«ãƒ¡ãƒ©ã®ãƒ©ã‚¤ãƒˆè¨­å®š
+    SetLighting();
 
-	//ƒtƒŠ[ƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FREE, std::bind(&Camera::SetBeforeDrawFree, this));
+    // åŠå¾„ã®è¨­å®š
+    radius_ = COLLISION_RADIUS;
 
-	//’Ç]ƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FOLLOW, std::bind(&Camera::SetBeforeDrawFollow, this));
+    // è¡çªåˆ¤å®šã®åˆæœŸåŒ–
+    InitCollider();
 
-	//‚Î‚Ë•t‚«ƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FOLLOW_SPRING, std::bind(&Camera::SetBeforeDrawFollowSpring, this));
-
-	//’Ç]‘ÎÛƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FOLLOW_PERSPECTIVE, std::bind(&Camera::SetBeforeDrawFollowPerspective, this));
-
-	//ƒJƒƒ‰—h‚ç‚µ
-	setBeforeDrawMode_.emplace(MODE::SHAKE, std::bind(&Camera::SetBeforeDrawShake, this));
-
-	//ƒ}ƒEƒX‘€ì©—RƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::FREE_MOUSE, std::bind(&Camera::SetBeforeDrawFreeMouse, this));
-
-	//TPS—pƒ}ƒEƒXƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::TPS_MOUSE, std::bind(&Camera::SetBeforeDrawTPSMouse, this));
-
-	//”Ä—pƒƒbƒNƒIƒ“ƒJƒƒ‰
-	setBeforeDrawMode_.emplace(MODE::VERSATILITY_LOCKON, std::bind(&Camera::SetBeforeDrawLockon, this));
-
-	//ƒJƒƒ‰‚Ì‰Šúİ’è
-	SetDefault();
-
-	//ƒJƒƒ‰‚Ìƒ‰ƒCƒgİ’è
-	SetLighting();
+    // CollisionControllerã«ç™»éŒ²
+    CollisionController::GetInstance().RegisterUnit(this);
 }
 
-//XVˆ—
+// è¡çªåˆ¤å®šã®åˆæœŸåŒ–
+void Camera::InitCollider(void)
+{
+    // çƒä½“ã‚³ãƒ©ã‚¤ãƒ€ã®ä½œæˆ
+    ColliderSphere* colSphere = new ColliderSphere(
+        ColliderBase::TAG::CAMERA,
+        &trans_,
+        Utility::VECTOR_ZERO,  // ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ï¼ˆä¸­å¿ƒï¼‰
+        COLLISION_RADIUS
+    );
+
+    ownColliders_.emplace(
+        static_cast<int>(COLLIDER_TYPE::SPHERE),
+        colSphere
+    );
+}
+
+// è¡çªåˆ¤å®šã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯ï¼ˆUpdate()ãƒ¡ã‚½ãƒƒãƒ‰ã®å¾Œã‚ãŸã‚Šã«è¿½åŠ ï¼‰
+void Camera::OnCollisionStay(const CollisionInfo& info)
+{
+   
+}
+
+// é‡åŠ›è¨ˆç®—
+void Camera::CalcGravityPow(void)
+{
+}
+
+// è¡çªåˆ¤å®š
+void Camera::Collision(void)
+{
+}
+
+void Camera::SetPitchInvert(bool invert)
+{
+    isPitchInverted_ = invert;
+}
+
+void Camera::SetYawInvert(bool invert)
+{
+    isYawInverted_ = invert;
+}
+
+// æ›´æ–°å‡¦ç†ï¼ˆè¡çªåˆ¤å®šå‰ï¼‰
+void Camera::UpdateBeforeCollision(void)
+{
+    // æŠ¼ã—å‡ºã—å‰ã®åº§æ¨™ã‚’ä¿å­˜
+    prePos_ = trans_.pos;
+}
+
+// æ›´æ–°å‡¦ç†
 void Camera::Update(void)
 {
-	//ƒ‰ƒCƒg‚ÌˆÚ“®
-	SetLightPositionHandle(spotLight_, pos_);
 
-	//ƒ‰ƒCƒg‚ÌŒü‚«XV
-	SetLightDirectionHandle(spotLight_, rot_.ToEuler());
+    // åŸºåº•ã‚¯ãƒ©ã‚¹ã®æ›´æ–°ï¼ˆè¡çªåˆ¤å®šã‚’å®Ÿè¡Œï¼‰
+    UnitBase::Update();
+
+    // ã‚«ãƒ¡ãƒ©æŠ¼ã—å‡ºã—å‡¦ç†ï¼ˆåœ°é¢ã¨ã®è¡çªå¯¾å¿œï¼‰
+    HandleCollisionPushback();
+
+    // ãƒ©ã‚¤ãƒˆã®ç§»å‹•
+    SetLightPositionHandle(spotLight_, trans_.pos);
+
+    // ãƒ©ã‚¤ãƒˆã®å‘ãæ›´æ–°
+    SetLightDirectionHandle(spotLight_, rot_.ToEuler());
 }
 
+// æç”»å‰å‡¦ç†
 void Camera::SetBeforeDraw(void)
 {
-	//ƒNƒŠƒbƒv‹——£‚ğİ’è‚·‚é(SetDrawScreen‚ÅƒŠƒZƒbƒg‚³‚ê‚é)
-	SetCameraNearFar(CAMERA_NEAR, CAMERA_FAR);
+    // ã‚¯ãƒªãƒƒãƒ—è·é›¢ã‚’è¨­å®šã™ã‚‹(SetDrawScreenã§ãƒªã‚»ãƒƒãƒˆã•ã‚Œã‚‹)
+    SetCameraNearFar(CAMERA_NEAR, CAMERA_FAR);
 
-	//ƒ‚[ƒh‚É‚æ‚éİ’èØ‚è‘Ö‚¦
-	setBeforeDrawMode_[mode_]();
+    // ãƒ¢ãƒ¼ãƒ‰ã«ã‚ˆã‚‹è¨­å®šåˆ‡ã‚Šæ›¿ãˆ
+    setBeforeDrawMode_[mode_]();
 
-	//ƒJƒƒ‰‚Ìİ’è(ˆÊ’u‚Æ’‹“_‚É‚æ‚é§Œä)
-	SetCameraPositionAndTargetAndUpVec
-	(
-		pos_,
-		targetPos_,
-		cameraUp_
-	);
+    // ã‚«ãƒ¡ãƒ©ã®è¨­å®š(ä½ç½®ã¨æ³¨è¦–ç‚¹ã«ã‚ˆã‚‹åˆ¶å¾¡)
+    SetCameraPositionAndTargetAndUpVec(
+        trans_.pos,  // pos_ â†’ trans_.pos
+        targetPos_,
+        cameraUp_
+    );
 
-	//DXƒ‰ƒCƒuƒ‰ƒŠ‚ÌƒJƒƒ‰‚ÆEffekseer‚ÌƒJƒƒ‰‚ğ“¯Šú‚·‚é
-	Effekseer_Sync3DSetting();
-
+    // DXãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®ã‚«ãƒ¡ãƒ©ã¨Effekseerã®ã‚«ãƒ¡ãƒ©ã‚’åŒæœŸã™ã‚‹
+    Effekseer_Sync3DSetting();
 }
 
-//’è“_ƒJƒƒ‰
+// å®šç‚¹ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFixedPoint(void)
 {
-
 }
 
-//ƒtƒŠ[ƒJƒƒ‰
+// ãƒ•ãƒªãƒ¼ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFree(void)
 {
-	auto& ins = InputManager::GetInstance();
+    auto& ins = InputManager::GetInstance();
 
-	//ˆÚ“®‘€ì
-	ProcessMove();
+    // ç§»å‹•æ“ä½œ
+    ProcessMove();
 
-	//Œ¸‘¬
-	Decelerate(MOVE_DEC);
+    // æ¸›é€Ÿ
+    Decelerate(MOVE_DEC);
 
-	//ˆÚ“®
-	Move();
+    // ç§»å‹•
+    Move();
 }
 
-//’Ç]ƒJƒƒ‰
+// è¿½å¾“ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFollow(void)
 {
-	if (!followTransform_) return;
+    if (!followTransform_) return;
 
-	//’Ç]‘ÎÛ‚ÌˆÊ’u
-	VECTOR followPos = followTransform_->pos;
+    // è¿½å¾“å¯¾è±¡ã®ä½ç½®
+    VECTOR followPos = followTransform_->pos;
 
-	//’Ç]‘ÎÛ‚ÌŒü‚«
-	Quaternion followRot = followTransform_->quaRot;
+    // è¿½å¾“å¯¾è±¡ã®å‘ã
+    Quaternion followRot = followTransform_->quaRot;
 
-	//’Ç]‘ÎÛ‚©‚çƒJƒƒ‰‚Ü‚Å‚Ì‘Š‘ÎÀ•W
-	VECTOR relativeCPos = followRot.PosAxis(RELATIVE_F2C_POS_FOLLOW);
+    // è¿½å¾“å¯¾è±¡ã‹ã‚‰ã‚«ãƒ¡ãƒ©ã¾ã§ã®ç›¸å¯¾åº§æ¨™
+    VECTOR relativeCPos = followRot.PosAxis(RELATIVE_F2C_POS_FOLLOW);
 
-	//ƒJƒƒ‰‚ÌˆÊ’u‚ÌXV
-	pos_ = VAdd(followPos, relativeCPos);
+    // ã‚«ãƒ¡ãƒ©ã®ä½ç½®ã®æ›´æ–°
+    trans_.pos = VAdd(followPos, relativeCPos);  // pos_ â†’ trans_.pos
 
-	//ƒJƒƒ‰ˆÊ’u‚©‚ç’‹“_‚Ü‚Å‚Ì‘Š‘ÎÀ•W
-	VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS);
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã‹ã‚‰æ³¨è¦–ç‚¹ã¾ã§ã®ç›¸å¯¾åº§æ¨™
+    VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS);
 
-	//’‹“_‚ÌXV
-	targetPos_ = VAdd(pos_, relativeTPos);
+    // æ³¨è¦–ç‚¹ã®æ›´æ–°
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ â†’ trans_.pos
 
-	//ƒJƒƒ‰‚Ìã•ûŒü
-	cameraUp_ = followRot.PosAxis(rot_.GetUp());
+    // ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘
+    cameraUp_ = followRot.PosAxis(rot_.GetUp());
 }
 
-//‚Î‚Ë•t‚«’Ç]ƒJƒƒ‰
+// ã°ã­ä»˜ãè¿½å¾“ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFollowSpring(void)
 {
-	if (!followTransform_) return;
-	auto& ins = InputManager::GetInstance();
+    if (!followTransform_) return;
+    auto& ins = InputManager::GetInstance();
 
-	//CƒL[‰Ÿ‰º‚ÅƒJƒƒ‰‚ğ—h‚ç‚·
-	if (ins.IsTrgDown(KEY_INPUT_C))
-	{
-		currentMode_ = mode_;
-		ChangeMode(MODE::SHAKE);
-	}
+    // Cã‚­ãƒ¼æŠ¼ä¸‹ã§ã‚«ãƒ¡ãƒ©ã‚’æºã‚‰ã™
+    if (ins.IsTrgDown(KEY_INPUT_C))
+    {
+        currentMode_ = mode_;
+        ChangeMode(MODE::SHAKE);
+    }
 
-	//‚Î‚Ë’è”(‚Î‚Ë‚Ì‹­‚³)
-	float POW_SPRING = 50.0f;
+    // ã°ã­å®šæ•°(ã°ã­ã®å¼·ã•)
+    float POW_SPRING = 50.0f;
 
-	//‚Î‚Ë’è”(‚Î‚Ë‚Ì’ïR)
-	float dampening = 2.0f * sqrt(POW_SPRING);
+    // ã°ã­å®šæ•°(ã°ã­ã®æŠµæŠ—)
+    float dampening = 2.0f * sqrt(POW_SPRING);
 
-	//ƒfƒ‹ƒ^ƒ^ƒCƒ€
-	float delta = SceneManager::GetInstance().GetDeltaTime();
+    // ãƒ‡ãƒ«ã‚¿ã‚¿ã‚¤ãƒ 
+    float delta = SceneManager::GetInstance().GetDeltaTime();
 
-	//3DŒ‚¢‚·‚él—p
-	//delta = 1.0f / 60.0f;
+    // è¿½å¾“å¯¾è±¡ã®ä½ç½®
+    VECTOR followPos = followTransform_->pos;
 
-	//’Ç]‘ÎÛ‚ÌˆÊ’u
-	VECTOR followPos = followTransform_->pos;
+    // è¿½å¾“å¯¾è±¡ã®å‘ã
+    Quaternion followRot = followTransform_->quaRot;
+    VECTOR zero = { 0.0f, 0.0f, 0.0f };
 
-	//’Ç]‘ÎÛ‚ÌŒü‚«
-	Quaternion followRot = followTransform_->quaRot;
-	VECTOR zero = { 0.0f, 0.0f, 0.0f };
+    // ã‚«ãƒ¡ãƒ©ã®æ–¹å‘ã‚’å›ºå®šã™ã‚‹ç”¨
+    Quaternion forward = Quaternion::Euler(zero);
 
-	//ƒJƒƒ‰‚Ì•ûŒü‚ğŒÅ’è‚·‚é—p
-	Quaternion forward = Quaternion::Euler(zero);
+    // è¿½å¾“å¯¾è±¡ã‹ã‚‰ã‚«ãƒ¡ãƒ©ã¾ã§ã®ç›¸å¯¾åº§æ¨™
+    VECTOR relativeCPos = forward.PosAxis(RELATIVE_F2C_POS_FOLLOW);
 
-	//’Ç]‘ÎÛ‚©‚çƒJƒƒ‰‚Ü‚Å‚Ì‘Š‘ÎÀ•W
-	VECTOR relativeCPos = forward.PosAxis(RELATIVE_F2C_POS_FOLLOW);
+    // ç†æƒ³ä½ç½®
+    VECTOR idealPos = VAdd(followPos, relativeCPos);
 
-	//—‘zˆÊ’u
-	VECTOR idealPos = VAdd(followPos, relativeCPos);
+    // å®Ÿéš›ã¨ç†æƒ³ã®å·®
+    VECTOR diff = VSub(trans_.pos, idealPos);  // pos_ â†’ trans_.pos
 
-	//ÀÛ‚Æ—‘z‚Ì·
-	VECTOR diff = VSub(pos_, idealPos);
+    // åŠ› =- ã°ã­ã®å¼·ã• Ã— ã°ã­ã®ä¼¸ã³ - æŠµæŠ— Ã— ã‚«ãƒ¡ãƒ©é€Ÿåº¦
+    VECTOR force = VScale(diff, -POW_SPRING);
+    force = VSub(force, VScale(velocity_, dampening));
 
-	//—Í =- ‚Î‚Ë‚Ì‹­‚³ ~ ‚Î‚Ë‚ÌL‚Ñ - ’ïR ~ ƒJƒƒ‰‘¬“x
-	VECTOR force = VScale(diff, -POW_SPRING);
-	force = VSub(force, VScale(velocity_, dampening));
+    // é€Ÿåº¦ã®æ›´æ–°
+    velocity_ = VAdd(trans_.pos, VScale(velocity_, delta));  // pos_ â†’ trans_.pos
 
-	//‘¬“x‚ÌXV
-	velocity_ = VAdd(pos_, VScale(velocity_, delta));
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã®æ›´æ–°
+    trans_.pos = VAdd(trans_.pos, VScale(velocity_, delta));  // pos_ â†’ trans_.pos
 
-	//ƒJƒƒ‰ˆÊ’u‚ÌXV
-	pos_ = VAdd(pos_, VScale(velocity_, delta));
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã‹ã‚‰æ³¨è¦–ç‚¹ã¾ã§ã®ç›¸å¯¾åº§æ¨™
+    VECTOR relativeTPos = forward.PosAxis(RELATIVE_C2T_POS);
 
-	//ƒJƒƒ‰ˆÊ’u‚©‚ç’‹“_‚Ü‚Å‚Ì‘Š‘ÎÀ•W
-	VECTOR relativeTPos = forward.PosAxis(RELATIVE_C2T_POS);
+    // æ³¨è¦–ç‚¹ã®æ›´æ–°
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ â†’ trans_.pos
 
-	//’‹“_‚ÌXV
-	targetPos_ = VAdd(pos_, relativeTPos);
-
-	//ƒJƒƒ‰‚Ìã•ûŒü
-	cameraUp_ = forward.PosAxis(rot_.GetUp());
+    // ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘
+    cameraUp_ = forward.PosAxis(rot_.GetUp());
 }
 
-//’Ç]‘ÎÛ‹“_ƒJƒƒ‰
+// è¿½å¾“å¯¾è±¡è¦–ç‚¹ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFollowPerspective(void)
 {
-	//’Ç]‘ÎÛ‚ÌˆÊ’u
-	VECTOR followPos = followTransform_->pos;
+    // è¿½å¾“å¯¾è±¡ã®ä½ç½®
+    VECTOR followPos = followTransform_->pos;
 
-	//’Ç]‘ÎÛ‚ÌŒü‚«
-	Quaternion followRot = followTransform_->quaRot;
+    // è¿½å¾“å¯¾è±¡ã®å‘ã
+    Quaternion followRot = followTransform_->quaRot;
 
-	//ƒJƒƒ‰ˆÊ’u‚©‚ç’‹“_‚Ü‚Å‚Ì‘Š‘ÎÀ•W
-	VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE);
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã‹ã‚‰æ³¨è¦–ç‚¹ã¾ã§ã®ç›¸å¯¾åº§æ¨™
+    VECTOR relativeTPos = followRot.PosAxis(RELATIVE_C2T_POS_FOLLOW_PERSPECTIVE);
 
-	//’‹“_‚ÌXV
-	targetPos_ = VAdd(pos_, relativeTPos);
+    // æ³¨è¦–ç‚¹ã®æ›´æ–°
+    targetPos_ = VAdd(trans_.pos, relativeTPos);  // pos_ â†’ trans_.pos
 
-	//ƒJƒƒ‰‚Ìã•ûŒü
-	cameraUp_ = followRot.PosAxis(rot_.GetUp());
+    // ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘
+    cameraUp_ = followRot.PosAxis(rot_.GetUp());
 }
 
-//ƒJƒƒ‰—h‚ç‚µ
+// ã‚«ãƒ¡ãƒ©æºã‚‰ã—
 void Camera::SetBeforeDrawShake(void)
 {
-	//ˆê’èŠÔƒJƒƒ‰‚ğ—h‚ç‚·
-	stepShake_ -= SceneManager::GetInstance().GetDeltaTime();
+    // ä¸€å®šæ™‚é–“ã‚«ãƒ¡ãƒ©ã‚’æºã‚‰ã™
+    stepShake_ -= SceneManager::GetInstance().GetDeltaTime();
 
-	if (stepShake_ < 0.0f)
-	{
-		pos_ = defaultPos_;
+    if (stepShake_ < 0.0f)
+    {
+        trans_.pos = defaultPos_;  // pos_ â†’ trans_.pos
 
-		ChangeMode(MODE::FOLLOW_SPRING);
-		return;
-	}
+        ChangeMode(MODE::FOLLOW_SPRING);
+        return;
+    }
 
-	//-1.0f`1.0f
-	float f = sinf(stepShake_ * SPEED_SHAKE);
+    // -1.0fï½1.0f
+    float f = sinf(stepShake_ * SPEED_SHAKE);
 
-	//-1000.0f`1000.0f
-	f *= 1000.0f;
+    // -1000.0fï½1000.0f
+    f *= 1000.0f;
 
-	//-1000 or 1000
-	int d = static_cast<int>(f);
+    // -1000 or 1000
+    int d = static_cast<int>(f);
 
-	//0 or 1
-	int shake = d % 2;
+    // 0 or 1
+    int shake = d % 2;
 
-	//0 or 2
-	shake *= 2;
+    // 0 or 2
+    shake *= 2;
 
-	//-1 or 1
-	shake -= 1;
+    // -1 or 1
+    shake -= 1;
 
-	//ˆÚ“®—Ê
-	VECTOR velocity = VScale(shakeDir_, (float)(shake)*WIDTH_SHAKE);
+    // ç§»å‹•é‡
+    VECTOR velocity = VScale(shakeDir_, (float)(shake)*WIDTH_SHAKE);
 
-	//ˆÚ“®æÀ•W
-	pos_ = VAdd(defaultPos_, velocity);
+    // ç§»å‹•å…ˆåº§æ¨™
+    trans_.pos = VAdd(defaultPos_, velocity);  // pos_ â†’ trans_.pos
 }
 
-//ƒ}ƒEƒX©—R‘€ìƒJƒƒ‰
+// ãƒã‚¦ã‚¹è‡ªç”±æ“ä½œã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawFreeMouse(void)
 {
-	auto& ins = InputManager::GetInstance();
-	//ƒ}ƒEƒXÀ•W‚ğæ“¾
-	Vector2 mousePos = ins.GetMousePos();
 
-	//ˆÚ“®—Ê
-	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
-	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
+    auto& ins = InputManager::GetInstance();
+    // ãƒã‚¦ã‚¹åº§æ¨™ã‚’å–å¾—
+    Vector2 mousePos = ins.GetMousePos();
 
-	//…•½‰ñ“]‚ğ“K—p
-	Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX_ * sensitivity_), Utility::AXIS_Y);
+    // ç§»å‹•é‡
+    deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+    deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	//‚’¼‰ñ“]‚ğ“K—p
-	Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY_ * sensitivity_), Utility::AXIS_X);
+    // æ°´å¹³å›è»¢ã‚’é©ç”¨
+    Quaternion yaw = Quaternion::AngleAxis(Utility::Deg2RadF(deltaX_ * sensitivity_), Utility::AXIS_Y);
 
-	//‰ñ“]‚ğ“K—p
-	rot_ = yaw.Mult(rot_);
+    // å‚ç›´å›è»¢ã‚’é©ç”¨
+    Quaternion pitch = Quaternion::AngleAxis(Utility::Deg2RadF(deltaY_ * sensitivity_), Utility::AXIS_X);
 
-	rot_ = pitch.Mult(rot_);
+    // å›è»¢ã‚’é©ç”¨
+    rot_ = yaw.Mult(rot_);
+    rot_ = pitch.Mult(rot_);
 
-	//’‹“_XV
-	VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
-	targetPos_ = VAdd(pos_, rotLocalPos);
+    // æ³¨è¦–ç‚¹æ›´æ–°
+    VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
+    targetPos_ = VAdd(trans_.pos, rotLocalPos);
 
-	//ãƒxƒNƒgƒ‹XV
-	cameraUp_ = rot_.GetUp();
+    // ä¸Šãƒ™ã‚¯ãƒˆãƒ«æ›´æ–°
+    cameraUp_ = rot_.GetUp();
 
-	//ƒ}ƒEƒX‚ğ’†‰›‚É–ß‚·
-	SetMousePoint(centerX_, centerY_);
+    // ãƒã‚¦ã‚¹ã‚’ä¸­å¤®ã«æˆ»ã™
+    SetMousePoint(centerX_, centerY_);
 }
 
+// TPSãƒã‚¦ã‚¹æ“ä½œã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawTPSMouse(void)
 {
-	if (!followTransform_) return;
+    if (pauseMenu_ != nullptr)
+    {
+        if (pauseMenu_->IsVisible() == true)
+        {
+            return;
+        }
+        else
+        {
+            SetMouseDispFlag(FALSE);
+        }
+    }
+    // ã‚‚ã—ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿æ™‚ç‚¹ã§ã®å–å¾—ã«å¤±æ•—ã—ã¦ã„ã‚‹å ´åˆã‚’è€ƒæ…®ã—ã¦å†å–å¾—ã‚’è©¦ã¿ã‚‹ã®ã‚‚æ‰‹ã§ã™
+    else
+    {
+        pauseMenu_ = Application::GetInstance().GetPauseMenu();
+    }
 
-	auto& ins = InputManager::GetInstance();
+    if (!followTransform_) return;
 
-	//ƒ}ƒEƒXÀ•W‚ğæ“¾
-	Vector2 mousePos = ins.GetMousePos();
+    auto& ins = InputManager::GetInstance();
 
-	//ˆÚ“®—Ê
-	deltaX_ = static_cast<int>(mousePos.x) - centerX_;
-	deltaY_ = static_cast<int>(mousePos.y) - centerY_;
+    // ãƒã‚¦ã‚¹åº§æ¨™ã‚’å–å¾—
+    Vector2 mousePos = ins.GetMousePos();
 
-	//‰ñ“]Šp“xXViƒ}ƒEƒX“ü—Íj
-	yaw_ += deltaX_ * sensitivity_;
-	pitch_ -= deltaY_ * sensitivity_;
+    // ç§»å‹•é‡
+    deltaX_ = static_cast<int>(mousePos.x) - centerX_;
+    deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
-	// ƒL[“ü—Í‚É‚æ‚é‰ñ“]‚ğ“K—pi“€Œ‹’†‚Ì‚İj
-	if (freezeFollow_)
-	{
-		yaw_ += keyRotateSpeed_;
-	}
+    // Yawï¼ˆå·¦å³å›è»¢ï¼‰ã¯å¸¸ã«æ›´æ–°
+    float yawDelta = 0.0f;
+    if (isYawInverted_)
+    {
+        // å·¦å³åè»¢ï¼šãƒã‚¦ã‚¹ã‚’å³ã«å‹•ã‹ã™ã¨å·¦ã«å›è»¢
+        yawDelta = -(deltaX_ * sensitivity_);
+    }
+    else
+    {
+        // é€šå¸¸ï¼šãƒã‚¦ã‚¹ã‚’å³ã«å‹•ã‹ã™ã¨å³ã«å›è»¢
+        yawDelta = (deltaX_ * sensitivity_);
+    }
+    yaw_ += yawDelta;
 
-	//ƒsƒbƒ`§ŒÀ
-	if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
-	if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
+    // Pitchï¼ˆä¸Šä¸‹å›è»¢ï¼‰ã®å‡¦ç†
+    float pitchDelta = 0.0f;
+    if (isPitchInverted_)
+    {
+        // åè»¢ï¼šãƒã‚¦ã‚¹ç§»å‹•é‡ãã®ã¾ã¾ï¼ˆãƒã‚¦ã‚¹ã‚’ä¸‹ã’ã‚‹ã¨ deltaY+ ãªã®ã§ã€ãƒ”ãƒƒãƒã‚‚+ï¼‰
+        pitchDelta = (deltaY_ * sensitivity_);
+    }
+    else
+    {
+        // é€šå¸¸ï¼šãƒã‚¦ã‚¹ç§»å‹•é‡ã«ãƒã‚¤ãƒŠã‚¹ã‚’æ›ã‘ã‚‹ï¼ˆãƒã‚¦ã‚¹ã‚’ä¸‹ã’ã‚‹ã¨ deltaY+ ãªã®ã§ã€ãƒ”ãƒƒãƒã¯-ï¼‰
+        pitchDelta = -(deltaY_ * sensitivity_);
+    }
+    pitch_ += pitchDelta;
 
-	// ’Ç]‚ª“€Œ‹‚³‚ê‚Ä‚¢‚È‚¢ê‡‚Ì’Êíˆ—
-	if (!freezeFollow_)
-	{
-		VECTOR followPos = followTransform_->pos;
+    // ã‚­ãƒ¼å…¥åŠ›ã«ã‚ˆã‚‹å›è»¢ã‚’é©ç”¨ï¼ˆå‡çµä¸­ã®ã¿ï¼‰
+    if (freezeFollow_)
+    {
+        yaw_ += keyRotateSpeed_;
+    }
 
-		//‹…–ÊÀ•W‚ÅƒJƒƒ‰‚ÌƒIƒtƒZƒbƒg‚ğŒvZ
-		offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-		offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
-		offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+    // ãƒ”ãƒƒãƒåˆ¶é™ï¼ˆé€šå¸¸ã®ä¸Šä¸‹é™ï¼‰
+    if (pitch_ > PITCH_UP) { pitch_ = PITCH_UP; }
+    if (pitch_ < PITCH_DWON) { pitch_ = PITCH_DWON; }
 
-		//ƒJƒƒ‰ˆÊ’u
-		pos_ = VAdd(followPos, offset_);
+    // æ³¨è¦–ç‚¹ã®é«˜ã•ã‚ªãƒ•ã‚»ãƒƒãƒˆï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®èƒ¸ã®é«˜ã•ï¼‰
+    const float TARGET_HEIGHT_OFFSET = 100.0f;
 
-		//’‹“_
-		targetPos_ = followPos;
-	}
-	else
-	{
-		// “€Œ‹’†FƒJƒƒ‰ˆÊ’u‚ÍŒÅ’èA’‹“_‚¾‚¯‰ñ“]
-		pos_ = frozenCameraPos_;
+    // è¿½å¾“ãŒå‡çµã•ã‚Œã¦ã„ãªã„å ´åˆã®é€šå¸¸å‡¦ç†
+    if (!freezeFollow_)
+    {
+        VECTOR followPos = followTransform_->pos;
 
-		// ƒvƒŒƒCƒ„[‚ÌŒ»İˆÊ’u
-		VECTOR playerPos = followTransform_->pos;
+        // çƒé¢åº§æ¨™ã§ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è¨ˆç®—
+        offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+        offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+        offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
-		// ƒJƒƒ‰‚©‚çƒvƒŒƒCƒ„[‚Ö‚ÌƒxƒNƒgƒ‹
-		VECTOR toPlayer = VSub(playerPos, frozenCameraPos_);
-		float distToPlayer = VSize(toPlayer);
+        // ç†æƒ³çš„ãªã‚«ãƒ¡ãƒ©ä½ç½®ã‚’è¨ˆç®—
+        VECTOR idealPos = VAdd(followPos, offset_);
 
-		// ƒ}ƒEƒX‘€ì‚É‚æ‚é’‹“_ƒIƒtƒZƒbƒgiƒJƒƒ‰‚ÌŒü‚«‚ğ•Ï‚¦‚éj
-		VECTOR lookOffset;
-		lookOffset.x = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-		lookOffset.y = distToPlayer * sinf(Utility::Deg2RadF(pitch_));
-		lookOffset.z = distToPlayer * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+        // åœ°é¢ã®é«˜ã•ã‚’å–å¾—
+        float groundY = GetGroundHeight(idealPos);
 
-		// ’‹“_ = ƒJƒƒ‰ˆÊ’u + Œü‚«ƒIƒtƒZƒbƒg
-		VECTOR calculatedTarget = VAdd(frozenCameraPos_, lookOffset);
+        // ã‚«ãƒ¡ãƒ©ã®çƒä½“ã‚³ãƒ©ã‚¤ãƒ€åŠå¾„ã‚’è€ƒæ…®ã—ãŸæœ€ä½é«˜åº¦
+        float minCameraY = groundY + COLLISION_RADIUS + MIN_CAMERA_Y;
 
-		// ƒvƒŒƒCƒ„[‚Æ‚Ì‹——£‚ª‹ß‚¢ê‡‚ÍƒvƒŒƒCƒ„[‚ğŒ©‚éiƒXƒ€[ƒY‚É•âŠÔj
-		float blendFactor = 0.7f; // ƒvƒŒƒCƒ„[’Ç]‚Ì‹­‚³i0.0`1.0j
-		targetPos_.x = calculatedTarget.x * (1.0f - blendFactor) + playerPos.x * blendFactor;
-		targetPos_.y = calculatedTarget.y * (1.0f - blendFactor) + playerPos.y * blendFactor;
-		targetPos_.z = calculatedTarget.z * (1.0f - blendFactor) + playerPos.z * blendFactor;
-	}
+        // åœ°é¢ã‚ˆã‚Šä¸‹ã«ãªã‚‰ãªã„ã‚ˆã†ã«åˆ¶é™
+        if (idealPos.y < minCameraY)
+        {
+            idealPos.y = minCameraY;
 
-	//ã•ûŒü‚ÍŒÅ’è
-	cameraUp_ = VGet(0, 1, 0);
+        }
 
-	//ƒ}ƒEƒX‚ğ’†‰›‚É–ß‚·
-	SetMousePoint(centerX_, centerY_);
+        // è·é›¢ãŒéå¸¸ã«è¿‘ã„å ´åˆã€Yåº§æ¨™ã‚’åœ°é¢ã‚ˆã‚Šä¸Šã«è£œæ­£
+        const float MIN_CAMERA_HEIGHT = 50.0f;
+        if (distance_ < 100.0f && idealPos.y < followPos.y + MIN_CAMERA_HEIGHT)
+        {
+            idealPos.y = followPos.y + MIN_CAMERA_HEIGHT;
+        }
 
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‹ã‚‰ã‚«ãƒ¡ãƒ©ã¸ã®è·é›¢ï¼ˆXZå¹³é¢ã®ã¿ï¼‰
+        VECTOR toIdeal = VSub(idealPos, followPos);
+        float idealDistXZ = sqrtf(toIdeal.x * toIdeal.x + toIdeal.z * toIdeal.z);
+
+        // é€šå¸¸æ™‚ã®å‡¦ç†
+        if (idealDistXZ < 1.0f)
+        {
+            trans_.pos.x = followPos.x;
+            trans_.pos.z = followPos.z;
+            trans_.pos.y = idealPos.y;
+        }
+        else
+        {
+            trans_.pos = idealPos;
+        }
+
+        // æ³¨è¦–ç‚¹ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®èƒ¸ã®é«˜ã•ã‚’è¦‹ã‚‹ï¼‰
+        targetPos_ = VGet(followPos.x, followPos.y + TARGET_HEIGHT_OFFSET, followPos.z);
+    }
+    else
+    {
+        // å‡çµä¸­ã®å‡¦ç†
+        VECTOR playerPos = followTransform_->pos;
+
+        // çƒé¢åº§æ¨™ã§ã‚«ãƒ¡ãƒ©ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è¨ˆç®—ï¼ˆé€šå¸¸æ™‚ã¨åŒã˜ï¼‰
+        offset_.x = distance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+        offset_.y = distance_ * sinf(Utility::Deg2RadF(pitch_));
+        offset_.z = distance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+
+        // ç†æƒ³çš„ãªã‚«ãƒ¡ãƒ©ä½ç½®ã‚’è¨ˆç®—
+        VECTOR idealPos = VAdd(playerPos, offset_);
+
+        // åœ°é¢ã®é«˜ã•ã‚’å–å¾—
+        float groundY = GetGroundHeight(idealPos);
+
+        // ã‚«ãƒ¡ãƒ©ã®çƒä½“ã‚³ãƒ©ã‚¤ãƒ€åŠå¾„ã‚’è€ƒæ…®ã—ãŸæœ€ä½é«˜åº¦
+        float minCameraY = groundY + COLLISION_RADIUS + MIN_CAMERA_Y;
+
+        // åœ°é¢ã‚ˆã‚Šä¸‹ã«ãªã‚‰ãªã„ã‚ˆã†ã«åˆ¶é™
+        if (idealPos.y < minCameraY)
+        {
+            idealPos.y = minCameraY;
+
+        }
+
+        trans_.pos = idealPos;
+
+        // æ³¨è¦–ç‚¹ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®èƒ¸ã®é«˜ã•ã‚’è¦‹ã‚‹ï¼‰
+        targetPos_ = VGet(playerPos.x, playerPos.y + TARGET_HEIGHT_OFFSET, playerPos.z);
+    }
+
+    // ä¸Šæ–¹å‘ã¯å›ºå®š
+    cameraUp_ = VGet(0, 1, 0);
+
+    // ãƒã‚¦ã‚¹ã‚’ä¸­å¤®ã«æˆ»ã™
+    SetMousePoint(centerX_, centerY_);
 }
 
+// ãƒ­ãƒƒã‚¯ã‚ªãƒ³ã‚«ãƒ¡ãƒ©
 void Camera::SetBeforeDrawLockon(void)
 {
-	if (!followTransform_) return;
-	VECTOR playerPos = followTransform_->pos;
+    if (!followTransform_) return;
+    VECTOR playerPos = followTransform_->pos;
 
-	auto& ins = InputManager::GetInstance();
-	bool mouseMoved = ins.GetMousePos().x != centerX_ || ins.GetMousePos().y != centerY_;
+    auto& ins = InputManager::GetInstance();
+    bool mouseMoved = ins.GetMousePos().x != centerX_ || ins.GetMousePos().y != centerY_;
 
-	if (lockonFlag_ && lockonTarget_)
-	{
-		// --- ƒƒbƒNƒIƒ“ ---
-		VECTOR enemyPos = lockonTarget_->pos;
+    if (lockonFlag_ && lockonTarget_)
+    {
+        VECTOR enemyPos = lockonTarget_->pos;
 
-		// ƒvƒŒƒCƒ„[Œã‚ëŠî–{ƒIƒtƒZƒbƒg
-		VECTOR localBackOffset = { 0.0f, 200.0f, -400.0f };
+        VECTOR localBackOffset = { 0.0f, 200.0f, -400.0f };
 
-		// ƒvƒŒƒCƒ„[‚Ìƒ[ƒJƒ‹‰ñ“]‚ğæ“¾
-		Quaternion playerRot = followTransform_->quaRot.Mult(followTransform_->quaRotLocal);
+        Quaternion playerRot = followTransform_->quaRot.Mult(followTransform_->quaRotLocal);
 
-		// ƒ[ƒJƒ‹ƒIƒtƒZƒbƒg‚ğ‰ñ“]
-		VECTOR rotatedOffset = playerRot.PosAxis(localBackOffset);
+        VECTOR rotatedOffset = playerRot.PosAxis(localBackOffset);
 
-		VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
+        VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
 
-		// ‰¡À•W•â³iƒƒbƒNƒIƒ“•â³j
-		float deltaX = pos_.x - playerPos.x;
-		if (deltaX > 50.0f)
-		{
-			desiredPos.x = playerPos.x + 150.0f;
-			desiredPos.y = playerPos.y + 250.0f;
-			desiredPos.z = playerPos.z - 300.0f;
-		}
-		else if (deltaX < -50.0f)
-		{
-			desiredPos.x = playerPos.x - 150.0f;
-			desiredPos.y = playerPos.y + 250.0f;
-			desiredPos.z = playerPos.z - 300.0f;
-		}
-		else
-		{
-			desiredPos.x = playerPos.x;
-			desiredPos.y = playerPos.y + 300.0f;
-			desiredPos.z = playerPos.z - 400.0f;
-		}
+        float deltaX = trans_.pos.x - playerPos.x;  // pos_ â†’ trans_.pos
+        if (deltaX > 50.0f)
+        {
+            desiredPos.x = playerPos.x + 150.0f;
+            desiredPos.y = playerPos.y + 250.0f;
+            desiredPos.z = playerPos.z - 300.0f;
+        }
+        else if (deltaX < -50.0f)
+        {
+            desiredPos.x = playerPos.x - 150.0f;
+            desiredPos.y = playerPos.y + 250.0f;
+            desiredPos.z = playerPos.z - 300.0f;
+        }
+        else
+        {
+            desiredPos.x = playerPos.x;
+            desiredPos.y = playerPos.y + 300.0f;
+            desiredPos.z = playerPos.z - 400.0f;
+        }
 
-		pos_ = desiredPos;
-		targetPos_ = VScale(VAdd(playerPos, enemyPos), 0.5f);
-		cameraUp_ = VGet(0, 1, 0);
-	}
-	else if (mouseMoved)
-	{
-		// --- ƒ}ƒEƒX‘€ì—Dæ ---
-		SetBeforeDrawTPSMouse();
-	}
-	else
-	{
-		// --- ƒ[ƒ‹ƒhÀ•W‚ÅƒXƒ€[ƒY’Ç] ---
-		VECTOR worldBackOffset = { 0.0f, 200.0f, -400.0f };
-		VECTOR targetCamPos = VAdd(playerPos, worldBackOffset);
+        trans_.pos = desiredPos;  // pos_ â†’ trans_.pos
+        targetPos_ = VScale(VAdd(playerPos, enemyPos), 0.5f);
+        cameraUp_ = VGet(0, 1, 0);
+    }
+    else if (mouseMoved)
+    {
+        SetBeforeDrawTPSMouse();
+    }
+    else
+    {
+        VECTOR worldBackOffset = { 0.0f, 200.0f, -400.0f };
+        VECTOR targetCamPos = VAdd(playerPos, worldBackOffset);
 
-		float lerpRate = 0.05f; // ƒXƒ€[ƒY’Ç]—¦i0.0`1.0j
-		pos_.x += (targetCamPos.x - pos_.x) * lerpRate;
-		pos_.y += (targetCamPos.y - pos_.y) * lerpRate;
-		pos_.z += (targetCamPos.z - pos_.z) * lerpRate;
+        float lerpRate = 0.05f;
+        trans_.pos.x += (targetCamPos.x - trans_.pos.x) * lerpRate;  // pos_ â†’ trans_.pos
+        trans_.pos.y += (targetCamPos.y - trans_.pos.y) * lerpRate;  // pos_ â†’ trans_.pos
+        trans_.pos.z += (targetCamPos.z - trans_.pos.z) * lerpRate;  // pos_ â†’ trans_.pos
 
-		targetPos_ = playerPos;
-		cameraUp_ = VGet(0, 1, 0);
-	}
+        targetPos_ = playerPos;
+        cameraUp_ = VGet(0, 1, 0);
+    }
 
-	// ƒ}ƒEƒX‚ğ’†‰›‚É–ß‚·
-	SetMousePoint(centerX_, centerY_);
+    SetMousePoint(centerX_, centerY_);
 }
 
-void Camera::Draw(void)
+void Camera::Draw(void) const
 {
-	//DrawFormatString(0, 0, 0xffffff,"ƒJƒƒ‰À•W = { %.2f, %.2f, %.2f}",pos_.x, pos_.y, pos_.z);
+#ifdef _DEBUG
+    UnitBase::Draw();
+
+    // ã‚«ãƒ¡ãƒ©ä½ç½®ã‚’å¯è¦–åŒ–
+    DrawSphere3D(trans_.pos, 10.0f, 8, GetColor(255, 255, 0), GetColor(255, 255, 0), TRUE);
+
+#endif
 }
 
 void Camera::Release(void)
 {
-	//ƒ‰ƒCƒg–³Œø‰»
-	SetLightEnableHandle(spotLight_, false);
+    // CollisionControllerã‹ã‚‰ç™»éŒ²è§£é™¤
+    CollisionController::GetInstance().UnregisterUnit(this);
 
-	//ƒ‰ƒCƒgƒnƒ“ƒhƒ‹íœ
-	DeleteLightHandle(spotLight_);
+    // ãƒ©ã‚¤ãƒˆç„¡åŠ¹åŒ–
+    SetLightEnableHandle(spotLight_, false);
+
+    // ãƒ©ã‚¤ãƒˆãƒãƒ³ãƒ‰ãƒ«å‰Šé™¤
+    DeleteLightHandle(spotLight_);
+
+    // åŸºåº•ã‚¯ãƒ©ã‚¹ã®è§£æ”¾
+    UnitBase::Release();
 }
 
 VECTOR Camera::GetPos(void) const
 {
-	return pos_;
+    return trans_.pos;  // pos_ â†’ trans_.pos
 }
 
 void Camera::ChangeMode(MODE mode)
 {
-	//ƒJƒƒ‰‚Ì‰Šúİ’è
-	//SetDefault();
+    mode_ = mode;
 
-	//ƒJƒƒ‰ƒ‚[ƒh‚Ì•ÏX
-	mode_ = mode;
+    switch (mode_)
+    {
+    case Camera::MODE::FIXED_POINT:
+        break;
 
-	//•ÏX‚Ì‰Šú‰»ˆ—
-	switch (mode_)
-	{
-	case Camera::MODE::FIXED_POINT:
-		break;
-		
-	case Camera::MODE::FREE:
-		break;
+    case Camera::MODE::FREE:
+        break;
 
-	case Camera::MODE::FOLLOW:
-		break;
+    case Camera::MODE::FOLLOW:
+        break;
 
-	case Camera::MODE::FOLLOW_SPRING:
-		break;
+    case Camera::MODE::FOLLOW_SPRING:
+        break;
 
-	case Camera::MODE::SHAKE:
-		stepShake_ = TIME_SHAKE;
-		shakeDir_ = VNorm({ 0.7f, 0.7f, 0.0f });
-		defaultPos_ = pos_;
-		break;
-	}
+    case Camera::MODE::SHAKE:
+        stepShake_ = TIME_SHAKE;
+        shakeDir_ = VNorm({ 0.7f, 0.7f, 0.0f });
+        defaultPos_ = trans_.pos;  // pos_ â†’ trans_.pos
+        break;
+    }
 }
 
-//À•W‚Ìæ“¾
 const void Camera::SetFollow(const Transform* follow)
 {
-	followTransform_ = follow;
+    followTransform_ = follow;
 }
 
-//À•W‚Ìİ’è
 void Camera::SetPos(const VECTOR& pos, const VECTOR& target)
 {
-	pos_ = pos;
-	targetPos_ = target;
+    trans_.pos = pos;  // pos_ â†’ trans_.pos
+    targetPos_ = target;
 }
 
 VECTOR Camera::GetFrontVec(void) const
 {
-	// pos_ ¨ targetPos_ ‚Ì•ûŒüƒxƒNƒgƒ‹‚ğ³‹K‰»
-	VECTOR front = VSub(targetPos_, pos_);
-	float length = sqrtf(front.x * front.x + front.y * front.y + front.z * front.z);
-	if (length > 0.0001f)
-	{
-		front.x /= length;
-		front.y /= length;
-		front.z /= length;
-	}
-	return front;
+    VECTOR front = VSub(targetPos_, trans_.pos);  // pos_ â†’ trans_.pos
+    float length = sqrtf(front.x * front.x + front.y * front.y + front.z * front.z);
+    if (length > 0.0001f)
+    {
+        front.x /= length;
+        front.y /= length;
+        front.z /= length;
+    }
+    return front;
 }
 
 VECTOR Camera::GetRightVec(void) const
 {
-	// ã•ûŒüƒxƒNƒgƒ‹‚ÍŒÅ’èiY²j
-	VECTOR up = { 0.0f, 1.0f, 0.0f };
-
-	// ‘O•ûŒü‚ğæ“¾
-	VECTOR front = GetFrontVec();
-
-	// ‰E•ûŒü = ‘O•ûŒü ~ ã•ûŒü
-	VECTOR right = VCross(front, up);
-
-	// …•½•ûŒü‚¾‚¯‚É‚·‚é
-	right.y = 0.0f;
-
-	// ³‹K‰»
-	right = VNorm(right);
-
-	return right;
+    VECTOR up = { 0.0f, 1.0f, 0.0f };
+    VECTOR front = GetFrontVec();
+    VECTOR right = VCross(front, up);
+    right.y = 0.0f;
+    right = VNorm(right);
+    return right;
 }
 
 Camera::MODE Camera::GetMode(void) const
 {
-	return mode_;
+    return mode_;
 }
 
 void Camera::SetLockon(bool loc)
 {
-	lockonFlag_ = loc;
+    lockonFlag_ = loc;
 }
 
 bool Camera::IsLockon(void) const
 {
-	return lockonFlag_;
+    return lockonFlag_;
 }
 
 void Camera::SetFreezeFollow(bool freeze)
 {
-	freezeFollow_ = freeze;
+    freezeFollow_ = freeze;
 
-	// “€Œ‹ŠJn‚ÉŒ»İ‚Ìó‘Ô‚ğ•Û‘¶
-	if (freeze && followTransform_)
-	{
-		frozenTargetPos_ = followTransform_->pos;
-		frozenCameraPos_ = pos_;
-		initialYaw_ = yaw_;
+    if (freeze && followTransform_)
+    {
+        frozenTargetPos_ = followTransform_->pos;
+        frozenCameraPos_ = trans_.pos;  // pos_ â†’ trans_.pos
+        initialYaw_ = yaw_;
 
-		// ƒJƒƒ‰‚ÆƒvƒŒƒCƒ„[‚Ì‹——£‚ğŒvZ
-		VECTOR diff = VSub(followTransform_->pos, pos_);
-		initialDistance_ = VSize(diff);
-	}
-	else
-	{
-		// “€Œ‹‰ğœ‚ÍƒL[“ü—Í‚É‚æ‚é‰ñ“]‚ğƒŠƒZƒbƒg
-		keyRotateSpeed_ = 0.0f;
-	}
+        VECTOR diff = VSub(trans_.pos, followTransform_->pos);  // pos_ â†’ trans_.pos
+        initialDistance_ = VSize(diff);
+
+        initialHeightOffset_ = diff.y;
+    }
+    else
+    {
+        keyRotateSpeed_ = 0.0f;
+    }
 }
 
 VECTOR Camera::GetOrbitPosition(void) const
 {
-	if (!freezeFollow_)
-	{
-		return Utility::VECTOR_ZERO;
-	}
+    if (!freezeFollow_)
+    {
+        return Utility::VECTOR_ZERO;
+    }
 
-	// yaw‚Ì•Ï‰»—Ê‚ğŒvZ
-	float deltaYaw = yaw_ - initialYaw_;
+    float deltaYaw = yaw_ - initialYaw_;
 
-	// ’‹“_‚ğŒÅ’èƒJƒƒ‰ˆÊ’u‚©‚çŒ©‚½•ûŒü‚ÅŒvZ
-	VECTOR direction;
-	direction.x = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
-	direction.y = initialDistance_ * sinf(Utility::Deg2RadF(pitch_));
-	direction.z = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
+    VECTOR direction;
+    direction.x = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * sinf(Utility::Deg2RadF(yaw_));
+    direction.y = initialDistance_ * sinf(Utility::Deg2RadF(pitch_));
+    direction.z = initialDistance_ * cosf(Utility::Deg2RadF(pitch_)) * cosf(Utility::Deg2RadF(yaw_));
 
-	// ƒvƒŒƒCƒ„[‚ÌV‚µ‚¢ˆÊ’uiƒJƒƒ‰ˆÊ’u + •ûŒüƒxƒNƒgƒ‹j
-	return VAdd(frozenCameraPos_, direction);
+    return VAdd(frozenCameraPos_, direction);
 }
 
 void Camera::SetKeyRotation(float rotSpeed)
 {
-	keyRotateSpeed_ = rotSpeed;
+    keyRotateSpeed_ = rotSpeed;
 }
 
 void Camera::SetLockonTarget(const Transform* target)
 {
-	lockonTarget_ = target;
+    lockonTarget_ = target;
 }
 
-//ƒJƒƒ‰‚Ì‰Šúİ’è
 void Camera::SetDefault(void)
 {
-	//ƒJƒƒ‰‚Ì‰Šúİ’è
-	pos_ = DEFAULT_CAMERA_POS;
+    trans_.pos = DEFAULT_CAMERA_POS;  // pos_ â†’ trans_.pos
 
-	//’‹“_
-	targetPos_ = VAdd(pos_, RELATIVE_C2T_POS);
+    targetPos_ = VAdd(trans_.pos, RELATIVE_C2T_POS);  // pos_ â†’ trans_.pos
 
-	//ƒJƒƒ‰ã•ûŒü
-	cameraUp_ = { 0.0f, 1.0f, 0.0f };
+    cameraUp_ = { 0.0f, 1.0f, 0.0f };
 
-	//ƒJƒƒ‰‚ÍX²‚ÉŒX‚¢‚Ä‚¢‚é‚ª
-	//‚±‚ÌŒX‚¢‚½ó‘Ô‚ğŠp“xƒ[ƒAŒX‚«‚È‚µ‚Æ‚·‚é
-	rot_ = Quaternion::Identity();
+    rot_ = Quaternion::Identity();
 
-	velocity_ = Utility::VECTOR_ZERO;
+    velocity_ = Utility::VECTOR_ZERO;
 }
 
-//ƒ‰ƒCƒg‚Ìİ’è
 void Camera::SetLighting(void)
 {
-	//ƒ‰ƒCƒgƒnƒ“ƒhƒ‹‚ğì¬
-	spotLight_ = CreateSpotLightHandle(
-		pos_,
-		VGet(0.0f, -1.0f, 0.0f),
-		DX_PI_F / 2.0f,
-		DX_PI_F / 4.0f,
-		2000.0f,
-		0.0f,
-		0.002f,
-		0.0f
-	);
+    spotLight_ = CreateSpotLightHandle(
+        trans_.pos,  // pos_ â†’ trans_.pos
+        VGet(0.0f, -1.0f, 0.0f),
+        DX_PI_F / 2.0f,
+        DX_PI_F / 4.0f,
+        2000.0f,
+        0.0f,
+        0.002f,
+        0.0f
+    );
 
-	//ƒ‰ƒCƒg—LŒø‰»
-	SetLightEnableHandle(spotLight_, true);
+    // ãƒ©ã‚¤ãƒˆæœ‰åŠ¹åŒ–
+    SetLightEnableHandle(spotLight_, true);
 }
 
-//ˆÚ“®‘€ì
+// ç§»å‹•æ“ä½œ
 void Camera::ProcessMove(void)
 {
-	auto& ins = InputManager::GetInstance();
+    auto& ins = InputManager::GetInstance();
 
-	//ˆÚ“®
-	if (ins.IsNew(KEY_INPUT_W)) { moveDIr_ = Utility::DIR_F; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_S)) { moveDIr_ = Utility::DIR_B; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_A)) { moveDIr_ = Utility::DIR_L; Acceleration(MOVE_ACC); }
-	if (ins.IsNew(KEY_INPUT_D)) { moveDIr_ = Utility::DIR_R; Acceleration(MOVE_ACC); }
+    // ç§»å‹•
+    if (ins.IsNew(KEY_INPUT_W)) { moveDIr_ = Utility::DIR_F; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_S)) { moveDIr_ = Utility::DIR_B; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_A)) { moveDIr_ = Utility::DIR_L; Acceleration(MOVE_ACC); }
+    if (ins.IsNew(KEY_INPUT_D)) { moveDIr_ = Utility::DIR_R; Acceleration(MOVE_ACC); }
 
-	//‰ñ“]²‚Æ—Ê‚ğŒˆ‚ß‚é
-	const float ROT_POW = 1.0f;
-	VECTOR axisDeg = Utility::VECTOR_ZERO;
-	if (ins.IsNew(KEY_INPUT_UP)) { axisDeg.x = -1.0f; }
-	if (ins.IsNew(KEY_INPUT_DOWN)) { axisDeg.x = 1.0f; }
-	if (ins.IsNew(KEY_INPUT_LEFT)) { axisDeg.y = -1.0f; }
-	if (ins.IsNew(KEY_INPUT_RIGHT)) { axisDeg.y = 1.0f; }
+    // å›è»¢è»¸ã¨é‡ã‚’æ±ºã‚ã‚‹
+    const float ROT_POW = 1.0f;
+    VECTOR axisDeg = Utility::VECTOR_ZERO;
+    if (ins.IsNew(KEY_INPUT_UP)) { axisDeg.x = -1.0f; }
+    if (ins.IsNew(KEY_INPUT_DOWN)) { axisDeg.x = 1.0f; }
+    if (ins.IsNew(KEY_INPUT_LEFT)) { axisDeg.y = -1.0f; }
+    if (ins.IsNew(KEY_INPUT_RIGHT)) { axisDeg.y = 1.0f; }
 
-	//ƒJƒƒ‰À•W‚ğ’†S‚Æ‚µ‚ÄA’‹“_‚ğ‰ñ“]‚³‚¹‚é
-	if (!Utility::EqualsVZero(axisDeg))
-	{
-		//¡‰ñ‚Ì‰ñ“]—Ê‚ğ‡¬
-		Quaternion rotPow;
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.z), Utility::AXIS_Z));
+    // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’ä¸­å¿ƒã¨ã—ã¦ã€æ³¨è¦–ç‚¹ã‚’å›è»¢ã•ã›ã‚‹
+    if (!Utility::EqualsVZero(axisDeg))
+    {
+        // ä»Šå›ã®å›è»¢é‡ã‚’åˆæˆ
+        Quaternion rotPow;
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.z), Utility::AXIS_Z));
 
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.x), Utility::AXIS_X));
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.x), Utility::AXIS_X));
 
-		rotPow = rotPow.Mult(
-			Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.y), Utility::AXIS_Y));
+        rotPow = rotPow.Mult(
+            Quaternion::AngleAxis(Utility::Deg2RadF(axisDeg.y), Utility::AXIS_Y));
 
-		//ƒJƒƒ‰‚Ì‰ñ“]‚Ì¡‰ñ‚Ì‰ñ“]—Ê‚ğ‰Á‚¦‚é(‡¬)
-		rot_ = rot_.Mult(rotPow);
+        // ã‚«ãƒ¡ãƒ©ã®å›è»¢ã®ä»Šå›ã®å›è»¢é‡ã‚’åŠ ãˆã‚‹(åˆæˆ)
+        rot_ = rot_.Mult(rotPow);
 
-		//’‹“_‚Ì‘Š‘ÎÀ•W‚ğ‰ñ“]‚³‚¹‚é
-		VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
+        // æ³¨è¦–ç‚¹ã®ç›¸å¯¾åº§æ¨™ã‚’å›è»¢ã•ã›ã‚‹
+        VECTOR rotLocalPos = rot_.PosAxis(RELATIVE_C2T_POS);
 
-		//’‹“_XV
-		targetPos_ = VAdd(pos_, rotLocalPos);
+        // æ³¨è¦–ç‚¹æ›´æ–°
+        targetPos_ = VAdd(trans_.pos, rotLocalPos);  // pos_ â†’ trans_.pos
 
-		//ƒJƒƒ‰‚Ìã•ûŒü
-		cameraUp_ = rot_.GetUp();
-	}
+        // ã‚«ãƒ¡ãƒ©ã®ä¸Šæ–¹å‘
+        cameraUp_ = rot_.GetUp();
+    }
 }
 
-//ˆÚ“®
+// ç§»å‹•
 void Camera::Move(void)
 {
-	//ˆÚ“®ˆ—
-	if (Utility::EqualsVZero(moveDIr_))
-	{
-		//ˆÚ“® = À•W * ˆÚ“®—Ê
-		//ˆÚ“®—Ê =  •ûŒü * ƒXƒs[ƒh
+    // ç§»å‹•å‡¦ç†
+    if (!Utility::EqualsVZero(moveDIr_))  // ä¿®æ­£: æ¡ä»¶ã‚’åè»¢
+    {
+        // ç§»å‹• = åº§æ¨™ * ç§»å‹•é‡
+        // ç§»å‹•é‡ =  æ–¹å‘ * ã‚¹ãƒ”ãƒ¼ãƒ‰
 
-		//“ü—Í‚³‚ê‚½•ûŒü‚ğƒJƒƒ‰‚Ì‰ñ“]÷•à‚¤‚ğg‚Á‚ÄA
-		//ƒJƒƒ‰‚Ìis•ûŒü‚É•ÏŠ·‚·‚é
-		VECTOR direction = rot_.PosAxis(moveDIr_);
+        // å…¥åŠ›ã•ã‚ŒãŸæ–¹å‘ã‚’ã‚«ãƒ¡ãƒ©ã®å›è»¢æƒ…å ±ã‚’ä½¿ã£ã¦ã€
+        // ã‚«ãƒ¡ãƒ©ã®é€²è¡Œæ–¹å‘ã«å¤‰æ›ã™ã‚‹
+        VECTOR direction = rot_.PosAxis(moveDIr_);
 
-		//ˆÚ“®—Ê
-		VECTOR movePow = VScale(direction, moveSpeed_);
+        // ç§»å‹•é‡
+        VECTOR movePow = VScale(direction, moveSpeed_);
 
-		//ˆÚ“®ˆ—
-		pos_ = VAdd(pos_, movePow);
+        // ç§»å‹•å‡¦ç†
+        trans_.pos = VAdd(trans_.pos, movePow);  // pos_ â†’ trans_.pos
 
-		targetPos_ = VAdd(targetPos_, movePow);
-	}
+        targetPos_ = VAdd(targetPos_, movePow);
+    }
 }
 
-//‰Á‘¬
+// åŠ é€Ÿ
 void Camera::Acceleration(float speed)
 {
-	moveSpeed_ += speed;
+    moveSpeed_ += speed;
 
-	//‘¬“x§ŒÀ(‰E•ûŒü)
-	if (moveSpeed_ > MAX_MOVE_SPEED)
-	{
-		moveSpeed_ = MAX_MOVE_SPEED;
-	}
+    // é€Ÿåº¦åˆ¶é™(å³æ–¹å‘)
+    if (moveSpeed_ > MAX_MOVE_SPEED)
+    {
+        moveSpeed_ = MAX_MOVE_SPEED;
+    }
 
-	//‘¬“x§ŒÀ(¶•ûŒü)
-	if (moveSpeed_ < -MAX_MOVE_SPEED)
-	{
-		moveSpeed_ = -MAX_MOVE_SPEED;
-	}
+    // é€Ÿåº¦åˆ¶é™(å·¦æ–¹å‘)
+    if (moveSpeed_ < -MAX_MOVE_SPEED)
+    {
+        moveSpeed_ = -MAX_MOVE_SPEED;
+    }
 }
 
-//Œ¸‘¬
+// æ¸›é€Ÿ
 void Camera::Decelerate(float speed)
 {
-	//‰E•ûŒü‚ÌˆÚ“®‚ğŒ¸‘¬‚³‚¹‚é
-	if (moveSpeed_ > 0.0f)
-	{
-		moveSpeed_ -= speed;
+    // å³æ–¹å‘ã®ç§»å‹•ã‚’æ¸›é€Ÿã•ã›ã‚‹
+    if (moveSpeed_ > 0.0f)
+    {
+        moveSpeed_ -= speed;
 
-		if (moveSpeed_ < 0.0f)
-		{
-			moveSpeed_ = 0.0f;
-		}
-	}
+        if (moveSpeed_ < 0.0f)
+        {
+            moveSpeed_ = 0.0f;
+        }
+    }
 
-	//¶•ûŒü‚ÌˆÚ“®‚ğŒ¸‘¬‚³‚¹‚é
-	if (moveSpeed_ < 0.0f)
-	{
-		moveSpeed_ += speed;
+    // å·¦æ–¹å‘ã®ç§»å‹•ã‚’æ¸›é€Ÿã•ã›ã‚‹
+    if (moveSpeed_ < 0.0f)
+    {
+        moveSpeed_ += speed;
 
-		if (moveSpeed_ > 0.0f)
-		{
-			moveSpeed_ = speed;
-		}
-	}
+        if (moveSpeed_ > 0.0f)
+        {
+            moveSpeed_ = 0.0f;  // ä¿®æ­£: speed â†’ 0.0f
+        }
+    }
+}
+
+// è¡çªå‡¦ç†
+void Camera::HandleCollisionPushback(void)
+{
+    // ãƒã‚¦ã‚¹æ“ä½œã§æ—¢ã«é«˜ã•åˆ¶é™ã•ã‚Œã¦ã„ã‚‹ã®ã§ã€
+    // ã“ã“ã§ã¯æœ€çµ‚çš„ãªå®‰å…¨ãƒã‚§ãƒƒã‚¯ã®ã¿è¡Œã†
+
+    // æœ€ä½é«˜åº¦ã®å®‰å…¨è£…ç½®
+    const float ABSOLUTE_MIN_Y = 5.0f;
+    if (trans_.pos.y < ABSOLUTE_MIN_Y)
+    {
+        float pushY = ABSOLUTE_MIN_Y - trans_.pos.y;
+        trans_.pos.y = ABSOLUTE_MIN_Y;
+        targetPos_.y += pushY;
+    }
+}
+
+// åœ°é¢ã®é«˜ã•ã‚’å–å¾—
+float Camera::GetGroundHeight(const VECTOR& pos)
+{
+    // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ï¼ˆåœ°é¢ãŒè¦‹ã¤ã‹ã‚‰ãªã„å ´åˆï¼‰
+    float groundY = 0.0f;
+    bool found = false;
+
+    // è¡çªå€™è£œã‹ã‚‰åœ°é¢ã‚’æ¢ã™
+    for (const auto& hitCol : hitColliders_)
+    {
+        if (!hitCol) continue;
+
+        // åœ°é¢ã‚¿ã‚°ã®ã¿å‡¦ç†
+        if (hitCol->GetTag() != ColliderBase::TAG::GROUND)
+        {
+            continue;
+        }
+
+        // ãƒ¢ãƒ‡ãƒ«ã‚³ãƒ©ã‚¤ãƒ€ã«ã‚­ãƒ£ã‚¹ãƒˆ
+        const ColliderModel* groundModel = dynamic_cast<const ColliderModel*>(hitCol);
+        if (!groundModel) continue;
+
+        int modelId = groundModel->GetFollow()->modelId;
+        if (modelId == -1) continue;
+
+        // æŒ‡å®šåº§æ¨™ã‹ã‚‰çœŸä¸‹ã«ãƒ¬ã‚¤ã‚­ãƒ£ã‚¹ãƒˆ
+        VECTOR rayStart = VAdd(pos, VGet(0, 1000.0f, 0));  // ååˆ†é«˜ã„ä½ç½®ã‹ã‚‰
+        VECTOR rayEnd = VAdd(pos, VGet(0, -1000.0f, 0));   // ååˆ†ä½ã„ä½ç½®ã¾ã§
+
+        auto lineHits = MV1CollCheck_LineDim(modelId, -1, rayStart, rayEnd);
+
+        if (lineHits.HitNum > 0)
+        {
+            // æœ€ã‚‚é«˜ã„åœ°é¢ã‚’å–å¾—
+            for (int i = 0; i < lineHits.HitNum; i++)
+            {
+                float hitY = lineHits.Dim[i].HitPosition.y;
+
+                if (!found || hitY > groundY)
+                {
+                    groundY = hitY;
+                    found = true;
+                }
+            }
+
+            MV1CollResultPolyDimTerminate(lineHits);
+        }
+    }
+
+    return groundY;
 }

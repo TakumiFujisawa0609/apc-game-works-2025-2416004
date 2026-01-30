@@ -2,9 +2,6 @@
 
 #include"Application.h"
 
-#include <crtdbg.h>
-#include <DxLib.h>
-
 
 //WInMainä÷êî
 //------------------------------

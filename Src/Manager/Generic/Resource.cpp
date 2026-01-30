@@ -63,6 +63,7 @@ Resource::~Resource()
 //読み込み
 void Resource::Load(void)
 {
+	int prevASync = 0;
 
 	switch (resType_)
 	{
@@ -86,9 +87,20 @@ void Resource::Load(void)
 		handleId_ = MV1LoadModel(path_.c_str());
 		break;
 
+	case Resource::TYPE::ANIM:
+		// アニメーション
+		handleId_ = MV1LoadModel(path_.c_str());
+		break;
+
 	case Resource::TYPE::EFFEKSEER:
-		//エフェクト
+	{ // ← 中括弧を開始
+		int prevASync = GetUseASyncLoadFlag();
+		SetUseASyncLoadFlag(FALSE);
+
 		handleId_ = LoadEffekseerEffect(path_.c_str());
+
+		SetUseASyncLoadFlag(prevASync);
+	} // ← 中括弧を終了
 		break;
 
 	case Resource::TYPE::SOUND:
@@ -137,6 +149,18 @@ void Resource::Release(void)
 	}
 		break;
 
+	case Resource::TYPE::ANIM:
+	{
+		//モデル
+		MV1DeleteModel(handleId_);
+		auto ids = duplicateModelIds_;
+		for (auto id : ids)
+		{
+			MV1DeleteModel(id);
+		}
+	}
+	break;
+
 	case Resource::TYPE::EFFEKSEER:
 		DeleteEffekseerEffect(handleId_);
 		break;
@@ -160,4 +184,9 @@ void Resource::CoopyHandle(int* imgs)
 	{
 		imgs[i] = handleIds_[i];
 	}
+}
+
+int Resource::GetHandle(void) const
+{
+	return handleId_;
 }

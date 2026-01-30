@@ -1,7 +1,4 @@
 #include "AnimationController.h"
-
-#include <DxLib.h>
-
 #include "../../Manager/Generic/SceneManager.h"
 
 //コンストラクタ
@@ -24,6 +21,9 @@ AnimationController::AnimationController(int modelId)
 
 	//ループ設定初期化
 	isLoop_ = false;
+
+	//一時停止フラグ初期化
+	isPaused_ = false;
 }
 
 //デストラクタ
@@ -55,13 +55,13 @@ void AnimationController::AddInternal(int type, int animIndex, float speed)
 }
 
 //外部アニメーションの追加
-void AnimationController::AddExternal(int type, const std::string& path, float speed)
+void AnimationController::AddExternal(int type, const int modelHandle, float speed)
 {
 	//アニメーションデータ
 	AnimData anim;
 
 	//アニメーションモデルの読み込み
-	anim.model = MV1LoadModel(path.c_str());
+	anim.model = modelHandle;
 
 	//アニメーションインデックス初期化
 	anim.animIndex = 0;
@@ -86,14 +86,23 @@ void AnimationController::Add(int type, AnimData anim)
 //アニメーションの再生
 void AnimationController::Play(int type, bool isLoop, float blendTime)
 {
-	// ブレンド中なら無視して安全
-	if (prevType_ != -1) return;
 
 	//同じアニメーションなら何もしない
 	if (type == playType_) return;
 
-	//前回のアニメーションを保存
-	prevType_ = playType_;
+	//以前のブレンドを中断する
+	if (prevType_ != -1)
+	{
+		auto& prevAnim = animations_[prevType_];
+		MV1DetachAnim(modeId_, prevAnim.attachNo);
+		prevType_ = -1;
+	}
+
+	//現在のアニメを前回にセット
+	if (playType_ != -1)
+	{
+		prevType_ = playType_;
+	}
 
 	//再生中のアニメーションを保存
 	playType_ = type;
@@ -106,6 +115,9 @@ void AnimationController::Play(int type, bool isLoop, float blendTime)
 
 	//ブレンドタイマーリセット
 	blendTimer_ = 0.0f;
+
+	//一時停止を解除
+	isPaused_ = false;
 
 	//再生するアニメーションデータ
 	auto& anim = animations_[type];
@@ -126,13 +138,32 @@ void AnimationController::Play(int type, bool isLoop, float blendTime)
 	//アニメーションの総時間を取得
 	anim.totalTime = MV1GetAttachAnimTotalTime(modeId_, anim.attachNo);
 
-	// 新アニメの初期ブレンド率は 0 にしておく
-	MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 0.0f);
+	// 前回のアニメーションがない場合は即座に100%、ある場合は0%から開始
+	if (prevType_ == -1)
+	{
+		MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 1.0f);
+	}
+	else
+	{
+		MV1SetAttachAnimBlendRate(modeId_, anim.attachNo, 0.0f);
+	}
 }
 
 //アニメーションの更新
 void AnimationController::Update(void)
 {
+	//一時停止中なら更新しない
+	if (isPaused_)
+	{
+		//一時停止中でも現在のフレームは適用する
+		if (playType_ != -1)
+		{
+			auto& anim = animations_[playType_];
+			MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+		}
+		return;
+	}
+
 	//デルタタイム
 	float deltaTime = SceneManager::GetInstance().GetDeltaTime();
 
@@ -230,4 +261,265 @@ void AnimationController::Release(void)
 	prevType_ = -1;
 	blendTimer_ = 0.0f;
 	blendTIme_ = 0.0f;
+	isPaused_ = false;
+}
+
+// アニメーションが再生中かチェック
+bool AnimationController::IsPlaying(int type) const
+{
+	// 現在再生中のアニメーションタイプと一致するかチェック
+	if (playType_ != type)
+	{
+		return false;
+	}
+
+	// アニメーションが終了しているかチェック
+	// ループアニメーションの場合は常にtrueを返す
+	if (isLoop_)
+	{
+		return true;
+	}
+
+	// アニメーションデータが存在するかチェック
+	auto it = animations_.find(type);
+	if (it == animations_.end())
+	{
+		return false;
+	}
+
+	const AnimData& anim = it->second;
+
+	// アニメーションの進行時間が総時間未満なら再生中
+	return anim.step < anim.totalTime;
+}
+
+// アニメーションの一時停止
+void AnimationController::Pause(void)
+{
+	isPaused_ = true;
+}
+
+// アニメーションの再開
+void AnimationController::Resume(void)
+{
+	isPaused_ = false;
+}
+
+// アニメーションが一時停止中か
+bool AnimationController::IsPaused(void) const
+{
+	return isPaused_;
+}
+
+// 特定のフレーム時間で停止
+void AnimationController::PauseAtTime(float time)
+{
+	if (playType_ != -1)
+	{
+		auto& anim = animations_[playType_];
+
+		// 時間を範囲内にクランプ
+		if (time < 0.0f) time = 0.0f;
+		if (time > anim.totalTime) time = anim.totalTime;
+
+		// 指定時間に設定
+		anim.step = time;
+		MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+
+		// 一時停止
+		isPaused_ = true;
+	}
+}
+
+// 特定のアニメーションタイプを指定してフレーム時間で停止
+void AnimationController::PauseAtTime(int animType, float time)
+{
+	// 指定されたタイプのアニメーションが存在するか確認
+	auto it = animations_.find(animType);
+	if (it == animations_.end())
+	{
+		return;
+	}
+
+	// 指定されたタイプが現在再生中でない場合は再生する
+	if (playType_ != animType)
+	{
+		Play(animType, false, 0.0f);
+	}
+
+	// 指定時間に設定して一時停止
+	auto& anim = animations_[animType];
+
+	// 時間を範囲内にクランプ
+	if (time < 0.0f) time = 0.0f;
+	if (time > anim.totalTime) time = anim.totalTime;
+
+	anim.step = time;
+	MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+
+	// 一時停止
+	isPaused_ = true;
+}
+
+// ★NEW★ フレーム番号で停止（現在再生中のアニメーション）
+void AnimationController::PauseAtFrame(int frameNumber)
+{
+	if (playType_ != -1)
+	{
+		auto& anim = animations_[playType_];
+
+		// フレーム番号を時間に変換
+		// 総フレーム数 = 総時間 × 再生速度
+		float totalFrames = anim.totalTime * anim.speed;
+
+		// フレーム番号を0から範囲内にクランプ
+		if (frameNumber < 0) frameNumber = 0;
+		if (frameNumber > (int)totalFrames) frameNumber = (int)totalFrames;
+
+		// フレーム番号を時間に変換
+		float time = (float)frameNumber / anim.speed;
+
+		// 時間を範囲内にクランプ
+		if (time > anim.totalTime) time = anim.totalTime;
+
+		// 指定時間に設定
+		anim.step = time;
+		MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+
+		// 一時停止
+		isPaused_ = true;
+	}
+}
+
+// ★NEW★ フレーム番号で停止（アニメーションタイプ指定）
+void AnimationController::PauseAtFrame(int animType, int frameNumber)
+{
+	// 指定されたタイプのアニメーションが存在するか確認
+	auto it = animations_.find(animType);
+	if (it == animations_.end())
+	{
+		return;
+	}
+
+	// 指定されたタイプが現在再生中でない場合は再生する
+	if (playType_ != animType)
+	{
+		Play(animType, false, 0.0f);
+	}
+
+	// 指定フレームに設定して一時停止
+	auto& anim = animations_[animType];
+
+	// フレーム番号を時間に変換
+	float totalFrames = anim.totalTime * anim.speed;
+
+	// フレーム番号を0から範囲内にクランプ
+	if (frameNumber < 0) frameNumber = 0;
+	if (frameNumber > (int)totalFrames) frameNumber = (int)totalFrames;
+
+	// フレーム番号を時間に変換
+	float time = (float)frameNumber / anim.speed;
+
+	// 時間を範囲内にクランプ
+	if (time > anim.totalTime) time = anim.totalTime;
+
+	anim.step = time;
+	MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+
+	// 一時停止
+	isPaused_ = true;
+}
+
+// ★NEW★ 現在のフレーム番号を取得
+int AnimationController::GetCurrentFrame(void) const
+{
+	if (playType_ != -1)
+	{
+		const auto& anim = animations_.at(playType_);
+		// 時間をフレーム番号に変換
+		return (int)(anim.step * anim.speed);
+	}
+	return 0;
+}
+
+// ★NEW★ 指定したアニメーションの現在フレーム番号を取得
+int AnimationController::GetCurrentFrame(int animType) const
+{
+	auto it = animations_.find(animType);
+	if (it != animations_.end())
+	{
+		const auto& anim = it->second;
+		return (int)(anim.step * anim.speed);
+	}
+	return 0;
+}
+
+// ★NEW★ 総フレーム数を取得
+int AnimationController::GetTotalFrames(void) const
+{
+	if (playType_ != -1)
+	{
+		const auto& anim = animations_.at(playType_);
+		return (int)(anim.totalTime * anim.speed);
+	}
+	return 0;
+}
+
+// ★NEW★ 指定したアニメーションの総フレーム数を取得
+int AnimationController::GetTotalFrames(int animType) const
+{
+	auto it = animations_.find(animType);
+	if (it != animations_.end())
+	{
+		const auto& anim = it->second;
+		return (int)(anim.totalTime * anim.speed);
+	}
+	return 0;
+}
+
+// 現在のアニメーション時間を取得
+float AnimationController::GetCurrentTime(void) const
+{
+	if (playType_ != -1)
+	{
+		return animations_.at(playType_).step;
+	}
+	return 0.0f;
+}
+
+// 指定したアニメーションタイプの現在時間を取得
+float AnimationController::GetCurrentTimes(int animType) const
+{
+	auto it = animations_.find(animType);
+	if (it != animations_.end())
+	{
+		return it->second.step;
+	}
+	return 0.0f;
+}
+
+// 現在のアニメーション時間を設定
+void AnimationController::SetCurrentTime(float time)
+{
+	if (playType_ != -1)
+	{
+		auto& anim = animations_[playType_];
+
+		// 時間を範囲内にクランプ
+		if (time < 0.0f) time = 0.0f;
+		if (time > anim.totalTime) time = anim.totalTime;
+
+		anim.step = time;
+		MV1SetAttachAnimTime(modeId_, anim.attachNo, anim.step);
+	}
+}
+
+// アニメーションの総時間を取得
+float AnimationController::GetTotalTime(void) const
+{
+	if (playType_ != -1)
+	{
+		return animations_.at(playType_).totalTime;
+	}
+	return 0.0f;
 }

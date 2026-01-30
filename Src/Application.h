@@ -1,7 +1,7 @@
 #pragma once
-#include<string>
-#include<windows.h>
-class Fps;
+#include "Pch.h"
+
+class FpsController;
 class PauseMenu;
 
 enum class ActiveUI {
@@ -20,7 +20,7 @@ public:
 	static constexpr int SCREEN_SIZE_X = 1920;
 	static constexpr int SCREEN_SIZE_Y = 1080;
 
-	//フルスクリーンサイズ
+	//デバッククリーンサイズ
 	static constexpr int DEFA_SCREEN_SIZE_X = 1200;
 	static constexpr int DEFA_SCREEN_SIZE_Y = 800;
 
@@ -76,6 +76,8 @@ public:
 	bool IsTeleportUIActive(void) const;
 	ActiveUI GetActiveUI(void) const;
 
+	PauseMenu* GetPauseMenu(void) const { return pauseMenu_; }
+
 private:
 
 	//性的インスタンス
@@ -90,11 +92,14 @@ private:
 	bool isActiveUI_;
 
 	//フレームレート制御
-	Fps* fps_;
+	std::unique_ptr<FpsController> fps_;
 
 	PauseMenu* pauseMenu_;
 
-	ActiveUI activeUI_;;
+	ActiveUI activeUI_;
+
+	// デバックスクリーンかどうか
+	bool debugSc_;
 
 	//エフェクシアの初期化
 	void InitEffekseer(void);

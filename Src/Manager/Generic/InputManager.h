@@ -1,7 +1,6 @@
 #pragma once
-#include <map>
-#include <Dxlib.h>
 #include "../../Common/Vector2.h"
+#include <DxLib.h>
 
 /// <summary>
 /// 入力全般（キーボード、マウス、ゲームパッド）を管理するクラス（シングルトン）
@@ -116,6 +115,11 @@ public:
 	bool IsNew(int key) const;
 
 	/// <summary>
+	/// キーが押されているか（押しっぱなしOK
+	/// </summary>
+	bool IsPress(int key) const;
+
+	/// <summary>
 	/// キーの押下判定(押しっぱなしはNG)
 	/// </summary>
 	bool IsTrgDown(int key) const;
@@ -156,6 +160,11 @@ public:
 	bool IsTrgMouseRight(void) const;
 
 	/// <summary>
+	/// マウスが押されているか（押しっぱなしOK）
+	/// </summary>
+	bool IsMousePress(int key) const;
+
+	/// <summary>
 	/// コントローラの入力情報を取得する
 	/// </summary>
 	JOYPAD_IN_STATE GetJPadInputState(JOYPAD_NO no);
@@ -174,6 +183,44 @@ public:
 	/// パッドボタンが離されたか
 	/// </summary>
 	bool IsPadBtnTrgUp(JOYPAD_NO no, JOYPAD_BTN btn) const;
+
+	/// <summary>
+	/// パッドボタンが押されているか（押しっぱなし判定）
+	/// </summary>
+	bool IsPadBtnPress(JOYPAD_NO no, JOYPAD_BTN btn) const;
+
+	/// <summary>
+	/// 右ステッィクのX軸の値を取得
+	/// </summary>
+	float GetPadStickLX(int padNo) const;
+
+	/// <summary>
+	/// 右ステッィクのY軸の値を取得
+	/// </summary>
+	float GetPadStickLY(int padNo) const;
+
+	/// <summary>
+	/// 左ステッィクのX軸の値を取得
+	/// </summary>
+	float GetPadStickRX(int padNo) const;
+
+	/// <summary>
+	/// 左ステッィクのY軸の値を取得
+	/// </summary>
+	float GetPadStickRY(int padNo) const;
+
+	//左スティック入力から方向ベクトルを取得
+	VECTOR GetDirectionXZAKey(int aKeyX, int aKeyY);
+
+	/// <summary>
+	/// マウス感度の設定
+	/// </summary>
+	void SetMouseSensitivity(float sensitivity);
+
+	/// <summary>
+	/// マウス感度の取得
+	/// </summary>
+	float GetMouseSensitivity(void) const { return mouseSensitivity_; }
 
 private:
 
@@ -200,6 +247,16 @@ private:
 		bool keyTrgDown;	// 現フレームでボタンが押されたか
 		bool keyTrgUp;		// 現フレームでボタンが離されたか
 	};
+
+	// 左スティック入力の最大値(XInput/DInputの場合は32767など)
+	static constexpr float AKEY_VAL_MAX = 32767.0f;
+
+	// スティックの無効範囲（倒し具合が小さい場合は無視）
+	static constexpr float THRESHOLD = 0.01f;
+
+
+	// マウス感度
+	static constexpr float DEFAULT_SENSITIVITY = 0.2f;
 
 	/// <summary>
 	/// コントローラ情報
@@ -237,6 +294,11 @@ private:
 	/// マウスボタンの入力状態
 	/// </summary>
 	int mouseInput_;
+
+	/// <summary>
+	/// マウス感度
+	/// </summary>
+	float mouseSensitivity_;
 
 	/// <summary>
 	// パッド情報

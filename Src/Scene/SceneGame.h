@@ -1,69 +1,71 @@
 #pragma once
-
-#include<memory>
-
 #include "SceneBase.h"
-
+#include "../Object/Manager/GroundManager.h"
 #include "../Object/Manager/EnemyManager.h"
-#include "../Application.h"
+#include "../Object/Manager/StageManager.h"
+
 
 class Player;
-class GroundManager;
 class EnemyData;
-
+class SkyDome;
 
 class SceneGame : public SceneBase
 {
 public:
+	// 制限時間（秒）
+	static constexpr float LIMIT_TIME = 120.0f;
 
-	//クリア時間
-	static constexpr float LIMIT_TIME = 5.0f;
-
-	//コンストラクタ
+	// コンストラクタ
 	SceneGame(void);
 
-	//デストラクタ
+	// デストラクタ
 	~SceneGame(void) = default;
 
-	//初期化処理
-	void Init(void)override;
-
-	//更新処理
-	void Update(void)override;
-
-	//描画処理
-	void Draw(void)override;
-
-	//解放処理
-	void Release(void)override;
-
-	//ロード
+	// 読み込み
 	void Load(void) override;
 
-	//ロード完了
+	// 読み込み終了
 	void EndLoad(void) override;
 
+	// 初期化
+	void Init(void) override;
+
+	// 更新処理
+	void Update(void) override;
+
+	// 描画処理
+	void Draw(void) override;
+
+	// 解放処理
+	void Release(void) override;
+
 private:
-
-	//ステージ
-
-	
-	//プレイヤー
+	// プレイヤー
 	std::shared_ptr<Player> player_;
 
-	//ステージ
+	// ステージ
 	std::shared_ptr<GroundManager> groundManager_;
-	
-	//エネミーマネージャー
-	std::unique_ptr<EnemyManager> enemyManager_;
 
-	//エネミーデータ
+	// エネミーデータ
 	std::shared_ptr<EnemyData> enemyData_;
 
+	// スカイドーム
+	std::shared_ptr<SkyDome> skyDome_;
+
+	// エネミーマネージャー
+	std::unique_ptr<EnemyManager> enemyManager_;
+
+	// ステージマネージャー
+	std::unique_ptr<StageManager> stageManager_;
+
+
+
+	// スタート時のフォント表示フラグ
 	bool isStartFont_;
 
-	//描画(デバッグ)
+	// エネミースポナーの配置設定
+	void SetupEnemySpawners();
+
+	// 描画(デバック)
 	void DrawDebug(void);
-
 };
-

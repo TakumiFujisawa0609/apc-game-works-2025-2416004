@@ -1,5 +1,4 @@
 #include "SceneUi.h"
-#include <DxLib.h>
 #include "../../DrawUI/Font.h"
 #include "../../Application.h"
 
@@ -34,7 +33,7 @@ void SceneUi::DrawFont(int baseYOverride)
         const auto& font = fontList_[i];
         int textWidth = GetDrawStringWidth(font.message.c_str(), (int)font.message.length());
 
-        int xPos = (Application::DEFA_SCREEN_SIZE_X / 2) - textWidth;
+        int xPos = (Application::SCREEN_SIZE_X / 2) - textWidth;
         int yPos = baseY + (int)i * spacing;
 
         int color = ((int)i == currentIndex_) ? GetColor(255, 255, 0) : GetColor(170, 170, 170);
@@ -55,12 +54,12 @@ void SceneUi::SetCurrentIndex(int index)
     }
 }
 
-int SceneUi::GetCurrentIndex() const
+int SceneUi::GetCurrentIndex(void) const
 {
     return currentIndex_;
 }
 
-int SceneUi::GetMaxIndex() const
+int SceneUi::GetMaxIndex(void) const
 {
     return static_cast<int>(fontList_.size());
 }

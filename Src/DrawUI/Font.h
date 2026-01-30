@@ -61,6 +61,9 @@ private:
 	//フォントハンドルのマップ
 	std::unordered_map<std::string, std::unordered_map<std::pair<int, int>, int, PairHash>> fontHandles_;
 
+	// フォントIDから内部フォント名を引くためのマップ
+	std::unordered_map<std::string, std::string> fontIdToInternalName_;
+
 	// 動的フォントサイズとタイプのキャッシュ
 	std::unordered_map<std::pair<int, int>, int, PairHash> dynamicFontHandles_;
 

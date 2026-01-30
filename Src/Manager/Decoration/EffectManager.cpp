@@ -44,9 +44,14 @@ void EffectManager::Add(const EFFECT& efc, int data)
 // エフェクトの再生
 void EffectManager::Play(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size, const SoundManager::SOUND _sound)
 {
+
     // 元データがないときは警告 (未登録のエフェクトを再生しようとした場合)
     // 注意: 変数名が不一致 (_efc → *efc)
     if (effectRes_.find(efc) == effectRes_.end()) assert("設定していないエフェクトを再生しようとしています。");
+
+    if (effectPlay_.find(efc) != effectPlay_.end()) {
+        StopEffekseer3DEffect(effectPlay_[efc]);
+    }
 
     // 再生配列内に要素が入っていないかを検索
     if (effectPlay_.find(efc) == effectPlay_.end()) {
@@ -65,6 +70,35 @@ void EffectManager::Play(const EFFECT& efc, const VECTOR& pos, const Quaternion&
     // NONE以外の効果音が指定されていれば再生
     if (_sound != SoundManager::SOUND::NONE) {
         SoundManager::GetInstance().Play(_sound);
+    }
+}
+
+// 個別にエフェクトを管理する用
+int EffectManager::PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qya, const float& size, const SoundManager::SOUND sound)
+{
+    if (effectRes_.find(efc) == effectRes_.end()) return -1;
+
+    // エフェクトの再生
+    int handle = PlayEffekseer3DEffect(effectRes_[efc]);
+
+    // 初回の位置合わせ
+    SyncEffect(efc, pos, qya, size);
+
+    // 効果音の再生
+    if (sound != SoundManager::SOUND::NONE) {
+        SoundManager::GetInstance().Play(sound);
+    }
+
+    return handle;
+}
+
+// ハンドル指定でエフェクト停止
+void EffectManager::StopHandle(int handle)
+{
+    // ハンドルが有効な場合かつ、再生中のみ停止
+    if (handle != -1 && IsEffekseer3DEffectPlaying(handle) == 0)
+    {
+        StopEffekseer3DEffect(handle);
     }
 }
 
@@ -100,6 +134,21 @@ void EffectManager::SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quate
     SetPosPlayingEffekseer3DEffect(effectPlay_[efc], pos.x, pos.y, pos.z);
 }
 
+// 個体ごと管理用
+void EffectManager::SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, const float& size)
+{
+    // ハンドルが無効、または再生終了していたら何もしない
+    if (handle == -1 || IsEffekseer3DEffectPlaying(handle) != 0) return;
+
+    SetScalePlayingEffekseer3DEffect(handle, size, size, size);
+
+    // クォータニオンをオイラー角に変換してセット
+    VECTOR euler = qua.ToEuler();
+    SetRotationPlayingEffekseer3DEffect(handle, euler.x, euler.y, euler.z);
+
+    SetPosPlayingEffekseer3DEffect(handle, pos.x, pos.y, pos.z);
+}
+
 // エフェクトの再生確認
 // param _efc: エフェクト名
 // return: 再生中ならtrue、停止中ならfalse
@@ -111,6 +160,15 @@ bool EffectManager::IsPlayEffect(const EFFECT& _efc)
         return true;
     }
     return false;
+}
+
+// エフェクトの再生確認(個体ごと管理用)
+bool EffectManager::IsPlayEffect(int handle)
+{
+    if (handle == -1) { return false; }
+
+    // Effekseerの関数で再生中か確認 (0が再生中)
+    return IsEffekseer3DEffectPlaying(handle) == 0;
 }
 
 // 解放処理

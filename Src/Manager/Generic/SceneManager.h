@@ -1,11 +1,4 @@
 #pragma once
-
-#include <chrono>
-#include <list>
-#include <memory>
-#include <mutex>
-#include <thread>
-
 #include "../../Application.h"
 
 class SceneBase;
@@ -60,6 +53,30 @@ public:
     // ゲームを終了させる
     void GameEnd(void);
 
+    // プレイヤーの移動距離を設定
+    void SetPlayerDistance(float distance);
+    
+    // プレイヤーの移動距離を取得
+    float GetPlayerDistance(void) const;
+    
+    // プレイヤーの移動距離をリセット
+    void ResetPlayerDistance(void);
+
+    // エネミーの死亡数を設定
+    void SetEnemyDeathCount(int count);
+   
+    // エネミーの死亡数を取得
+    int GetEnemyDeathCount(void) const;
+    
+    // エネミーの死亡数をリセット
+    void ResetEnemyDeathCount(void);
+    
+    // エネミーの死亡数を加算
+    void AddEnemyDeathCount(int add = 1);
+
+    // ゲーム統計をリセット（距離と死亡数を一括リセット）
+    void ResetGameStats(void);
+
 private:
     // 唯一のインスタンス
     static SceneManager* instance_;
@@ -84,6 +101,12 @@ private:
 
     // デルタタイム
     float deltaTime_;
+
+    // プレイヤーの移動距離
+    float playerDistance_;
+    
+    // エネミーの死亡数
+    int enemyDeathCount_;
 
     // 3D描画設定を初期化する
     void Init3D(void);

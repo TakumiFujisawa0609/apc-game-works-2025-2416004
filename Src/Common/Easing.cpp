@@ -1,7 +1,5 @@
 #include "Easing.h"
 
-#include<cmath>
-#include<DxLib.h>
 
 //time			= 進行度
 //totalTime		= 目標時間

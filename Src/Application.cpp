@@ -1,16 +1,14 @@
 #include"Application.h"
 
-#include<DxLib.h>
-#include<EffekseerForDXLib.h>
-
 #include "Manager/Decoration/EffectManager.h"
 #include "Manager/Generic/ResourceManager.h"
 #include "Manager/Generic/InputManager.h"
 #include "Manager/Generic/SceneManager.h"
 #include "DrawUI/Font.h"
-#include "Fps/FpsControll.h"
+#include "Fps/FpsController.h"
 #include "DrawUI/SceneUI/PauseMenu.h"
-#include "Scene/SceneTitle.h"
+#include "Manager/System/Loading.h"
+#include "Manager/System/TimeManager.h"
 
 
 Application* Application::instance_ = nullptr;
@@ -47,17 +45,37 @@ void Application::Init(void)
 	//アプリケーションの初期設定
 	SetWindowText("Fly");
 	
-	//ウィンドウのサイズ
-	SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
+	if (debugSc_)
+	{
+		//ウィンドウのサイズ
+		SetGraphMode(DEFA_SCREEN_SIZE_X, DEFA_SCREEN_SIZE_Y, 32);
 
-	ChangeWindowMode(true);
+		ChangeWindowMode(true);
+	}
+	else
+	{
+		//ウィンドウのサイズ
+		SetGraphMode(SCREEN_SIZE_X, SCREEN_SIZE_Y, 32);
+
+		ChangeWindowMode(false);
+	}
+
+	
+
+	
 
 	//非アクティブ状態でも動作する
 	SetAlwaysRunFlag(TRUE);
 
+	//FPS制御クラス
+	fps_ = std::make_unique<FpsController>(DEFAULT_FPS);
+
 	//DXLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 	isInitFail_ = false;
+
+	SetUseASyncLoadFlag(TRUE);
+
 	if (DxLib_Init() == -1)
 	{
 		//エラー処理
@@ -84,13 +102,6 @@ void Application::Init(void)
 
 	EffectManager::CreateInstance();
 
-	std::string fontPath = Application::PATH_FONT + "NikkyouSans-mLKax.ttf";
-
- 	Font::GetInstance().AddFont("GameFont","Nikkyou Sans", fontPath, 24, 6, Font::FONT_TYPE_EDGE);
-
-	//FPS制御初期化
-	fps_->FpsControll_Initialize();
-
 	pauseMenu_ = new PauseMenu();
 	pauseMenu_->Init();
 	
@@ -110,6 +121,11 @@ void Application::Run(void)
 	{
 		if (sceneManager.GetGameEnd()) break;
 
+		SetDrawScreen(DX_SCREEN_BACK);
+		ClearDrawScreen();
+
+		inputManager.Update();
+
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -117,8 +133,6 @@ void Application::Run(void)
 		}
 
 		Sleep(1);
-
-		isActiveUI_ = false;
 
 		// --- ESCキーでポーズ表示 ---
 		if (isActiveUI_ == false)
@@ -128,13 +142,14 @@ void Application::Run(void)
 				pauseMenu_->Show();  // メニュー表示
 			}
 		}
-		
-
-		inputManager.Update();
 
 		if (pauseMenu_->IsVisible())
 		{
-			pauseMenu_->Update();
+			if (!isActiveUI_)
+			{
+				pauseMenu_->Update();
+			}
+
 			if (pauseMenu_->IsDecisionMade())
 			{
 				int index = pauseMenu_->GetSelectedIndex();
@@ -154,7 +169,7 @@ void Application::Run(void)
 
 				case 3: // ゲーム終了
 					sceneManager.GameEnd();
-					return;
+					break;
 				}
 			}
 		}
@@ -162,36 +177,38 @@ void Application::Run(void)
 		{
 			// 通常ゲーム処理
 			sceneManager.Update();
-
-			//auto scene = dynamic_cast<SceneTitle*>(sceneManager.GetScene());
-			/*if (scene && scene->IsExitRequested())
-			{
-				return;
-			}*/
 		}
+
+		sceneManager.Draw();
+
 		// エフェクト更新
 		UpdateEffekseer3D();
 
-		
-
-		// 描画
-		sceneManager.Draw();
-
-		fps_->FpsControll_Update();
-
-		// フレームレート表示
-		fps_->FpsControll_Draw();
 
 		// エフェクト描画
 		DrawEffekseer3D();
 
-		if (pauseMenu_->IsVisible())
-		{
-			pauseMenu_->Draw();  // ポーズメニュー前面に
-		}
-		ScreenFlip();
+		// 平均FPS描画
+		fps_->Draw();
 
-		fps_->FpsControll_Wait();
+
+		// ポーズメニュー（最前面）
+		if (pauseMenu_->IsVisible() && !Loading::GetInstance()->IsLoading() && !isActiveUI_)
+		{
+
+			TimeManager::GetInstance().SetPaused(true);
+			pauseMenu_->Draw();
+		}
+		else
+		{
+			TimeManager::GetInstance().SetPaused(false);
+		}
+
+		fps_->Wait();
+
+ 		ScreenFlip();
+
+		
 		
 	}
 }
@@ -214,7 +231,10 @@ void Application::Destroy(void)
 		isReleaseFail_ = true;
 	}
 	
-	delete fps_;
+	if (fps_)
+	{
+		fps_.reset();
+	}
 	delete instance_;
 }
 
@@ -266,7 +286,9 @@ void Application::InitEffekseer(void)
 
 Application::Application(void)
 {
-	fps_ = new Fps();
 	isInitFail_ = false;
 	isReleaseFail_ = false;
+
+	// デバックスクリーンかどうか
+	debugSc_ = false;
 }

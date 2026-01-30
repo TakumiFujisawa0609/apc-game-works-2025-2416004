@@ -27,16 +27,19 @@ void SceneBase::Release(void)
 {
 }
 
+// ロード開始
 void SceneBase::Load(void)
 {
 	isLoading_ = true;
 }
 
+// ロード完了
 void SceneBase::EndLoad(void)
 {
 	isLoading_ = false;
 }
 
+// ロード中か
 bool SceneBase::IsLoading(void) const
 {
 	return isLoading_;

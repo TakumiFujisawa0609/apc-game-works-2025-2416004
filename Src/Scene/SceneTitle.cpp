@@ -1,74 +1,83 @@
 ﻿#include "SceneTitle.h"
-
-#include <DxLib.h>
-#include "../Manager/Generic/Resource.h"
-#include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
+#include "../Manager/Generic/ResourceManager.h"
 #include "../Manager/Decoration/SoundManager.h"
 #include "../Manager/Generic/Camera.h"
 #include "../Scene/SceneGame.h"
+#include "../Scene/SceneTutorial.h"
+#include "../Scene/SceneOption.h"
+#include "../Scene/SceneCredit.h"
 #include "../Object/Grid.h"
 #include "../Application.h"
 #include "../DrawUI/Font.h"
-#include "../Manager/System/Loading.h"
 #include "../Manager/System/TimeManager.h"
+#include "../Manager/System/Loading.h"
 
 SceneTitle::SceneTitle(void)
 {
-   logo_ = -1;
-   grid_ = nullptr;
-   isDecided_ = false;
-   blackAlpha_ = 0;
-   operationHandle_ = -1;
-   movieHandle_ = -1;
-   showBlackBackground_ = false;
-   playHandle_ = -1;
-   playHandle2_ = -1;
-   isPlay_ = false;
-   exitRequested_ = false;
-   howToPlayPage_ = 0;
-   atelierHandle_ = -1;
-   gardenHandle_ = -1;
-   guildHandle_ = -1;
-   inHowToPlayMenu_ = false;
-   pauseUiCount_ = 0;
+    logo_ = -1;
+    grid_ = nullptr;
+    isDecided_ = false;
+    movieHandle_ = -1;
+    showBlackBackground_ = false;
+    isPlay_ = false;
+    exitRequested_ = false;
+    howToPlayPage_ = 0;
+    pauseUiCount_ = 0;
 }
 
 void SceneTitle::Load(void)
 {
     // isLoading_ を true に
-    SceneBase::Load(); 
+    SceneBase::Load();
+
+    // リソースの読み込み
+    ResourceManager::GetInstance().InitTitle();
+
+    // 動画ファイルの読み込み
+    movieHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::TITLE_MOVIE).handleId_;
+
+
+    if (movieHandle_ == -1)
+    {
+        // 読み込み失敗時のエラーハンドリング
+        printfDx("Failed to load title movie!\n");
+    }
+
+    // タイトルロゴ画像の読み込み
+    logo_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::TYTLE_LOGO).handleId_;
+
+    if (logo_ == -1)
+    {
+        printfDx("Failed to load title logo!\n");
+    }
 
     // BGM・SEロード
-    
+    Loading::GetInstance()->SetProgress(25.0f);
 
     // 音量調整
-
+    Loading::GetInstance()->SetProgress(45.0f);
+     
     // ロゴ・操作説明・再生用画像ロード
+    Loading::GetInstance()->SetProgress(60.0f);
 
     // その他画像
+    Loading::GetInstance()->SetProgress(80.0f);
 
-    // 動画ロード
-   
     // UI 初期化
     uiMain_ = std::make_unique<SceneUi>();
     uiMain_->AddCharctor("開始");
     uiMain_->AddCharctor("遊び方");
-    uiMain_->AddCharctor("操作説明");
+    uiMain_->AddCharctor("設定");
     uiMain_->AddCharctor("クレジット");
     uiMain_->AddCharctor("ゲーム終了");
     uiMain_->SetCurrentIndex(0);
 
-    uiHowToPlay_ = std::make_unique<SceneUi>();
-    uiHowToPlay_->AddCharctor("目標について");
-    uiHowToPlay_->AddCharctor("戦闘方法");
-    uiHowToPlay_->AddCharctor("化学反応");
-    uiHowToPlay_->AddCharctor("戻る");
-    uiHowToPlay_->SetCurrentIndex(0);
-
     //時間カウントリセット
     TimeManager::GetInstance().Reset();
+
+    Loading::GetInstance()->SetProgress(100.0f);
 }
 
 void SceneTitle::EndLoad(void)
@@ -78,6 +87,31 @@ void SceneTitle::EndLoad(void)
 
 void SceneTitle::Init(void)
 {
+    // タイトルBGM
+    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_TITLE).handleId_);
+
+    // キャンセル音
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_CANCEL, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_CANCEL).handleId_);
+
+    // 選択音
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SELECT, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_SELECT).handleId_);
+
+    // 決定音
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_PUSH, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_PUSH).handleId_);
+
+
+    SetMouseDispFlag(TRUE);
+
+    SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_TITLE);
+
+    // 動画再生の開始
+    if (movieHandle_ != -1)
+    {
+        // 動画を最初から再生
+        SeekMovieToGraph(movieHandle_, 0);
+        PlayMovieToGraph(movieHandle_);
+    }
+
     // --- カメラ設定 ---
     auto camera = SceneManager::GetInstance().GetCamera();
     camera->ChangeMode(Camera::MODE::FIXED_POINT);
@@ -87,7 +121,6 @@ void SceneTitle::Init(void)
     grid_->Init();
 
     // --- UI初期化 ---
-    inHowToPlayMenu_ = false;
     howToPlayPage_ = 0;
     showBlackBackground_ = false;
     isDecided_ = false;
@@ -97,11 +130,32 @@ void SceneTitle::Init(void)
 
     // UIはLoadで生成済みなので、ここで初期位置設定
     if (uiMain_) uiMain_->SetCurrentIndex(0);
-    if (uiHowToPlay_) uiHowToPlay_->SetCurrentIndex(0);
+
+    Application::GetInstance().SetActiveUI(true);
 }
 
 void SceneTitle::Update(void)
 {
+    // --- カメラ設定 ---
+    auto camera = SceneManager::GetInstance().GetCamera();
+    camera->ChangeMode(Camera::MODE::FIXED_POINT);
+
+    if (Loading::GetInstance()->IsLoading()) return;
+
+    // --- 修正ポイント：ロード完了チェック ---
+    // uiMain_ が生成されていない（ロードが終わっていない）場合は何もしない
+    if (!uiMain_) return;
+
+    // 動画のループ処理
+    if (movieHandle_ != -1)
+    {
+        if (GetMovieStateToGraph(movieHandle_) == 0) // 再生停止中
+        {
+            SeekMovieToGraph(movieHandle_, 0);
+            PlayMovieToGraph(movieHandle_);
+        }
+    }
+
     auto& sound = SoundManager::GetInstance();
     auto& input = InputManager::GetInstance();
 
@@ -112,9 +166,9 @@ void SceneTitle::Update(void)
         {
             sound.Play(SoundManager::SOUND::SE_CANCEL);
             showBlackBackground_ = false;
-            uiMain_->SetCurrentIndex(0); // 最初の項目「開始」に戻す
+            uiMain_->SetCurrentIndex(0);
         }
-        return; // 背景表示中は他の処理をしない
+        return;
     }
 
     // --- 遊び方説明ページ表示中 ---
@@ -123,216 +177,128 @@ void SceneTitle::Update(void)
         if (input.IsTrgDown(KEY_INPUT_ESCAPE))
         {
             sound.Play(SoundManager::SOUND::SE_CANCEL);
-            howToPlayPage_ = 0; // 説明を閉じる
-            uiMain_->SetCurrentIndex(0); // 最初の項目に戻す
+            howToPlayPage_ = 0;
+            uiMain_->SetCurrentIndex(0);
         }
         return;
     }
 
     // ----- メインメニュー操作 -----
-    if (!inHowToPlayMenu_)
+    // ポインタを直接触らずにガードする
+    auto ui = uiMain_.get();
+    int currentIndex = ui->GetCurrentIndex();
+    int maxIndex = ui->GetMaxIndex() - 1;
+
+    // --- マウスによる選択更新 ---
+    Vector2 mousePos = input.GetMousePos();
+    int menuStartY = Application::SCREEN_SIZE_Y / 2 + 80;
+    int itemHeight = 80;
+    int menuWidth = 200;
+
+    for (int i = 0; i <= maxIndex; i++)
     {
-        auto ui = uiMain_.get();
-        int currentIndex = ui->GetCurrentIndex();
-        int maxIndex = ui->GetMaxIndex() - 1;
+        int rectLeft = Application::SCREEN_SIZE_X / 2 - (menuWidth / 2);
+        int rectRight = Application::SCREEN_SIZE_X / 2 + (menuWidth / 2);
+        int rectTop = menuStartY + (i * itemHeight) - (itemHeight / 2);
+        int rectBottom = menuStartY + (i * itemHeight) + (itemHeight / 2);
 
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
-        else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
-
-        if (input.IsTrgDown(KEY_INPUT_SPACE)) 
+        if (mousePos.x >= rectLeft && mousePos.x <= rectRight &&
+            mousePos.y >= rectTop && mousePos.y <= rectBottom)
         {
-            Application::GetInstance().SetActiveUI(true);
-            int selected = ui->GetCurrentIndex();
-
-            // ゲーム開始
-            if (selected == 0) 
+            if (currentIndex != i)
             {
-                isDecided_ = true;
-
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-
-                auto newScene = std::make_shared<SceneGame>();
-
-                SceneManager::GetInstance().ChangeScene(newScene);
-                return;
-            }
-            else if (selected == 1) { // 遊び方
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-                inHowToPlayMenu_ = true;
-                uiHowToPlay_->SetCurrentIndex(0);
-            }
-            else if (selected == maxIndex) { // ゲーム終了
-                sound.Play(SoundManager::SOUND::SE_PUSH);
-                exitRequested_ = true;
-                return;
-            }
-            else {
-                showBlackBackground_ = true; // 操作説明やクレジットはそのまま黒背景
+                SoundManager::GetInstance().Play(SoundManager::SOUND::SE_SELECT);
+                ui->SetCurrentIndex(i);
             }
         }
     }
-    // ----- サブメニュー操作 -----
-    else
+
+    // 上下入力
+    if (input.IsTrgDown(KEY_INPUT_UP)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
+        ui->SetCurrentIndex(currentIndex);
+    }
+    else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
+        sound.Play(SoundManager::SOUND::SE_SELECT);
+        currentIndex = (currentIndex + 1) % (maxIndex + 1);
+        ui->SetCurrentIndex(currentIndex);
+    }
+
+    // 決定操作
+    if (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsTrgMouseLeft())
     {
-        auto ui = uiHowToPlay_.get();
-        int currentIndex = ui->GetCurrentIndex();
-        int maxIndex = ui->GetMaxIndex() - 1;
+        Application::GetInstance().SetActiveUI(true);
+        int selected = ui->GetCurrentIndex();
 
-        if (input.IsTrgDown(KEY_INPUT_UP)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
-        else if (input.IsTrgDown(KEY_INPUT_DOWN)) {
-            sound.Play(SoundManager::SOUND::SE_SELECT);
-            currentIndex = (currentIndex + 1) % (maxIndex + 1);
-            ui->SetCurrentIndex(currentIndex);
-        }
+        switch (selected)
+        {
+        case 0: // 開始
+            isDecided_ = true;
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            Application::GetInstance().SetActiveUI(false);
+            SceneManager::GetInstance().ChangeScene(std::make_shared<SceneGame>());
+            break;
 
-        if (input.IsTrgDown(KEY_INPUT_SPACE)) {
-            int selected = ui->GetCurrentIndex();
-            if (selected == 0) { // 目標について
-                howToPlayPage_ = 1;
-            }
-            else if (selected == 1) { // 錬金について
-                howToPlayPage_ = 2;
-            }
-            else if (selected == 2) { // アトリエについて
-                howToPlayPage_ = 3;
-            }
-            else if (selected == 3) { // ギルドについて
-                howToPlayPage_ = 4;
-            }
-            else if (selected == 4) { // ガーデンについて
-                howToPlayPage_ = 5;
-            }
-            else if (selected == 5) { // 戻る
-                inHowToPlayMenu_ = false;
-            }
+        case 1: // 遊び方
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneTutorial>());
+            break;
+
+        case 2: // 操作説明
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneOption>());
+            break;
+
+        case 3: // クレジット
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneCredit>());
+            break;
+
+        case 4: // ゲーム終了
+            sound.Play(SoundManager::SOUND::SE_PUSH);
+            exitRequested_ = true;
+            SceneManager::GetInstance().GameEnd();
+            break;
         }
     }
 }
 
 void SceneTitle::Draw(void)
 {
-    // 背景動画
-    DrawRotaGraph3(0, 0, 0, 0, 1.0f, 1.0f, 0, movieHandle_, FALSE);
-
-    // ---- 遊び方説明ページ表示中 ----
-    if (howToPlayPage_ > 0)
+    // 背景動画の描画（動画はロードの最初の方で読み込まれるため、これだけは出してもOK）
+    if (movieHandle_ != -1)
     {
-        DrawBox(0, 0, Application::DEFA_SCREEN_SIZE_X, Application::DEFA_SCREEN_SIZE_Y, GetColor(0, 0, 0), TRUE);
+        int movieWidth, movieHeight;
+        GetGraphSize(movieHandle_, &movieWidth, &movieHeight);
 
-        if (howToPlayPage_ == 1) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, playHandle_, true);
-        }
-        else if (howToPlayPage_ == 2) {
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, playHandle2_, true);
-        }
-        else if (howToPlayPage_ == 3) { // アトリエ
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, atelierHandle_, true);
-        }
-        else if (howToPlayPage_ == 4) { // ギルド
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, guildHandle_, true);
-        }
-        else if (howToPlayPage_ == 5) { // ガーデン
-            DrawRotaGraph(Application::SCREEN_SIZE_X / 2,
-                Application::SCREEN_SIZE_Y / 2,
-                1.0, 0.0, gardenHandle_, true);
-        }
+        float scaleX = static_cast<float>(Application::SCREEN_SIZE_X) / movieWidth;
+        float scaleY = static_cast<float>(Application::SCREEN_SIZE_Y) / movieHeight;
+        float scale = (scaleX > scaleY) ? scaleX : scaleY;
 
-        DrawString(50, Application::DEFA_SCREEN_SIZE_Y - 30, "ESCキーで戻る", GetColor(200, 200, 200));
-        return;
+        DrawRotaGraph3(Application::SCREEN_SIZE_X / 2, Application::SCREEN_SIZE_Y / 2,
+            movieWidth / 2, movieHeight / 2, scale, scale, 0.0, movieHandle_, TRUE);
     }
 
-    // ---- メインメニュー ----
-    if (!inHowToPlayMenu_)
+    // --- 修正ポイント：UI描画のガード ---
+    // ロード中（uiMain_がnullptr）なら、以降の描画処理を行わない
+    if (!uiMain_) return;
+
+
+    // メインメニュー描画
+    if (logo_ != -1)
     {
-        DrawRotaGraph(Application::SCREEN_SIZE_X / 2 + 55,
-            Application::SCREEN_SIZE_Y / 2,
-            1.0, 0.0, logo_, true);
-        uiMain_->Draw(Application::DEFA_SCREEN_SIZE_Y / 2);
-
-        // 操作説明やクレジットを選んだとき
-        if (showBlackBackground_)
-        {
-            // 黒背景
-            DrawBox(0, 0,
-                Application::DEFA_SCREEN_SIZE_X,
-                Application::DEFA_SCREEN_SIZE_Y,
-                GetColor(0, 0, 0), TRUE);
-
-            int selected = uiMain_->GetCurrentIndex();
-            if (selected == 2) // 操作説明
-            {
-                DrawRotaGraph3(50, 50, 0, 0, 1.0f, 1.0f, 0, operationHandle_, true);
-            }
-            else if (selected == 3) // クレジット
-            {
-                auto& font = Font::GetInstance();
-                std::vector<std::string> lines = {
-                   
-                };
-
-                int color = GetColor(255, 255, 255);
-                int fontSize = 28;
-                int fontType = DX_FONTTYPE_ANTIALIASING;
-
-                int centerX = Application::SCREEN_SIZE_X / 2;
-                int centerY = Application::SCREEN_SIZE_Y / 2;
-
-                int lineSpacing = fontSize + 24; // ← 行間を広めに (12px 余白)
-
-                int totalHeight = static_cast<int>(lines.size()) * lineSpacing;
-                int startY = centerY - totalHeight / 2;
-
-                for (size_t i = 0; i < lines.size(); i++)
-                {
-                    int textWidth = font.GetDefaultTextWidth(lines[i]);
-                    int drawX = centerX - textWidth / 2;
-                    int drawY = startY + static_cast<int>(i) * lineSpacing;
-
-                    font.DrawDefaultText(drawX, drawY, lines[i].c_str(), color, fontSize, fontType);
-                }
-            }
-
-        }
-
+        DrawRotaGraph(Application::SCREEN_SIZE_X / 2, 450, 1.0f, 0.0, logo_, TRUE);
     }
-    // ---- 遊び方サブメニュー ----
-    else
-    {
-        DrawBox(0, 0,
-            Application::DEFA_SCREEN_SIZE_X,
-            Application::DEFA_SCREEN_SIZE_Y,
-            GetColor(0, 0, 0), TRUE);
 
-        int centerY = Application::DEFA_SCREEN_SIZE_Y / 2;
-        int offsetY = centerY - 100;  // 上にずらす
-
-        uiHowToPlay_->Draw(offsetY);
-    }
+    // UI描画（uiMain_が存在することが確定している）
+    uiMain_->Draw(Application::SCREEN_SIZE_Y / 2 + 80);
 }
 
 void SceneTitle::Release(void)
 {
-    DeleteGraph(movieHandle_);
+    SetMouseDispFlag(FALSE);
+
     grid_->Release();
     delete grid_;
     grid_ = nullptr;

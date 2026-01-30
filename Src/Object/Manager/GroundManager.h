@@ -1,49 +1,96 @@
 #pragma once
-
-#include <vector>
-
 #include "../Stage/Ground.h"
 
-//ステージの地面生成マネージャー
+class Camera;
+
+// ステージの地面生成マネージャー
 class GroundManager
 {
 public:
-	//地面の最大数
-	static constexpr int TILE_COUNT = 100;
 
-	//地面の大きさ
-	static constexpr float TILE_SIZE = 100.0f;
+    // コンストラクタ
+    GroundManager(void);
 
-	//コンストラクタ
-	GroundManager(void);
+    // デストラクタ
+    ~GroundManager(void);
 
-	//デストラクタ
-	~GroundManager(void);
+    // 読み込み処理
+    void Load(void);
 
-	//読み込み処理
-	void Load(void);
+    // 初期化
+    void Init(void);
 
-	//初期化
-	void Init(void);
+    // カメラ位置に近いタイルのモデルIDと位置を取得
+    std::vector<std::pair<int, VECTOR>> GetNearbyTiles(const VECTOR& cameraPos, float range) const;
 
-	//更新処理
-	void Update(void);
+    // 更新処理
+    void Update(void);
 
-	//描画処理
-	void Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const VECTOR& cameraDir);
+    // 描画処理
+    void Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const VECTOR& cameraDir);
 
-	//解放処理
-	void Release(void);
+    // 解放処理
+    void Release(void);
+
+    // プレイヤーの座標を設定
+    void SetPlayerPos(const VECTOR& pos);
+
+    // 敵の座標を設定
+    void SetEnemyPos(const std::vector<VECTOR>& positions);
 
 private:
 
-	//地面部品
-	std::vector<Ground> grounds_;
+    // 座標を識別するための構造体
+    struct GridPos {
+        int x, z;
+        bool operator<(const GridPos& other) const {
+            return x < other.x || (x == other.x && z < other.z);
+        }
+    };
 
-	//元モデル
-	int baseModelId_;
+    // 地面の最大数
+    static constexpr int TILE_COUNT = 160;
 
-	//ロード済みか判定
-	bool isLoaded_;
+    // 地面の大きさ
+    static constexpr float TILE_SIZE = 1150.0f;
+
+    // 登録範囲
+    static constexpr float REGISTER_RANGE = 200.0f;
+
+    // 登録範囲の二乗
+    static constexpr float REGISTER_RANGE_SQ = REGISTER_RANGE * REGISTER_RANGE;
+
+
+    // 生成・削除を判定する距離（描画距離より少し長めに設定）
+    static constexpr float SPAWN_RANGE = 12000.0f;
+
+    // 現在生成されているタイル（座標 -> インスタンス）
+    std::map<GridPos, std::shared_ptr<Ground>> activeGrounds_;
+
+    // 地面部品
+    std::vector<std::shared_ptr<Ground>> grounds_;
+
+    // 登録済みの地面
+    std::vector<std::shared_ptr<Ground>> registeredGrounds_;
+
+    // 元モデル
+    int baseModelId_;
+
+    // ロード済みか判定
+    bool isLoaded_;
+
+    // プレイヤーの座標を取得
+    VECTOR playerPos_;
+
+    // 敵のの座標を取得
+    std::vector<VECTOR> enemyPoss_;
+
+    // 周辺の地面を登録
+    void RegisterNearbyGrounds(void);
+
+    // 座標からグリッドインデックスを取得
+    int GetGridIndex(const VECTOR& pos) const;
+
+    // 周辺のグリッド範囲を取得
+    std::vector<int> GetNearbyGridIndices(const VECTOR& pos, float range) const;
 };
-

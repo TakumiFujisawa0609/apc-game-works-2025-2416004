@@ -1,0 +1,2 @@
+Name,Attack,Defense,HP,MaxHP,Stamina,CollsisionRadius,Level,MaxLevel,JumpPower,speed
+Player,15,10,500,500,80,30,1,10,25,15

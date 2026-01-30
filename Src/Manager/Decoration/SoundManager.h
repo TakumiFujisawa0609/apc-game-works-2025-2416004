@@ -27,22 +27,20 @@ public:
 		//ここに使用する音楽や効果音などを羅列
 		NONE,
 		BGM_TITLE,      // タイトル画面BGM
-		BGM_GAME,       // ゲームプレイ中BGM
-		BGM_GAMEOVER,   // ゲームオーバー時BGM
-		BGM_GAMECLEAR,  // ゲームクリア時BGM
-		BGM_GARDEN_DAY, //ガーデンの朝昼BGM
-		BGM_GARDEN_NIGHT, //ガーデンの夕方夜BGM
-		BGM_ATELIER,    //アトリエBGM
-		BGM_GUILD,      //ギルドのBGM
+		BGM_GAME,       // ゲーム画面BGM
+		BGM_FAITE,      // 戦闘BGM
+		BGM_SCORE,      // スコア画面BGM
+		SE_CANCEL,      // キャンセル音
+		SE_SELECT,      // 選択音
+		SE_PUSH,        // 決定音 
+		SE_WATER,       // 水攻撃音
+		SE_FIRE,        // 火の攻撃音
+		SE_FREEZE,      // 凍結音
+		SE_BLAST,       // 爆発音
+		SE_LEVER_UP,    // レベルアップ音
+		SE_SLASH,       // 斬撃音
+		SE_GLIDER       // グライダー音
 
-		SE_PUSH,        // ボタン押下時効果音
-		SE_CANCEL,              //キャンセル音
-		SE_SELECT,      // カーソル移動
-		SE_DAMAGE,      // ダメージ受けた時効果音
-		SE_GET,         // アイテム取得時効果音
-		SE_ALCHEMY,     // 錬金時効果音	
-		SE_ALCHEMY_FAIL, //錬金失敗効果音
-		SE_ALCHEMY_SUCCESS, //錬金成功効果音
 	};
 
 	/// <summary>
@@ -67,6 +65,8 @@ public:
 	/// <returns>SoundManagerの唯一のインスタンス</returns>
 	static SoundManager& GetInstance(void);
 
+	void Init(void);
+
 	/// <summary>
 	/// サウンドの追加
 	/// </summary>
@@ -88,6 +88,12 @@ public:
 	void Stop(const SOUND _sound);
 
 	/// <summary>
+	/// すべてのBGMを停止する
+	/// BGMとして登録されている音声データを停止します。
+	/// </summary>
+	void StopAllBGM(void);
+
+	/// <summary>
 	/// 音声データの解放処理
 	/// </summary>
 	void Release(void);
@@ -107,6 +113,21 @@ public:
 	/// </summary>
 	void Destroy(void);
 
+	// マスター音量の設定(BGM)
+	void SetMasterVolumeBGM(int volume);
+
+	// マスター音量の設定(SE)
+	void SetMasterVolumeSE(int volume);
+
+	// 現在のマスター音量を取得(BGM)
+	int GetMasterVolumeBGM(void) const { return masterVolumeBGM_; }
+
+	// 現在のマスター音量を取得(SE)
+	int GetMasterVolumeSE(void) const { return masterVolumeSE_; }
+
+	// すべての音量設定を再適用
+	void ApplyMasterVolumes(void);
+
 private:
 	//インスタンス用
 	static SoundManager* instance_;
@@ -116,6 +137,15 @@ private:
 	/// SOUND列挙型をキーとして、対応する音声データを管理
 	/// </summary>
 	std::unordered_map<SOUND, SOUND_DATA>sounds_;
+
+	// スレッド間の交通整理用
+	static std::mutex g_soundMutex;
+
+	// マンスタ音量(BGM)
+	int masterVolumeBGM_;
+
+	// マスター音量(SE)
+	int masterVolumeSE_;
 
 	/// <summary>
 	/// コンストラクタ（シングルトンパターンのため外部からのインスタンス化を防止）

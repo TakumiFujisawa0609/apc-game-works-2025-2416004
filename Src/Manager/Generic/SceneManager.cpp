@@ -1,13 +1,7 @@
 #include "SceneManager.h"
-
-#include <DxLib.h>
-#include <cassert>
-
 #include "../../Scene/SceneBase.h"
 #include "../../Scene/SceneTitle.h"
-#include "ResourceManager.h"
-#include "../System/Collision.h"
-#include "../System/CollisionManager.h"
+#include "../System/CollisionController.h" 
 #include "../Decoration/SoundManager.h"
 #include "../System/TimeManager.h"
 #include "Camera.h"
@@ -44,6 +38,8 @@ void SceneManager::DestroyInstance(void)
 
 // コンストラクタ
 SceneManager::SceneManager(void)
+    : playerDistance_(0.0f)        
+    , enemyDeathCount_(0)
 {
     isGameEnd_ = false;
     isSceneChanging_ = false;
@@ -62,20 +58,22 @@ SceneManager::~SceneManager(void)
 // 初期化する
 void SceneManager::Init(void)
 {
-    // 各マネージャーを生成する
-    Collision::CreateInstance();
     SoundManager::CreateInstance();
+    SoundManager::GetInstance().Init();
     TimeManager::CreateInstance();
     Loading::CreateInstance();
-    CollisionManager::CreateInstance();
+    CollisionController::CreateInstance();
 
     // カメラを初期化する
     camera_->Init();
 
+    // ゲーム統計を初期化
+    playerDistance_ = 0.0f;
+    enemyDeathCount_ = 0;
+
     // 3D描画設定を初期化する
     Init3D();
 
-    // 最初のシーンを設定する
     ChangeScene(std::make_shared<SceneTitle>());
 }
 
@@ -98,6 +96,13 @@ void SceneManager::Init3D(void)
     SetUseLighting(true);
     SetLightEnable(true);
 
+    SetGlobalAmbientLight(GetColorF(0.8f, 0.8f, 0.8f, 1.0f));
+
+    ChangeLightTypeDir(VGet(0.0f, -1.0f, 1.0f));  // ライトの方向
+    SetLightDifColor(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));  // 拡散光
+    SetLightSpcColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 鏡面光
+    SetLightAmbColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 環境光
+
     // フォグを設定する
     SetFogEnable(true);
     SetFogColor(5, 5, 5);
@@ -111,6 +116,12 @@ void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
     for (auto& s : scenes_)
         s->Release();
     scenes_.clear();
+
+    // CollisionControllerをクリア
+    CollisionController::GetInstance().Clear();
+
+    // BGMを停止する
+    SoundManager::GetInstance().StopAllBGM();
 
     // 新しいシーンを設定
     scenes_.push_back(scene);
@@ -147,6 +158,13 @@ void SceneManager::PopScene(void)
 void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
 {
     scenes_.clear();
+
+    // CollisionControllerをクリア
+    CollisionController::GetInstance().Clear();
+
+    // BGMを停止する
+    SoundManager::GetInstance().StopAllBGM();
+
     isSceneChanging_ = true;
     scenes_.push_back(scene);
 
@@ -156,87 +174,69 @@ void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
         });
 }
 
-// 更新する
 void SceneManager::Update(void)
 {
     if (scenes_.empty()) return;
 
-    // 時間を更新する
     TimeManager::GetInstance().Update();
-
-    // デルタタイムを計算する
     auto nowTime = std::chrono::system_clock::now();
-    deltaTime_ = static_cast<float>(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(nowTime - preTime_).count()
-        / 1000000000.0
-        );
+    deltaTime_ = std::chrono::duration<float>(nowTime - preTime_).count();
     preTime_ = nowTime;
 
-    // 現在のシーンを取得する
-    std::shared_ptr<SceneBase> current = scenes_.back();
+    if (isGameEnd_) return;
 
-    // シーン切り替え中の場合、ロードを更新する
+  
+    // ロード中の処理を完全に分離する
     if (isSceneChanging_)
     {
-        Loading::GetInstance()->Update();
+        auto loader = Loading::GetInstance();
+        loader->Update();
 
-        // ロード完了を確認する
-        if (!Loading::GetInstance()->IsLoading())
+        // ★重要：完全に100%になり、かつ非同期スレッドが終了するまで絶対に出さない
+        if (loader->GetProgress() >= 100.0f && !loader->IsLoading())
         {
-            current->EndLoad();
-            current->Init();
-            isSceneChanging_ = false;
+            auto current = scenes_.back();
+            current->EndLoad(); // ロード終了処理
+            current->Init();    // 初期化
+            isSceneChanging_ = false; // ここで初めてロード終了フラグを立てる
         }
-    }
-    else
-    {
-        if (current) current->Update();
+        return;
     }
 
-    // カメラを更新する
+    auto current = scenes_.back();
+    if (current)
+    {
+        current->Update();
+    }
+
+    // カメラや衝突判定
+    if (camera_) camera_->UpdateBeforeCollision();
+    CollisionController::GetInstance().Update();
     if (camera_) camera_->Update();
-
-    // 終了フラグを確認する
-    if (isGameEnd_)
-    {
-        scenes_.clear();
-        Release();
-    }
-
-    // 衝突を更新する
-    CollisionManager::GetInstance().Update();
 }
 
-// 描画する
+// SceneManager.cpp
 void SceneManager::Draw(void)
 {
     if (scenes_.empty()) return;
 
-    // 描画先をバックバッファに設定する
-    SetDrawScreen(DX_SCREEN_BACK);
-
-    // バックバッファをクリアする
-    ClearDrawScreen();
-
-    // 非同期ロード中は進捗バーを描画する
-    if (Loading::GetInstance()->IsLoading())
+    // 非同期ロード中の描画
+    if (isSceneChanging_ || Loading::GetInstance()->IsLoading())
     {
+        // 重要：ロード中は「今あるもの」を無理に描画せず、ロード画面だけ出す
+        // もし背景に何か映したい場合は、そのテクスチャが確実に読み込み済みか確認が必要
         Loading::GetInstance()->Draw();
-        ScreenFlip();
         return;
     }
 
-    // カメラの設定を行う
+    // 通常時の描画
     if (camera_) camera_->SetBeforeDraw();
 
-    // シーンを描画する（コピーを使用して安全に処理）
-    std::vector<std::shared_ptr<SceneBase>> scenesCopy(scenes_.begin(), scenes_.end());
-    for (auto& scene : scenesCopy)
+    for (auto& scene : scenes_)
     {
         if (scene) scene->Draw();
     }
 
-    // カメラの描画を行う
     if (camera_) camera_->Draw();
 }
 
@@ -266,7 +266,7 @@ void SceneManager::Release(void)
     SoundManager::GetInstance().Destroy();
     TimeManager::GetInstance().Destroy();
     Loading::GetInstance()->DestroyInstance();
-    CollisionManager::GetInstance().Destroy();
+    CollisionController::Destroy();
 }
 
 // ゲームを終了させる
@@ -298,4 +298,54 @@ void SceneManager::ResetDeltaTime(void)
 {
     deltaTime_ = 1.0f / 60.0f;
     preTime_ = std::chrono::system_clock::now();
+}
+
+
+// プレイヤーの移動距離を設定
+void SceneManager::SetPlayerDistance(float distance)
+{
+    playerDistance_ = distance;
+}
+
+// プレイヤーの移動距離を取得
+float SceneManager::GetPlayerDistance(void) const
+{
+    return playerDistance_;
+}
+
+// プレイヤーの移動距離をリセット
+void SceneManager::ResetPlayerDistance(void)
+{
+    playerDistance_ = 0.0f;
+}
+
+// エネミーの死亡数を設定
+void SceneManager::SetEnemyDeathCount(int count)
+{
+    enemyDeathCount_ = count;
+}
+
+// エネミーの死亡数を取得
+int SceneManager::GetEnemyDeathCount(void) const
+{
+    return enemyDeathCount_;
+}
+
+// エネミーの死亡数をリセット
+void SceneManager::ResetEnemyDeathCount(void)
+{
+    enemyDeathCount_ = 0;
+}
+
+// エネミーの死亡数を加算
+void SceneManager::AddEnemyDeathCount(int add)
+{
+    enemyDeathCount_ += add;
+}
+
+// ゲーム統計をリセット（距離と死亡数を一括リセット）
+void SceneManager::ResetGameStats(void)
+{
+    playerDistance_ = 0.0f;
+    enemyDeathCount_ = 0;
 }

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 class PauseMenu
 {
 public:
@@ -39,19 +36,8 @@ private:
     bool visible_;
     bool decisionMade_;
 
-    // 「遊び方」サブメニュー
-    std::vector<std::string> howToPlayItems_;
-    int howToPlayIndex_;
     int howToPlayPage_;   // 1=目標 2=錬金 3=アトリエ 4=ギルド 5=ガーデン
 
     // 表示モード
     MODE_POUSE mode_;
-
-    // 画像ハンドル
-    int controlHandle_;
-    int reninHandle_;
-    int mokihiHandle_;
-    int atelierHandle_;
-    int guildHandle_;
-    int gardenHandle_;
 };
