@@ -187,6 +187,7 @@ bool InputManager::IsMousePress(int key) const
 InputManager::InputManager(void)
 {
 	mouseInput_ = -1;
+	mouseSensitivity_ = DEFAULT_SENSITIVITY;
 }
 
 InputManager::InputManager(const InputManager& manager)
@@ -537,4 +538,10 @@ VECTOR InputManager::GetDirectionXZAKey(int aKeyX, int aKeyY)
 
 	ret = VNorm({ dirX, 0.0f, -dirZ }); // Z軸反転
 	return ret;
+}
+
+// マウス感度設定
+void InputManager::SetMouseSensitivity(float sensitivity)
+{
+	mouseSensitivity_ = sensitivity;
 }

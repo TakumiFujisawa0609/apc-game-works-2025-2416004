@@ -8,6 +8,7 @@
 #include "Fps/FpsController.h"
 #include "DrawUI/SceneUI/PauseMenu.h"
 #include "Manager/System/Loading.h"
+#include "Manager/System/TimeManager.h"
 
 
 Application* Application::instance_ = nullptr;
@@ -72,6 +73,9 @@ void Application::Init(void)
 	//DXLibの初期化
 	SetUseDirect3DVersion(DX_DIRECT3D_11);
 	isInitFail_ = false;
+
+	SetUseASyncLoadFlag(TRUE);
+
 	if (DxLib_Init() == -1)
 	{
 		//エラー処理
@@ -117,6 +121,11 @@ void Application::Run(void)
 	{
 		if (sceneManager.GetGameEnd()) break;
 
+		SetDrawScreen(DX_SCREEN_BACK);
+		ClearDrawScreen();
+
+		inputManager.Update();
+
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -124,8 +133,6 @@ void Application::Run(void)
 		}
 
 		Sleep(1);
-
-		isActiveUI_ = false;
 
 		// --- ESCキーでポーズ表示 ---
 		if (isActiveUI_ == false)
@@ -135,13 +142,14 @@ void Application::Run(void)
 				pauseMenu_->Show();  // メニュー表示
 			}
 		}
-		
-
-		inputManager.Update();
 
 		if (pauseMenu_->IsVisible())
 		{
-			pauseMenu_->Update();
+			if (!isActiveUI_)
+			{
+				pauseMenu_->Update();
+			}
+
 			if (pauseMenu_->IsDecisionMade())
 			{
 				int index = pauseMenu_->GetSelectedIndex();
@@ -170,22 +178,30 @@ void Application::Run(void)
 			// 通常ゲーム処理
 			sceneManager.Update();
 		}
+
+		sceneManager.Draw();
+
 		// エフェクト更新
 		UpdateEffekseer3D();
 
-		
-
-		// 描画
-		sceneManager.Draw();
-		// 平均FPS描画
-		fps_->Draw();
 
 		// エフェクト描画
 		DrawEffekseer3D();
 
-		if (pauseMenu_->IsVisible() && !Loading::GetInstance()->IsLoading())
+		// 平均FPS描画
+		fps_->Draw();
+
+
+		// ポーズメニュー（最前面）
+		if (pauseMenu_->IsVisible() && !Loading::GetInstance()->IsLoading() && !isActiveUI_)
 		{
-			pauseMenu_->Draw();  // ポーズメニュー前面に
+
+			TimeManager::GetInstance().SetPaused(true);
+			pauseMenu_->Draw();
+		}
+		else
+		{
+			TimeManager::GetInstance().SetPaused(false);
 		}
 
 		fps_->Wait();

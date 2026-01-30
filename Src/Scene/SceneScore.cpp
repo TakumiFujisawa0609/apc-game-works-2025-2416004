@@ -33,10 +33,6 @@ void SceneScore::Load(void)
 
     Loading::GetInstance()->SetProgress(25.0f);
 
-    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_SCORE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_SCORE).handleId_);
-
-    SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_SCORE, 30);
-
     bgHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::GAMECLERA_LOGO).handleId_;
 
     bgMovieId_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::BG_MOVIE).handleId_;
@@ -62,8 +58,11 @@ void SceneScore::EndLoad(void)
 
 void SceneScore::Init(void)
 {
+
     // ƒTƒEƒ“ƒh
     auto& res = ResourceManager::GetInstance();
+
+    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_SCORE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_SCORE).handleId_);
 
     // ‰ŠúBGM
     SoundManager::GetInstance().Play(SoundManager::SOUND::BGM_SCORE);
@@ -84,6 +83,8 @@ void SceneScore::Init(void)
 
 void SceneScore::Update(void)
 {
+    if (Loading::GetInstance()->IsLoading()) return;
+
     auto& sound = SoundManager::GetInstance();
     auto& input = InputManager::GetInstance();
     auto& sceneMgr = SceneManager::GetInstance();

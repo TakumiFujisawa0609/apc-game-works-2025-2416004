@@ -212,6 +212,16 @@ public:
 	//左スティック入力から方向ベクトルを取得
 	VECTOR GetDirectionXZAKey(int aKeyX, int aKeyY);
 
+	/// <summary>
+	/// マウス感度の設定
+	/// </summary>
+	void SetMouseSensitivity(float sensitivity);
+
+	/// <summary>
+	/// マウス感度の取得
+	/// </summary>
+	float GetMouseSensitivity(void) const { return mouseSensitivity_; }
+
 private:
 
 	/// <summary>
@@ -243,6 +253,10 @@ private:
 
 	// スティックの無効範囲（倒し具合が小さい場合は無視）
 	static constexpr float THRESHOLD = 0.01f;
+
+
+	// マウス感度
+	static constexpr float DEFAULT_SENSITIVITY = 0.2f;
 
 	/// <summary>
 	/// コントローラ情報
@@ -280,6 +294,11 @@ private:
 	/// マウスボタンの入力状態
 	/// </summary>
 	int mouseInput_;
+
+	/// <summary>
+	/// マウス感度
+	/// </summary>
+	float mouseSensitivity_;
 
 	/// <summary>
 	// パッド情報

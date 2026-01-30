@@ -40,12 +40,4 @@ private:
 
     // 表示モード
     MODE_POUSE mode_;
-
-    // 画像ハンドル
-    int controlHandle_;
-    int reninHandle_;
-    int mokihiHandle_;
-    int atelierHandle_;
-    int guildHandle_;
-    int gardenHandle_;
 };

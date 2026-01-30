@@ -319,80 +319,49 @@ void UnitBase::CalcGravityPow(void)
 
 void UnitBase::CollisionGravity(void)
 {
-	// 線分コライダ
 	int lineType = static_cast<int>(COLLIDER_TYPE::LINE);
+	if (ownColliders_.count(lineType) == 0) return;
 
-	// 線分コライダが無ければ処理を抜ける
-	if (ownColliders_.count(lineType) == 0) { return; }
+	ColliderLine* colliderLine = dynamic_cast<ColliderLine*>(ownColliders_.at(lineType));
+	if (!colliderLine) return;
 
-	// 線分コライダ情報
-	ColliderLine* colliderLine =
-		dynamic_cast<ColliderLine*>(ownColliders_.at(lineType));
-
-	if (colliderLine == nullptr) { return; }
-
-	// 線分の始点と終点を取得
 	VECTOR s = colliderLine->GetPosStart();
 	VECTOR e = colliderLine->GetPosEnd();
 
-	// 登録されている衝突物を全てチェック
+	bool isGrounded = false;
+	float maxY = -FLT_MAX;
+
 	for (const auto& hitCol : hitColliders_)
 	{
-		// ステージ・地面以外は処理を飛ばす
 		if (hitCol->GetTag() != ColliderBase::TAG::STAGE &&
 			hitCol->GetTag() != ColliderBase::TAG::GROUND) continue;
 
-		// 派生クラスへキャスト
-		const ColliderModel* colliderModel =
-			dynamic_cast<const ColliderModel*>(hitCol);
+		const ColliderModel* colliderModel = dynamic_cast<const ColliderModel*>(hitCol);
+		if (!colliderModel) continue;
 
-		if (colliderModel == nullptr) { continue; }
-
-		// ステージモデル(地面)との衝突
-		auto hits = MV1CollCheck_LineDim(
-			colliderModel->GetFollow()->modelId, -1, s, e);
-
-		bool isGrounded = false;
-		VECTOR bestHitPos = trans_.pos;
-		float maxY = -FLT_MAX;
+		// 線分 vs モデル（地面）
+		auto hits = MV1CollCheck_LineDim(colliderModel->GetFollow()->modelId, -1, s, e);
 
 		for (int i = 0; i < hits.HitNum; i++)
 		{
-			auto hit = hits.Dim[i];
+			if (colliderModel->IsExcludeFrame(hits.Dim[i].FrameIndex)) continue;
 
-			// 除外フレームは無視
-			if (colliderModel->IsExcludeFrame(hit.FrameIndex))
+			if (hits.Dim[i].HitPosition.y > maxY)
 			{
-				continue;
-			}
-
-			// 最もY座標が高い衝突点を採用
-			if (hit.HitPosition.y > maxY)
-			{
-				maxY = hit.HitPosition.y;
-				bestHitPos = hit.HitPosition;
+				maxY = hits.Dim[i].HitPosition.y;
 				isGrounded = true;
 			}
 		}
-
-		// 検出した地面ポリゴン情報の後始末
 		MV1CollResultPolyDimTerminate(hits);
+	}
 
-		if (isGrounded)
+	if (isGrounded)
+	{
+		// 落下中のみ着地判定
+		if (jumpPow_.y <= 0.1f)
 		{
-			// ジャンプ上昇中は地面判定を無視
-			if (jumpPow_.y > 0.1f)
-			{
-				continue;
-			}
-
-			// 衝突地点から少し上に移動
-			trans_.pos = VAdd(bestHitPos, VScale(Utility::DIR_U, 2.0f));
-
-			// ジャンプリセット
-			jumpPow_ = Utility::VECTOR_ZERO;
-
-			// 地面フラグを立てる（Playerクラスで使用)
+			trans_.pos.y = maxY; // 地面の高さに直接セット
+			jumpPow_ = VGet(0, 0, 0); // 重力をリセット
 		}
 	}
 }

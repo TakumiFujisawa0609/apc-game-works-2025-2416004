@@ -37,7 +37,7 @@ void StageManager::Load(void)
     auto& res = ResourceManager::GetInstance();
 
     // タワーのマスターモデルを読み込む
-    towerModelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_TOWER);
+    towerModelId_ = res.Load(ResourceManager::SRC::MODEL_TOWER).handleId_;
 
 
     isLoaded_ = true;
@@ -394,29 +394,37 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
     if (!enemyManager_) return;
 
     int key = GetGridKey(gridX, gridZ);
-
-    // 既に存在する場合はスキップ
     if (spawners_.find(key) != spawners_.end()) return;
 
-    // ワールド座標を計算
     VECTOR worldPos = GridToWorld(gridX, gridZ);
-
-    // 距離に応じたレベルを計算
     int enemyLevel = CalculateEnemyLevelByDistance(worldPos);
 
-    // EnemyManagerにスポナーを追加（レベル指定版）
+    // 1. EnemyManagerにスポナーを追加
     enemyManager_->AddSpawner(worldPos, spawnRange_, enemyType_, enemyLevel);
 
-    // 追加したスポナーの設定
     int spawnerIndex = enemyManager_->GetSpawnerCount() - 1;
     auto* spawner = enemyManager_->GetSpawner(spawnerIndex);
+
     if (spawner)
     {
+        // 2. スポナーにモデルをセットする (ここでモデルIDが渡される)
+        // もし ResourceManager からモデルを取得しているなら、ここで Duplicate して渡す
+        auto& res = ResourceManager::GetInstance();
+        // スポナー用のモデルリソースがある場合（例: MODEL_SPAWNER）
+        int masterModelId = res.GetHandle(ResourceManager::SRC::MODEL_ENEMYSPAWNER); // 仮でタワーと同じにしてますが適宜変更
+        int myModelId = MV1DuplicateModel(masterModelId);
+
+        spawner->SetModelId(myModelId);
+
+        // 3. 各種設定
         spawner->SetActivationRange(activationRange_);
         spawner->SetRequirePlayerInRange(true);
         spawner->SetSpawnInterval(spawnInterval_);
         spawner->SetMaxEnemies(maxEnemies_);
-        spawner->SetActive(false); // 最初は非アクティブ
+        spawner->SetActive(false);
+
+        // 4. 重要：ここで強制的に初期化（Init内で行われる InitCollider を確実に呼ぶ）
+        spawner->Init();
     }
 
     // スポナー情報を記録

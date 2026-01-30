@@ -25,6 +25,8 @@ public:
 		IMG_TUTORIAL_1,         // チュートリアル画像1
 		IMG_TUTORIAL_2,         // チュートリアル画像2
 		IMG_TUTORIAL_3,         // チュートリアル画像3
+		IMG_OPTION,             // 設定背景画像
+		IMG_OPTION_1,           // 設定画像
 
 		// モデル
 		MODEL_PLAYER,			// プレイヤーモデル
@@ -47,6 +49,12 @@ public:
 		SE_SELECT,              // 選択音
 		SE_PUSH,                // 決定音
 		SE_SLASH,               // 斬撃音
+		SE_WATER,               // 水攻撃音
+		SE_FIRE,                // 火の攻撃音
+		SE_FREEZE,              // 凍結音
+		SE_BLAST,               // 爆発音
+		SE_LEVER_UP,            // レベルアップ音
+		SE_GLIDER,              // グライダー音
 		
 		// エフェクト
 		EFFECT_FIRE,            // 火のエフェクト
@@ -54,9 +62,9 @@ public:
 		EFFECT_BLAST,           // 爆発エフェクト
 		EFFECT_FREEZE,          // 凍結エフェクト
 		EFFECT_LEVER_UP,        // レベルアップエフェクト
-		FIRE_BURN,              // やけどエフェクト
-		WET,                    // 湿潤エフェクト
-		AMMONIUM,               // 硝酸アンモニウムエフェクト
+		EFFECT_FIRE_BURN,       // やけどエフェクト
+		EFFECT_WET,             // 湿潤エフェクト
+		EFFECT_AMMONIUM,        // 硝酸アンモニウムエフェクト
 
 
 		// アニメーション
@@ -95,6 +103,9 @@ public:
 	// チュートリアルで使うリソース初期化
 	void InitTutorial(void);
 
+	// 設定で使うリソース初期化
+	void InitOption(void);
+
 	//プレイヤーが使うリソース初期化
 	void ResourcePlayer(void);
 
@@ -126,6 +137,8 @@ private:
 
 	//読み込み済みリソース
 	std::map<SRC, Resource*> loadedMap_;
+
+	static std::mutex g_resMutex;
 
 	// デフォルトコンストラクタをprivateにして、
 	// 外部から生成できない様にする

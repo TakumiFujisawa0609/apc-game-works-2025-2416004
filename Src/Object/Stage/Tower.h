@@ -45,7 +45,7 @@ public:
     // ’n–Ê‚Æ‚ÌÚGƒtƒ‰ƒO‚ğæ“¾
     bool IsGround(void) const { return isGround_; }
 
-    void CalcGravityPow(void) override;
+   void CalcGravityPow(void) override;
 
 protected:
 

@@ -24,10 +24,10 @@ GroundManager::~GroundManager(void)
 // 読み込み
 void GroundManager::Load(void)
 {
-    if (isLoaded_) return;
+    if (isLoaded_) return;  // すでにロード済みなら何もしない
 
     auto& res = ResourceManager::GetInstance();
-    baseModelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_GROUND);
+    baseModelId_ = res.Load(ResourceManager::SRC::MODEL_GROUND).handleId_;
 
     if (baseModelId_ == -1)
     {
@@ -321,7 +321,6 @@ void GroundManager::Draw(const VECTOR& centerPos, const VECTOR& cameraPos, const
 #ifdef _DEBUG
     // デバッグ表示：activeGrounds_ の数を表示するように変更
     DrawFormatString(10, 200, GetColor(255, 255, 255), "Active Tiles: %d", activeGrounds_.size());
-    }
 #endif
 }
 
@@ -356,11 +355,7 @@ void GroundManager::Release(void)
 
     grounds_.clear();
 
-    if (baseModelId_ != -1)
-    {
-        MV1DeleteModel(baseModelId_);
-        baseModelId_ = -1;
-    }
+    baseModelId_ = -1;
 
     isLoaded_ = false;
 }

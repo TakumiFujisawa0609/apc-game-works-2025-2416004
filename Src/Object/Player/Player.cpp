@@ -47,6 +47,7 @@ Player::Player(void)
     , invincibleTime_(0)
     , lastHitEnemyTime_(0)
     , experience_(0)
+    , glideExpTimer_(0.0f)
     , iconFire_(-1)
     , iconFireCD_(-1)
     , iconWater_(-1)
@@ -60,6 +61,7 @@ Player::Player(void)
     , isAttack_(false)
     , UnitBase()
 {
+    speed_ = 5.5f;
 }
 
 Player::~Player(void)
@@ -98,13 +100,35 @@ void Player::Load(void)
 {
     auto& res = ResourceManager::GetInstance();
 
-    modelId_ = res.LoadModelDuplicate(ResourceManager::SRC::MODEL_PLAYER);
+    modelId_ = res.Load(ResourceManager::SRC::MODEL_PLAYER).handleId_;
     trans_.SetModel(modelId_);
 
     iconFire_ = res.Load(ResourceManager::SRC::IMG_FIRE_SUKILL).handleId_;
     iconFireCD_ = res.Load(ResourceManager::SRC::IMG_FIRE_SUKILL_CD).handleId_;
     iconWater_ = res.Load(ResourceManager::SRC::IMG_WATER_SUKILL).handleId_;
     iconWaterCD_ = res.Load(ResourceManager::SRC::IMG_WATER_SUKILL_CD).handleId_;
+
+    sword_->Load();
+    fireAttack_->Load();
+    waterAttack_->Load();
+    glider_->Load();
+}
+
+void Player::Init(void)
+{
+    auto& res = ResourceManager::GetInstance();
+
+    trans_.pos = Utility::VECTOR_ZERO;
+    prePos_ = trans_.pos;
+    trans_.rot = VGet(0, 0, 0);
+    trans_.quaRotLocal = Quaternion::Identity();
+    trans_.scl = PLAYER_SCL;
+    radius_ = param_.collisionRadius;
+    movePow_ = Utility::VECTOR_ZERO;
+    jumpPow_ = Utility::VECTOR_ZERO;
+
+    originPos_ = trans_.pos;
+
 
     anim_ = std::make_unique<AnimationController>(modelId_);
     anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_IDEL), 35.0f);
@@ -117,24 +141,12 @@ void Player::Load(void)
     EffectManager::GetInstance().Add(EffectManager::EFFECT::WATER, res.Load(ResourceManager::SRC::EFFECT_WATER).handleId_);
     EffectManager::GetInstance().Add(EffectManager::EFFECT::LEVER_UP, res.Load(ResourceManager::SRC::EFFECT_LEVER_UP).handleId_);
 
-    sword_->Load();
-    fireAttack_->Load();
-    waterAttack_->Load();
-    glider_->Load();
-}
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_FIRE, res.Load(ResourceManager::SRC::SE_FIRE).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_WATER, res.Load(ResourceManager::SRC::SE_WATER).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_LEVER_UP, res.Load(ResourceManager::SRC::SE_LEVER_UP).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SLASH, res.Load(ResourceManager::SRC::SE_SLASH).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_GLIDER, res.Load(ResourceManager::SRC::SE_GLIDER).handleId_);
 
-void Player::Init(void)
-{
-    trans_.pos = Utility::VECTOR_ZERO;
-    prePos_ = trans_.pos;
-    trans_.rot = VGet(0, 0, 0);
-    trans_.quaRotLocal = Quaternion::Identity();
-    trans_.scl = PLAYER_SCL;
-    radius_ = param_.collisionRadius;
-    movePow_ = Utility::VECTOR_ZERO;
-    jumpPow_ = Utility::VECTOR_ZERO;
-
-    originPos_ = trans_.pos;
 
     PlayAnim(ANIM::IDEL, true, 0.0f);
 
@@ -304,6 +316,7 @@ void Player::ProcessJump(void)
             isGround_ = false;  // 即座に空中扱いにする
             hasJumped_ = true;
             isGliding_ = false;
+            glideExpTimer_ = 0.0f;
         }
         else
         {
@@ -317,45 +330,73 @@ void Player::ProcessJump(void)
     if (isGliding_)
     {
         ProcessGlide();
+        if (!SoundManager::GetInstance().IsPlaying(SoundManager::SOUND::SE_GLIDER))
+        {
+            SoundManager::GetInstance().Play(SoundManager::SOUND::SE_GLIDER);
+        }
+        
+    }
+    else
+    {
+        SoundManager::GetInstance().Stop(SoundManager::SOUND::SE_GLIDER);
     }
 }
+
 void Player::ProcessGlide(void)
 {
     auto& input = InputManager::GetInstance();
     auto camera = SceneManager::GetInstance().GetCamera();
 
-    // グライド中はゆっくり降下
+    glideExpTimer_ += SceneManager::GetInstance().GetDeltaTime();
+    if (glideExpTimer_ >= GLIDE_EXP_INTERVAL)
+    {
+        AddExperinece(GLIDE_EXP_AMOUNT); // 経験値加算
+        glideExpTimer_ = 0.0f;           // タイマーリセット
+    }
+
+    // 1. 下降処理
+    // グライド中はゆっくり降下する（GLIDE_FALL_SPEEDはヘッダー定義の定数）
     jumpPow_.y = -GLIDE_FALL_SPEED;
 
-    // 前方方向を取得（現在のプレイヤーの向き）
+    // 2. 自動前進処理 (現在の向きに合わせて進む)
+    // プレイヤーの現在の向き（クォータニオン）から前方ベクトルを取得
     VECTOR forward = trans_.quaRotLocal.GetForward();
-    forward.y = 0.0f;
+    forward.y = 0.0f; // 水平移動に限定
 
-    // 前方向が有効な場合、自動的に前進（グライド感を出す）
     if (VSize(forward) > 0.0001f)
     {
         forward = VNorm(forward);
-        VECTOR autoMove = VScale(forward, -3.0f);
+
+        // --- UnitBase::speed_ を活用 ---
+        // 何もしなくても進む速度（自動推進力）を移動速度の30%に設定
+        float autoGlideSpeed = speed_ * 0.3f;
+
+        // forwardはモデルの向きなので、逆方向（-1）に力をかける
+        VECTOR autoMove = VScale(forward, -autoGlideSpeed);
         trans_.pos = VAdd(trans_.pos, autoMove);
     }
 
-    // 水平方向の入力を取得
+    // 3. 入力による移動制御
     float forwardInput = 0.0f;
     float rightInput = 0.0f;
 
+    // キーボード入力の取得
     if (input.IsPress(KEY_INPUT_W)) { forwardInput += 1.0f; }
     if (input.IsPress(KEY_INPUT_S)) { forwardInput -= 1.0f; }
     if (input.IsPress(KEY_INPUT_A)) { rightInput -= 1.0f; }
     if (input.IsPress(KEY_INPUT_D)) { rightInput += 1.0f; }
 
+    // パッド入力の取得
     InputManager::JOYPAD_IN_STATE padState = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
     VECTOR padInputDir = input.GetDirectionXZAKey(padState.AKeyLX, padState.AKeyLY);
 
     forwardInput += padInputDir.z;
     rightInput += padInputDir.x;
 
+    // 入力がある場合のみ移動処理を行う
     if (forwardInput != 0.0f || rightInput != 0.0f)
     {
+        // カメラの向きに基づいた移動方向の計算
         VECTOR camForward = camera->GetFrontVec();
         camForward.y = 0.0f;
         camForward = VNorm(camForward);
@@ -372,9 +413,14 @@ void Player::ProcessGlide(void)
         if (VSize(moveDir) > 0.0001f)
         {
             moveDir = VNorm(moveDir);
-            VECTOR movement = VScale(moveDir, GLIDE_HORIZONTAL_SPEED);
+
+            // 操作時のグライド速度を地上移動速度(speed_)の1.2倍に設定
+            float glideControlSpeed = speed_ * 1.2f;
+            VECTOR movement = VScale(moveDir, glideControlSpeed);
+
             trans_.pos = VAdd(trans_.pos, movement);
 
+            // プレイヤーを移動方向に向かせる回転処理
             Quaternion targetLocalRot = Quaternion::LookRotation(VScale(moveDir, -1.0f));
             trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 15.0f);
         }
@@ -458,6 +504,8 @@ void Player::Attack(void)
     isAttacking_ = true;
     PlayAnim(ANIM::ATTACK, false, 0.1f);
 
+    SoundManager::GetInstance().Play(SoundManager::SOUND::SE_SLASH);
+
     if (sword_)
     {
         sword_->SetAttacking(true);
@@ -469,6 +517,7 @@ void Player::FireAttackAction(void)
     if (!fireAttack_) return;
 
     fireAttack_->Init(this, Utility::VECTOR_ZERO);
+    SoundManager::GetInstance().Play(SoundManager::SOUND::SE_FIRE);
     fireAttackCoolTime_ = FIRE_ATTACK_COOL_TIME_MAX;
 }
 
@@ -477,6 +526,7 @@ void Player::WaterAttackAction(void)
     if (!waterAttack_) return;
 
     waterAttack_->Init(this, Utility::VECTOR_ZERO);
+    SoundManager::GetInstance().Play(SoundManager::SOUND::SE_WATER);
     waterAttackCoolTime_ = WATER_ATTACK_COOL_TIME_MAX;
 }
 
@@ -803,91 +853,65 @@ void Player::OnCollisionStay(const CollisionInfo& info)
 
 void Player::CollisionWithModel(void)
 {
-    // カプセルコライダーを取得
     int capsuleType = static_cast<int>(COLLIDER_TYPE::CAPSULE);
-
     if (ownColliders_.count(capsuleType) == 0) return;
 
     ColliderCapsule* myCapsule = dynamic_cast<ColliderCapsule*>(ownColliders_.at(capsuleType));
     if (!myCapsule) return;
 
-    // カプセルの中心座標と半径を取得
+    // カプセルの情報を取得
     VECTOR capsuleStart = myCapsule->GetPosStart();
     VECTOR capsuleEnd = myCapsule->GetPosEnd();
-    VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
     float capsuleRadius = myCapsule->GetRadius();
+    // 判定用の中心点（簡易的に足元から少し上の位置などで調整）
+    VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
 
-    // 登録されている衝突物をチェック
     for (const auto& hitCol : hitColliders_)
     {
-        // STAGEタグのモデルコライダーのみ処理
         if (hitCol->GetTag() != ColliderBase::TAG::STAGE) continue;
         if (hitCol->GetShape() != ColliderBase::SHAPE::MODEL) continue;
 
         const ColliderModel* hitModel = dynamic_cast<const ColliderModel*>(hitCol);
         if (!hitModel) continue;
 
-        // モデルとの衝突判定
         int modelId = hitModel->GetFollow()->modelId;
         if (modelId < 0) continue;
 
-        // モデルとの球体衝突判定
-        MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(
-            modelId, -1, capsuleCenter, capsuleRadius + 50.0f
-        );
+        // 1. 周辺ポリゴンを取得（検索半径はカプセル半径 + 余裕分）
+        float searchRadius = capsuleRadius + 20.0f;
+        MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(modelId, -1, capsuleCenter, searchRadius);
 
         if (hitResult.HitNum > 0)
         {
-            // 最も近いポリゴンを見つける
-            float minDist = FLT_MAX;
-            VECTOR nearestHitPos = capsuleCenter;
-            VECTOR nearestNormal = Utility::DIR_U;
-
             for (int i = 0; i < hitResult.HitNum; i++)
             {
                 MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
-
-                // 除外フレームチェック
                 if (hitModel->IsExcludeFrame(poly.FrameIndex)) continue;
 
-                // ポリゴンの中心を計算
-                VECTOR polyCenter = VScale(
-                    VAdd(VAdd(poly.Position[0], poly.Position[1]), poly.Position[2]),
-                    1.0f / 3.0f
-                );
+                // 2. ★重要：ポリゴン平面との距離で押し出しを計算
+                // poly.Position[0]（ポリゴンの1頂点）から中心点へのベクトル
+                VECTOR v = VSub(capsuleCenter, poly.Position[0]);
+                // 法線方向への投影距離（平面から球体中心までの最短距離）
+                float dist = VDot(v, poly.Normal);
 
-                VECTOR diff = VSub(capsuleCenter, polyCenter);
-                float dist = VSize(diff);
-
-                if (dist < minDist)
+                // 距離が半径より小さければ衝突している
+                if (dist < searchRadius)
                 {
-                    minDist = dist;
-                    nearestHitPos = polyCenter;
-                    nearestNormal = poly.Normal;
-                }
-            }
+                    // 水平方向の押し出し成分を抽出
+                    VECTOR pushNormal = VGet(poly.Normal.x, 0.0f, poly.Normal.z);
+                    if (VSquareSize(pushNormal) > 0.0001f)
+                    {
+                        pushNormal = VNorm(pushNormal);
+                        // めり込み量分だけ押し出す
+                        float pushDist = searchRadius - dist;
+                        trans_.pos = VAdd(trans_.pos, VScale(pushNormal, pushDist));
 
-            // 衝突している場合、押し返す
-            if (minDist < capsuleRadius + 50.0f)
-            {
-                // 水平方向の押し返しのみ（Y軸は無視）
-                VECTOR pushNormal = VGet(nearestNormal.x, 0.0f, nearestNormal.z);
-
-                if (VSquareSize(pushNormal) > 0.0001f)
-                {
-                    pushNormal = VNorm(pushNormal);
-
-                    // 押し返し距離を計算
-                    float pushDist = (capsuleRadius + 50.0f) - minDist;
-                    VECTOR pushVec = VScale(pushNormal, pushDist);
-
-                    // プレイヤーを押し返す
-                    trans_.pos = VAdd(trans_.pos, pushVec);
+                        // 座標更新に合わせてカプセルの中心もズラす（連続衝突への対応）
+                        capsuleCenter = VScale(VAdd(myCapsule->GetPosStart(), myCapsule->GetPosEnd()), 0.5f);
+                    }
                 }
             }
         }
-
-        // 検出したポリゴン情報を解放
         MV1CollResultPolyDimTerminate(hitResult);
     }
 }
@@ -966,12 +990,20 @@ void Player::LevelUp(void)
     param_.attack += LEVEL_UP_STAT;
     param_.defensse += LEVEL_UP_STAT;
     param_.maxHp += LEVEL_UP_STAT;
+    speed_ += LEVEL_UP_STAT * 0.5f;
     param_.hp = param_.maxHp;
     hpDisplay_ = param_.hp;
 
     int required = CalcRequiredExp(param_.level - 1);
     experience_ -= required;
     if (experience_ < 0) { experience_ = 0; }
+
+    EffectManager::GetInstance().Play(EffectManager::EFFECT::LEVER_UP, trans_.pos,
+        trans_.quaRot,
+        40.0f,
+        SoundManager::SOUND::NONE);
+
+    SoundManager::GetInstance().Play(SoundManager::SOUND::SE_LEVER_UP);
 }
 
 void Player::AddExperinece(int exp)

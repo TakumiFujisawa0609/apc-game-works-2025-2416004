@@ -59,6 +59,7 @@ SceneManager::~SceneManager(void)
 void SceneManager::Init(void)
 {
     SoundManager::CreateInstance();
+    SoundManager::GetInstance().Init();
     TimeManager::CreateInstance();
     Loading::CreateInstance();
     CollisionController::CreateInstance();
@@ -66,14 +67,13 @@ void SceneManager::Init(void)
     // カメラを初期化する
     camera_->Init();
 
-    // ★ゲーム統計を初期化
+    // ゲーム統計を初期化
     playerDistance_ = 0.0f;
     enemyDeathCount_ = 0;
 
     // 3D描画設定を初期化する
     Init3D();
 
-    // 最初のシーンを設定する
     ChangeScene(std::make_shared<SceneTitle>());
 }
 
@@ -174,80 +174,69 @@ void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
         });
 }
 
-// 更新する
 void SceneManager::Update(void)
 {
     if (scenes_.empty()) return;
 
-    // 経過時間
     TimeManager::GetInstance().Update();
-
     auto nowTime = std::chrono::system_clock::now();
     deltaTime_ = std::chrono::duration<float>(nowTime - preTime_).count();
     preTime_ = nowTime;
 
-    // ゲーム終了フラグが立っていたら何もしない
-    if (isGameEnd_)
-    {
-        return; // ※破棄は Application 側で行う
-    }
+    if (isGameEnd_) return;
 
-    std::shared_ptr<SceneBase> current = scenes_.back();
-
-    // ロード中
+  
+    // ロード中の処理を完全に分離する
     if (isSceneChanging_)
     {
-        Loading::GetInstance()->Update();
+        auto loader = Loading::GetInstance();
+        loader->Update();
 
-        if (!Loading::GetInstance()->IsLoading())
+        // ★重要：完全に100%になり、かつ非同期スレッドが終了するまで絶対に出さない
+        if (loader->GetProgress() >= 100.0f && !loader->IsLoading())
         {
-            current->EndLoad();
-            current->Init();
-            isSceneChanging_ = false;
+            auto current = scenes_.back();
+            current->EndLoad(); // ロード終了処理
+            current->Init();    // 初期化
+            isSceneChanging_ = false; // ここで初めてロード終了フラグを立てる
         }
         return;
     }
 
-    // 通常更新
-    if (current) current->Update();
+    auto current = scenes_.back();
+    if (current)
+    {
+        current->Update();
+    }
 
+    // カメラや衝突判定
     if (camera_) camera_->UpdateBeforeCollision();
-
-    // 衝突
     CollisionController::GetInstance().Update();
-
     if (camera_) camera_->Update();
 }
 
-// 描画する
+// SceneManager.cpp
 void SceneManager::Draw(void)
 {
     if (scenes_.empty()) return;
 
-    // 描画先をバックバッファに設定する
-    SetDrawScreen(DX_SCREEN_BACK);
-
-    // 非同期ロード中は進捗バーのみ描画する
-    if (Loading::GetInstance()->IsLoading() || isSceneChanging_)
+    // 非同期ロード中の描画
+    if (isSceneChanging_ || Loading::GetInstance()->IsLoading())
     {
+        // 重要：ロード中は「今あるもの」を無理に描画せず、ロード画面だけ出す
+        // もし背景に何か映したい場合は、そのテクスチャが確実に読み込み済みか確認が必要
         Loading::GetInstance()->Draw();
         return;
     }
 
-    // バックバッファをクリアする
-    ClearDrawScreen();
-
-    // カメラの設定を行う
+    // 通常時の描画
     if (camera_) camera_->SetBeforeDraw();
 
-    // シーンを描画する（コピーを使用して安全に処理）
-    std::vector<std::shared_ptr<SceneBase>> scenesCopy(scenes_.begin(), scenes_.end());
-    for (auto& scene : scenesCopy)
+    for (auto& scene : scenes_)
     {
         if (scene) scene->Draw();
     }
 
-    // カメラの描画を行う
     if (camera_) camera_->Draw();
 }
 

@@ -58,7 +58,7 @@ Camera::Camera(void)
     velocity_ = Utility::VECTOR_ZERO;
 
     // マウス感度
-    sensitivity_ = DEFAULT_SENSITIVITY;
+    sensitivity_ = InputManager::GetInstance().GetMouseSensitivity();
 
     // x中央
     centerX_ = Application::SCREEN_SIZE_X / 2;
@@ -80,6 +80,10 @@ Camera::Camera(void)
 
     // 追従停止しているか
     freezeFollow_ = false;
+
+    isPitchInverted_ = false;
+
+    isYawInverted_ = false;
 
     // 固定された注視点
     frozenTargetPos_ = Utility::VECTOR_ZERO;
@@ -171,6 +175,16 @@ void Camera::CalcGravityPow(void)
 // 衝突判定
 void Camera::Collision(void)
 {
+}
+
+void Camera::SetPitchInvert(bool invert)
+{
+    isPitchInverted_ = invert;
+}
+
+void Camera::SetYawInvert(bool invert)
+{
+    isYawInverted_ = invert;
 }
 
 // 更新処理（衝突判定前）
@@ -448,10 +462,31 @@ void Camera::SetBeforeDrawTPSMouse(void)
     deltaY_ = static_cast<int>(mousePos.y) - centerY_;
 
     // Yaw（左右回転）は常に更新
-    yaw_ += deltaX_ * sensitivity_;
+    float yawDelta = 0.0f;
+    if (isYawInverted_)
+    {
+        // 左右反転：マウスを右に動かすと左に回転
+        yawDelta = -(deltaX_ * sensitivity_);
+    }
+    else
+    {
+        // 通常：マウスを右に動かすと右に回転
+        yawDelta = (deltaX_ * sensitivity_);
+    }
+    yaw_ += yawDelta;
 
     // Pitch（上下回転）の処理
-    float pitchDelta = -(deltaY_ * sensitivity_);
+    float pitchDelta = 0.0f;
+    if (isPitchInverted_)
+    {
+        // 反転：マウス移動量そのまま（マウスを下げると deltaY+ なので、ピッチも+）
+        pitchDelta = (deltaY_ * sensitivity_);
+    }
+    else
+    {
+        // 通常：マウス移動量にマイナスを掛ける（マウスを下げると deltaY+ なので、ピッチは-）
+        pitchDelta = -(deltaY_ * sensitivity_);
+    }
     pitch_ += pitchDelta;
 
     // キー入力による回転を適用（凍結中のみ）

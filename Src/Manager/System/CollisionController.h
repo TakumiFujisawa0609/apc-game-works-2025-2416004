@@ -90,7 +90,7 @@ private:
     // デフォルトのカリング距離
     static constexpr float DEFAULT_CULLING_DISTANCE = 1500.0f;
 
-    // コライダペアの更新処理（★追加）
+    // コライダペアの更新処理
     void UpdateCollisionPairs(void);
 
     // 線分とモデルの衝突判定

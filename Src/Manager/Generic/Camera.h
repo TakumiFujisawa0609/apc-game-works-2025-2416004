@@ -89,6 +89,15 @@ public:
     // ロックオン対象の設定
     void SetLockonTarget(const Transform* target);
 
+    // 外から切り替えられるようにセッターを追加
+    void SetPitchInvert(bool invert);
+
+    void SetYawInvert(bool invert);
+
+    bool GetPitchInvert(void) const { return isPitchInverted_; }
+
+    bool GetYawInvert(void) const { return isYawInverted_; }
+
 protected:
     // 衝突判定の初期化
     void InitCollider(void) override;
@@ -101,7 +110,6 @@ protected:
 
     // 衝突判定
     void Collision(void) override;
-
 private:
 
     // 衝突判定
@@ -141,9 +149,6 @@ private:
     static constexpr float MOVE_ACC = 3.0f;
     static constexpr float MOVE_DEC = 3.0f;
     static constexpr float MAX_MOVE_SPEED = 7.0f;
-
-    // マウス感度
-    static constexpr float DEFAULT_SENSITIVITY = 0.2f;
 
     // ピッチ制限
     static constexpr float PITCH_UP = 89.0f;
@@ -255,6 +260,10 @@ private:
 
     // 凍結開始時のY軸オフセット
     float initialHeightOffset_;
+
+    bool isPitchInverted_;
+
+    bool isYawInverted_;
 
     // 押し出し前の座標
     VECTOR prePos_;

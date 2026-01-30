@@ -6,6 +6,7 @@
 #include "../Application.h"
 #include "../DrawUI/Font.h"
 #include "../Manager/System/TimeManager.h"
+#include "../Manager/Generic/Camera.h"
 
 // コンストラクタ
 SceneTutorial::SceneTutorial(void)
@@ -33,9 +34,13 @@ void SceneTutorial::EndLoad(void)
 // 初期化処理
 void SceneTutorial::Init(void)
 {
+    SetMouseDispFlag(TRUE);
+
     pageIndex_ = 0;
 
     TimeManager::GetInstance().SetPaused(true);
+    auto camera = SceneManager::GetInstance().GetCamera();
+    camera->ChangeMode(Camera::MODE::FIXED_POINT);
 }
 
 // 更新処理
@@ -57,6 +62,8 @@ void SceneTutorial::Update(void)
         if (pageIndex_ >= static_cast<int>(tutorialImgs_.size()))
         {
             TimeManager::GetInstance().SetPaused(false);
+
+            Application::GetInstance().SetActiveUI(false);
             SceneManager::GetInstance().PopScene();
         }
     }

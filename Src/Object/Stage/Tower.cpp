@@ -38,7 +38,13 @@ void Tower::Init(void)
 
     InitCollider(); // コライダーの初期化
 
-    // CollisionControllerに登録
+    // モデル自体のスケールもセット（これをしないと判定データがズレることがあります）
+    MV1SetScale(trans_.modelId, trans_.scl);
+
+    // その後でセットアップ
+    MV1SetupCollInfo(trans_.modelId, -1);
+
+        // CollisionControllerに登録
     CollisionController::GetInstance().RegisterUnit(this);
 }
 
@@ -54,13 +60,20 @@ void Tower::Draw(void) const
 {
     UnitBase::Draw();
 #ifdef _DEBUG
-    // モデルコライダーのデバッグ描画
-    int modelType = static_cast<int>(COLLIDER_TYPE::MODEL);
-    const ColliderBase* col = GetOwnCollider(modelType);
-    if (col)
-    {
-        // タワーの位置に緑の球体を描画
-        DrawSphere3D(trans_.pos, 100.0f, 16, GetColor(0, 255, 0), GetColor(0, 255, 0), FALSE);
+    // モデルが持つ全フレーム数を取得
+    int frameNum = MV1GetFrameNum(trans_.modelId);
+
+    // 画面に表示 (座標 20, 20 に白文字で)
+    DrawFormatString(20, 400, GetColor(255, 255, 255), "Tower Total Frames: % d", frameNum);
+
+    // ついでに各フレームの名前と判定があるかをコンソール(出力ウィンドウ)に出す
+    for (int i = 0; i < frameNum; i++) {
+        const char* name = MV1GetFrameName(trans_.modelId, i);
+        // そのフレームにポリゴンが含まれているか
+        int triangleNum = MV1GetFrameTriangleNum(trans_.modelId, i);
+
+        // デバッグ出力 (Visual Studio の「出力」タブに表示されます)
+        // printf("Frame[%d]: %s (Polygons: %d)\n", i, name, triangleNum);
     }
 #endif
 }
@@ -98,14 +111,8 @@ void Tower::CalcGravityPow(void)
 // コライダー初期化
 void Tower::InitCollider(void)
 {
-    // 地面判定用のライン
-    const float HALF_HEIGHT = trans_.scl.y / 2.0f; // 35.0 / 2 = 17.5
-    const float GROUND_CHECK_OFFSET = 5.0f;       // 少し余裕を持たせてモデル内側から開始
-    const float RAY_LENGTH = 30.0f;               // 地面を突き抜けるのに十分な長さ
-
-    // 計算した値を座標として設定
-    const VECTOR localStart = VGet(0.0f, -HALF_HEIGHT + GROUND_CHECK_OFFSET, 0.0f);
-    const VECTOR localEnd = VGet(0.0f, -HALF_HEIGHT - RAY_LENGTH, 0.0f);
+    const VECTOR localStart = VGet(0.0f, 50.0f, 0.0f);
+    const VECTOR localEnd = VGet(0.0f, -100.0f, 0.0f);
 
     ColliderLine* colLine = new ColliderLine(
         ColliderBase::TAG::STAGE,
@@ -115,8 +122,8 @@ void Tower::InitCollider(void)
     );
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::LINE), colLine);
 
+    // モデルコライダーを作成（除外フレームなしで全フレーム有効化）
     ColliderModel* colModel = new ColliderModel(ColliderBase::TAG::STAGE, &trans_);
-
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::MODEL), colModel);
 }
 

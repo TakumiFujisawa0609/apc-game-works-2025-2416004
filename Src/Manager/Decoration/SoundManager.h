@@ -32,7 +32,15 @@ public:
 		BGM_SCORE,      // スコア画面BGM
 		SE_CANCEL,      // キャンセル音
 		SE_SELECT,      // 選択音
-		SE_PUSH         // 決定音 
+		SE_PUSH,        // 決定音 
+		SE_WATER,       // 水攻撃音
+		SE_FIRE,        // 火の攻撃音
+		SE_FREEZE,      // 凍結音
+		SE_BLAST,       // 爆発音
+		SE_LEVER_UP,    // レベルアップ音
+		SE_SLASH,       // 斬撃音
+		SE_GLIDER       // グライダー音
+
 	};
 
 	/// <summary>
@@ -56,6 +64,8 @@ public:
 	/// </summary>
 	/// <returns>SoundManagerの唯一のインスタンス</returns>
 	static SoundManager& GetInstance(void);
+
+	void Init(void);
 
 	/// <summary>
 	/// サウンドの追加
@@ -103,6 +113,21 @@ public:
 	/// </summary>
 	void Destroy(void);
 
+	// マスター音量の設定(BGM)
+	void SetMasterVolumeBGM(int volume);
+
+	// マスター音量の設定(SE)
+	void SetMasterVolumeSE(int volume);
+
+	// 現在のマスター音量を取得(BGM)
+	int GetMasterVolumeBGM(void) const { return masterVolumeBGM_; }
+
+	// 現在のマスター音量を取得(SE)
+	int GetMasterVolumeSE(void) const { return masterVolumeSE_; }
+
+	// すべての音量設定を再適用
+	void ApplyMasterVolumes(void);
+
 private:
 	//インスタンス用
 	static SoundManager* instance_;
@@ -112,6 +137,15 @@ private:
 	/// SOUND列挙型をキーとして、対応する音声データを管理
 	/// </summary>
 	std::unordered_map<SOUND, SOUND_DATA>sounds_;
+
+	// スレッド間の交通整理用
+	static std::mutex g_soundMutex;
+
+	// マンスタ音量(BGM)
+	int masterVolumeBGM_;
+
+	// マスター音量(SE)
+	int masterVolumeSE_;
 
 	/// <summary>
 	/// コンストラクタ（シングルトンパターンのため外部からのインスタンス化を防止）

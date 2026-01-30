@@ -44,20 +44,25 @@ SceneGame::SceneGame(void)
 // 読み込み
 void SceneGame::Load()
 {
+	Loading::GetInstance()->SetProgress(10.0f);
+
 	SceneBase::Load();
 
-	// ここで必要なリソースを読み込む
+	// InitGameの前後で進捗を更新してみる
 	ResourceManager::GetInstance().InitGame();
+	Loading::GetInstance()->SetProgress(15.0f);
 
 	// プレイヤーのパラメータ読み込み
 	player_->LoadParamCSV(Application::PATH_CSV + "Player_param.csv");
 
 	//プレイヤーの読み込み
 	player_->Load();
+
 	Loading::GetInstance()->SetProgress(25.0f);
 
 	//ステージの読み込み
 	groundManager_->Load();
+
 	Loading::GetInstance()->SetProgress(45.0f);
 
 	//エネミーの読み込み
@@ -72,26 +77,19 @@ void SceneGame::Load()
 	// スカイドームの読み込み
 	skyDome_->Load();
 
+
 	Loading::GetInstance()->SetProgress(60.0f);
 
 	// サウンドの読み込み
 	
-	// ゲームBGM登録
-	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_GAME, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_GAME).handleId_);
+	
 
-	// ゲームBGMの音量調整
-	SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_GAME, 30);
-
-	// 戦闘BGMの登録
-	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_FAITE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_FAITE).handleId_);
-
-	// 戦闘BGMの音量調整
-	SoundManager::GetInstance().AdjustVolume(SoundManager::SOUND::BGM_FAITE, 30);
 
 	Loading::GetInstance()->SetProgress(80.0f);
 
 	//時間カウントリセット
 	TimeManager::GetInstance().Reset();
+
 
 	Loading::GetInstance()->SetProgress(100.0f);
 }
@@ -105,6 +103,15 @@ void SceneGame::EndLoad()
 // 初期化
 void SceneGame::Init()
 {
+
+	if (Loading::GetInstance()->IsLoading()) return;
+
+	// ゲームBGM登録
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_GAME, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_GAME).handleId_);
+
+	// 戦闘BGMの登録
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_FAITE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_FAITE).handleId_);
+
 	// カメラ設定
 	auto camera = SceneManager::GetInstance().GetCamera();
 	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
@@ -174,11 +181,17 @@ void SceneGame::SetupEnemySpawners()
 // 更新処理
 void SceneGame::Update(void)
 {
+
+	if (Loading::GetInstance()->IsLoading()) return;
+
 	auto& sound = SoundManager::GetInstance();
 	auto& input = InputManager::GetInstance();
 	auto& time = TimeManager::GetInstance();
 	auto camera = SceneManager::GetInstance().GetCamera();
 	auto loader = Loading::GetInstance();
+
+
+	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
 
 	// プレイヤーの更新
 	player_->Update();

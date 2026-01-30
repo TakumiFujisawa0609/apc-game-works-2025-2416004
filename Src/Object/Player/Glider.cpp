@@ -1,7 +1,6 @@
 #include "Glider.h"
 #include "../../Utility/Utility.h"
 #include "../../Manager/Generic/ResourceManager.h"
-#include "../../Manager/System/CollisionController.h"
 
 // コンストラクタ
 Glider::Glider(void)
@@ -22,7 +21,7 @@ void Glider::Load(void)
 {
     // グライダーのモデルを読み込み
     // ※ ResourceManager::SRC::MODEL_GLIDER を定義する必要があります
-    trans_.modelId = ResourceManager::GetInstance().LoadModelDuplicate(ResourceManager::SRC::MODEL_GLIDER);
+    trans_.modelId = ResourceManager::GetInstance().Load(ResourceManager::SRC::MODEL_GLIDER).handleId_;
     trans_.SetModel(trans_.modelId);
 }
 

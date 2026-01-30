@@ -63,6 +63,7 @@ Resource::~Resource()
 //読み込み
 void Resource::Load(void)
 {
+	int prevASync = 0;
 
 	switch (resType_)
 	{
@@ -92,8 +93,14 @@ void Resource::Load(void)
 		break;
 
 	case Resource::TYPE::EFFEKSEER:
-		//エフェクト
+	{ // ← 中括弧を開始
+		int prevASync = GetUseASyncLoadFlag();
+		SetUseASyncLoadFlag(FALSE);
+
 		handleId_ = LoadEffekseerEffect(path_.c_str());
+
+		SetUseASyncLoadFlag(prevASync);
+	} // ← 中括弧を終了
 		break;
 
 	case Resource::TYPE::SOUND:

@@ -2,8 +2,11 @@
 #include "../../Manager/Generic/InputManager.h"
 #include "../../Manager/Decoration/SoundManager.h"
 #include "../../Manager/Generic/SceneManager.h"
+#include "../../Scene/SceneOption.h"
+#include "../../Scene/SceneTutorial.h"
 #include "../../DrawUI/Font.h"
 #include "../../Application.h"
+#include "../../Manager/System/TimeManager.h"
 
 PauseMenu::PauseMenu(void)
     : currentIndex_(0)
@@ -11,18 +14,12 @@ PauseMenu::PauseMenu(void)
     , decisionMade_(false)
     , howToPlayPage_(0)
     , mode_(MODE_POUSE::SELECT)
-    , controlHandle_(-1)
-    , reninHandle_(-1)
-    , mokihiHandle_(-1)
-    , atelierHandle_(-1)
-    , guildHandle_(-1)
-    , gardenHandle_(-1)
 {
     // メインメニュー
     menuItems_ = {
         "続ける",
         "遊び方",
-        "操作説明",
+        "設定",
         "ゲーム終了"
     };
 }
@@ -43,6 +40,7 @@ void PauseMenu::Hide(void)
     mode_ = MODE_POUSE::SELECT;
     SetMouseDispFlag(FALSE);
     SetMousePoint(Application::SCREEN_SIZE_X / 2, Application::SCREEN_SIZE_Y / 2);
+
 }
 
 bool PauseMenu::IsVisible(void) const
@@ -62,13 +60,6 @@ int PauseMenu::GetSelectedIndex(void) const
 
 void PauseMenu::Init(void)
 {
-    // 各種画像のロード
-    reninHandle_   = LoadGraph((Application::PATH_IMAGE + "UI/renkint.png").c_str());
-    mokihiHandle_  = LoadGraph((Application::PATH_IMAGE + "UI/mokuhyou.png").c_str());
-    controlHandle_ = LoadGraph((Application::PATH_IMAGE + "UI/sousa.png").c_str());
-    atelierHandle_ = LoadGraph((Application::PATH_IMAGE + "UI/atrieT.png").c_str());
-    guildHandle_   = LoadGraph((Application::PATH_IMAGE + "UI/girudo.png").c_str());
-    gardenHandle_  = LoadGraph((Application::PATH_IMAGE + "UI/gadenT.png").c_str());
 }
 
 void PauseMenu::Update(void)
@@ -126,10 +117,22 @@ void PauseMenu::Update(void)
     {
         sound.Play(SoundManager::SOUND::SE_PUSH);
         switch (currentIndex_) {
-        case 0: visible_ = false; break;          // 続ける
-        case 1: mode_ = MODE_POUSE::HOW_TO_PLAY_PAGE; howToPlayPage_ = 1; break;
-        case 2: mode_ = MODE_POUSE::CONTROL;break;
-        case 3: SceneManager::GetInstance().GameEnd(); visible_ = false; break;
+        case 0: 
+            visible_ = false; 
+            break;          // 続ける
+        case 1: 
+            mode_ = MODE_POUSE::HOW_TO_PLAY_PAGE; howToPlayPage_ = 1;
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneTutorial>());
+            visible_ = false;
+            break;
+        case 2: 
+            mode_ = MODE_POUSE::CONTROL;
+            SceneManager::GetInstance().PushScene(std::make_shared<SceneOption>());
+            visible_ = false;
+            break;
+        case 3: 
+            SceneManager::GetInstance().GameEnd(); visible_ = false; 
+            break;
         }
     }
 }
@@ -141,25 +144,7 @@ void PauseMenu::Draw(void)
     const int screenW = Application::SCREEN_SIZE_X;
     const int screenH = Application::SCREEN_SIZE_Y;
 
-    // --- 各種説明ページ（背景黒） ---
-    if (mode_ == MODE_POUSE::HOW_TO_PLAY_PAGE || mode_ == MODE_POUSE::CONTROL)
-    {
-        DrawBox(0, 0, screenW, screenH, GetColor(0, 0, 0), TRUE);
-        int handle = -1;
-        if (mode_ == MODE_POUSE::CONTROL) handle = controlHandle_;
-        else {
-            switch (howToPlayPage_) {
-            case 1: handle = mokihiHandle_; break;
-            case 2: handle = reninHandle_; break;
-            case 3: handle = atelierHandle_; break;
-            case 4: handle = guildHandle_; break;
-            case 5: handle = gardenHandle_; break;
-            }
-        }
-        if (handle != -1) DrawRotaGraph(screenW / 2, screenH / 2, 1.0, 0.0, handle, TRUE);
-        DrawString(50, screenH - 30, "ESCまたはクリックで戻る", GetColor(200, 200, 200));
-        return;
-    }
+   
 
     // --- 通常のポーズメニュー ---
     const int boxW = 400;
@@ -185,10 +170,4 @@ void PauseMenu::Draw(void)
 
 void PauseMenu::Release(void)
 {
-    DeleteGraph(controlHandle_);
-    DeleteGraph(reninHandle_);
-    DeleteGraph(mokihiHandle_);
-    DeleteGraph(atelierHandle_);
-    DeleteGraph(guildHandle_);
-    DeleteGraph(gardenHandle_);
 }

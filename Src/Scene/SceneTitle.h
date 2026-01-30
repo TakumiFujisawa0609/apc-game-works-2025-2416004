@@ -32,15 +32,7 @@ private:
 
     int logo_;
     int movieHandle_;
-    int operationHandle_;
-    int playHandle_;
-    int playHandle2_;
-    int blackAlpha_;
     int pauseUiCount_;
-
-    int atelierHandle_;
-    int guildHandle_;
-    int gardenHandle_;
 
     bool isDecided_;
     bool showBlackBackground_;

@@ -96,7 +96,7 @@ protected:
 
     // 状態異常の持続時間
     static constexpr float AMMONIUM_NITRATE_DURATION = 8.0f;  // 硝酸アンモニウム状態
-    static constexpr float FROZEN_DURATION = 3.0f;            // 凍結
+    static constexpr float FROZEN_DURATION = 10.0f;            // 凍結
     static constexpr float BURN_DURATION = 5.0f;              // やけど
     static constexpr float WET_DURATION = 4.0f;               // 湿潤
 
@@ -160,8 +160,9 @@ protected:
 
     // 状態異常関連
     STATUS_EFFECT currentStatus_;      // 現在の状態異常
-    float statusTimer_;                 // 状態異常の残り時間
-    float burnTickTimer_;               // やけどのダメージ間隔タイマー
+    float statusTimer_;                // 状態異常の残り時間
+    float burnTickTimer_;              // やけどのダメージ間隔タイマー
+    int statusEffectHandle_;           // 状態以上エフェクトのハンドル 
 
     // ステージ上にいるかチェック
     bool IsOnStage(const VECTOR& pos) const;
@@ -177,6 +178,9 @@ protected:
 
     // 状態異常を適用
     void ApplyStatusEffect(STATUS_EFFECT status);
+
+    // 状態異常再スタート
+    void RestartStatusEffect(void);
 
     // 状態異常をクリア
     void ClearStatusEffect(void);

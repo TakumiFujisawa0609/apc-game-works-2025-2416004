@@ -132,6 +132,12 @@ void Ground::Release(void)
 
     // 基底クラスの解放（コライダの削除）
     UnitBase::Release();
+
+    if (trans_.modelId != -1)
+    {
+        MV1DeleteModel(trans_.modelId);
+        trans_.modelId = -1;
+    }
 }
 
 // タイルサイズを取得

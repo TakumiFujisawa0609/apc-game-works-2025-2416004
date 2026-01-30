@@ -311,6 +311,12 @@ void EnemySpawner::SetModelId(int modelId)
 {
     modelId_ = modelId;
     trans_.modelId = modelId;
+    if (modelId_ >= 0) {
+        // モデルのスケールを適用
+        MV1SetScale(modelId_, trans_.scl);
+        // ★物理判定の構築（全メッシュ対象）
+        MV1SetupCollInfo(modelId_, -1);
+    }
     trans_.Update();
 }
 

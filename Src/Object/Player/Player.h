@@ -151,6 +151,8 @@ private:
     static constexpr int BASE_EXP = 100;                        // 基礎必要経験値
     static constexpr float EXP_MULTIPLIER = 1.5f;               // 経験値倍率
     static constexpr int LEVEL_UP_STAT = 10;                    // レベルアップ時のステータス上昇
+    static constexpr float GLIDE_EXP_INTERVAL = 1.0f; // 1秒ごとに判定
+    static constexpr int GLIDE_EXP_AMOUNT = 5;       // 1秒につき5リワード
 
     // HPバー関連
     static constexpr int HP_BAR_WIDTH = 300;                    // HPバーの幅
@@ -171,6 +173,7 @@ private:
     static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };  // ラインコライダー終了位置
     static constexpr VECTOR COL_CAPSULE_START_POS = { 0.0f, 130.0f, 0.0f };     // カプセル始点
     static constexpr VECTOR COL_CAPSULE_END_POS = { 0.0f, 15.0f, 0.0f };       // カプセル終点
+
 
     // モデルと武器
     int modelId_;                               // プレイヤーモデルID
@@ -197,6 +200,7 @@ private:
     int experience_;                            // 現在の経験値
     bool isLevelUpEffectPlaying_;               // レベルアップ演出中かどうか
     float levelUpEffectTimer_;                  // レベルアップ演出のタイマー
+    float glideExpTimer_ = 0.0f;
 
     // フラグ
     bool isGround_;                             // 地面にいるか

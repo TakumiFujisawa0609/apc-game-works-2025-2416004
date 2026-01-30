@@ -20,6 +20,8 @@ void EnemySlime::Load(int modelId)
 {
     trans_.modelId = modelId;
     trans_.SetModel(trans_.modelId);
+
+    EnemyBase::Load(modelId);
 }
 
 // ‰Šú‰»

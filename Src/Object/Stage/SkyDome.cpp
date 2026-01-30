@@ -21,7 +21,7 @@ SkyDome::~SkyDome(void)
 // ƒŠƒ\[ƒX‚Ì“Ç‚İ‚İ
 void SkyDome::Load(void)
 {
-	trans_.modelId = ResourceManager::GetInstance().LoadModelDuplicate(ResourceManager::SRC::MODEL_SKY_DOME);
+	trans_.modelId = ResourceManager::GetInstance().Load(ResourceManager::SRC::MODEL_SKY_DOME).handleId_;
 }
 
 // ‰Šú‰»

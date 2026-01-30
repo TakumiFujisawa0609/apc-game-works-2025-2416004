@@ -20,7 +20,7 @@ EnemyManager::~EnemyManager(void)
 void EnemyManager::Load(void)
 {
     auto& res = ResourceManager::GetInstance();
-    res.LoadModelDuplicate(ResourceManager::SRC::MODEL_SLIME);
+    res.Load(ResourceManager::SRC::MODEL_SLIME).handleId_;
     
 }
 

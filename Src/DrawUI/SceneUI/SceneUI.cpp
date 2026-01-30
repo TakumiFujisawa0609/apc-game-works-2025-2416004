@@ -54,12 +54,12 @@ void SceneUi::SetCurrentIndex(int index)
     }
 }
 
-int SceneUi::GetCurrentIndex() const
+int SceneUi::GetCurrentIndex(void) const
 {
     return currentIndex_;
 }
 
-int SceneUi::GetMaxIndex() const
+int SceneUi::GetMaxIndex(void) const
 {
     return static_cast<int>(fontList_.size());
 }

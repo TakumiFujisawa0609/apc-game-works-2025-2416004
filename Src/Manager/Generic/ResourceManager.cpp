@@ -8,6 +8,8 @@
 // シングルトンのインスタンス初期化
 ResourceManager* ResourceManager::instance_ = nullptr;
 
+std::mutex ResourceManager::g_resMutex;
+
 // インスタンス生成（初回のみ）＋初期化呼び出し
 void ResourceManager::CreateInstance(void)
 {
@@ -47,6 +49,9 @@ void ResourceManager::Init(void)
 
 	// チュートリアルシーン用リソースの初期化
 	InitTutorial();
+
+	// 設定のリソース初期化
+	InitOption();
 }
 // タイトルシーン用リソースの初期化
 void ResourceManager::InitTitle(void)
@@ -139,6 +144,19 @@ void ResourceManager::InitTutorial(void)
 	resourcesMap_.emplace(SRC::IMG_TUTORIAL_3, res);
 }
 
+// 設定で使うリソース初期化
+void ResourceManager::InitOption(void)
+{
+	Resource res;
+	
+	// 設定背景画像
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Option.png");
+	resourcesMap_.emplace(SRC::IMG_OPTION, res);
+
+	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Option1.png");
+	resourcesMap_.emplace(SRC::IMG_OPTION_1, res);
+}
+
 
 // プレイヤー用リソース初期化
 void ResourceManager::ResourcePlayer(void)
@@ -204,6 +222,27 @@ void ResourceManager::ResourcePlayer(void)
 	// 水のスキルアイコン(クールダウン中)
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "waterCool.png");
 	resourcesMap_.emplace(SRC::IMG_WATER_SUKILL_CD, res);
+
+
+	// 火攻撃音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_821624.mp3");
+	resourcesMap_.emplace(SRC::SE_FIRE, res);
+
+	// 水攻撃音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_1443393.mp3");
+	resourcesMap_.emplace(SRC::SE_WATER, res);
+
+	// レベルアップ音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "Level-up_VR.mp3");
+	resourcesMap_.emplace(SRC::SE_LEVER_UP, res);
+
+	//　斬撃音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_153419.mp3");
+	resourcesMap_.emplace(SRC::SE_SLASH, res);
+
+	// グライダー音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "kazekirionn.mp3");
+	resourcesMap_.emplace(SRC::SE_GLIDER, res);
 }
 
 // 敵用リソース初期化
@@ -215,7 +254,34 @@ void ResourceManager::ResourceEnemy(void)
 	resourcesMap_.emplace(SRC::MODEL_SLIME, res);
 
 	// 凍結エフェクト
-	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "")
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "Freeze/aice.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_FREEZE, res);
+
+	// 爆発エフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "BlastHit/BlastHit.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_BLAST, res);
+
+	// やけどエフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "fire/fire.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_FIRE_BURN, res);
+
+	// 湿潤エフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "water/water.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_WET, res);
+
+	// 硝酸アンモニウムエフェクト
+	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "anmonium/anmoniumu.efkefc");
+	resourcesMap_.emplace(SRC::EFFECT_AMMONIUM, res);
+
+
+	// 爆発音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_1496191.mp3");
+	resourcesMap_.emplace(SRC::SE_BLAST, res);
+
+	// 凍結音
+	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_1091522.mp3");
+	resourcesMap_.emplace(SRC::SE_FREEZE, res);
+
 }
 
 // 全リソースの解放処理
@@ -241,6 +307,8 @@ void ResourceManager::Destroy(void)
 // リソースの読み込み（読み込み済みなら再利用）
 Resource ResourceManager::Load(SRC src)
 {
+	std::lock_guard<std::mutex> lock(g_resMutex);
+
 	Resource* res = _Load(src);
 	if (res == nullptr)
 	{
@@ -252,6 +320,8 @@ Resource ResourceManager::Load(SRC src)
 // モデルの複製を行い、複製IDを返す
 int ResourceManager::LoadModelDuplicate(SRC src)
 {
+	std::lock_guard<std::mutex> lock(g_resMutex);
+
 	Resource* res = _Load(src);
 	if (!res || res->handleId_ == -1)
 		return -1;

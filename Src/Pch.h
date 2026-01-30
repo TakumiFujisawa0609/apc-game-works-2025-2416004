@@ -22,5 +22,7 @@
 #include <math.h>
 #include <unordered_set>
 
+
+
 #include <DxLib.h>
 #include <EffekseerForDXLib.h>

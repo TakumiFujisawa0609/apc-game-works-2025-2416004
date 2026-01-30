@@ -65,6 +65,12 @@ public:
         const VECTOR& pos, const Quaternion& qua, const float& _size,
         const SoundManager::SOUND _sound);
 
+    // 個別にエフェクトを管理する用
+    int PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qya, const float& size, const SoundManager::SOUND sound);
+
+    // ハンドル指定でエフェクト停止
+    void StopHandle(int handle);
+
     /// <summary>
     /// エフェクトの再生停止
     /// </summary>
@@ -81,12 +87,18 @@ public:
     /// <param name="_size">大きさ</param>
     void SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size);
 
+    // 個体ごと管理用
+    void SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, const float& size);
+
     /// <summary>
     /// エフェクトの再生確認
     /// </summary>
     /// <param name="_efc">エフェクト名</param>
     /// <returns>再生中ならtrue、停止中ならfalse</returns>
     bool IsPlayEffect(const EFFECT& _efc);
+
+    // エフェクトの再生確認(個体ごと管理用)
+    bool IsPlayEffect(int handle);
 
     /// <summary>
     /// 解放処理

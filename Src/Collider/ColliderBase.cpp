@@ -2,10 +2,10 @@
 
 // コンストラクタ
 ColliderBase::ColliderBase(SHAPE shape, TAG tag, const Transform* follow)
-	: shape_(shape)
-	, tag_(tag)
-	, follow_(follow)
-	, isValid_(true)
+	: shape_(shape)             // コライダー形状
+	, tag_(tag)                 // 衝突判定用のタグ
+	, follow_(follow)           // 追従先の transform(位置・回転情報)
+	, isValid_(true)            // 有効フラグ
 {
 }
 

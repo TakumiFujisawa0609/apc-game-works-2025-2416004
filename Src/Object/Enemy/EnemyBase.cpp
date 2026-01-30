@@ -5,6 +5,7 @@
 #include "../../Manager/System/CollisionController.h"
 #include "../../Manager/Generic/SceneManager.h"
 #include "../../Manager/Decoration/EffectManager.h"
+#include "../../Manager/Generic/ResourceManager.h"
 
 // コンストラクタ
 EnemyBase::EnemyBase(void)
@@ -25,6 +26,7 @@ EnemyBase::EnemyBase(void)
     , currentStatus_(STATUS_EFFECT::NONE)
     , statusTimer_(0.0f)
     , burnTickTimer_(0.0f)
+    , statusEffectHandle_(-1)
 {
 }
 
@@ -33,6 +35,21 @@ void EnemyBase::Load(int modelId)
 {
     trans_.modelId = modelId;
     trans_.SetModel(trans_.modelId);
+
+    // 凍結エフェクトの読み込み
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::FREEZE, ResourceManager::GetInstance().Load(ResourceManager::SRC::EFFECT_FREEZE).handleId_);
+
+    // 爆発エフェクトの読み込み
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::BLAST, ResourceManager::GetInstance().Load(ResourceManager::SRC::EFFECT_BLAST).handleId_);
+
+    // 硝酸アンモニウムエフェクトの読み込み
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::AMMONIUM, ResourceManager::GetInstance().Load(ResourceManager::SRC::EFFECT_AMMONIUM).handleId_);
+
+    // やけどエフェクトの読み込み
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::FIRE_BURN, ResourceManager::GetInstance().Load(ResourceManager::SRC::EFFECT_FIRE_BURN).handleId_);
+
+    // 湿潤エフェクトの読み込み
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::WET, ResourceManager::GetInstance().Load(ResourceManager::SRC::EFFECT_WET).handleId_);
 }
 
 // 初期化
@@ -55,6 +72,9 @@ void EnemyBase::Init(const VECTOR& startPos)
 
     // CollisionControllerに登録
     CollisionController::GetInstance().RegisterUnit(this);
+
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_BLAST, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_BLAST).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_FREEZE, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_FREEZE).handleId_);
 }
 
 // コライダ初期化
@@ -115,12 +135,29 @@ void EnemyBase::Update(void)
         trans_.pos = preCollisionPos_;
         movePow_ = Utility::VECTOR_ZERO;
     }
+
+    // エフェクトの追従
+    if (statusEffectHandle_ != -1) {
+        EffectManager::GetInstance().SyncEffect(statusEffectHandle_, trans_.pos, trans_.quaRot, 50.0f);
+    }
 }
 
 // 状態異常の更新
 void EnemyBase::UpdateStatusEffect(float deltaTime)
 {
     if (currentStatus_ == STATUS_EFFECT::NONE) return;
+
+    statusTimer_ -= deltaTime;
+
+    // --- ここからループ（再生）維持ロジック ---
+    EffectManager& em = EffectManager::GetInstance();
+
+    // ハンドルが無効、もしくは再生が終了していたら再スタート
+    if (statusEffectHandle_ == -1 || !em.IsPlayEffect(statusEffectHandle_))
+    {
+        // 現在の状態異常に応じたエフェクトを再セット
+        RestartStatusEffect();
+    }
 
     // 状態異常のタイマー更新
     statusTimer_ -= deltaTime;
@@ -149,33 +186,87 @@ void EnemyBase::UpdateStatusEffect(float deltaTime)
 // 状態異常を適用
 void EnemyBase::ApplyStatusEffect(STATUS_EFFECT status)
 {
+    // すでに同じ状態ならタイマーリセットだけで良い
+    if (currentStatus_ == status && status != STATUS_EFFECT::EXPLODED) {
+        // 状態に合わせてタイマーを上書き
+        if (status == STATUS_EFFECT::AMMONIUM_NITRATE) statusTimer_ = AMMONIUM_NITRATE_DURATION;
+        else if (status == STATUS_EFFECT::FROZEN)       statusTimer_ = FROZEN_DURATION;
+        else if (status == STATUS_EFFECT::BURN)         statusTimer_ = BURN_DURATION;
+        else if (status == STATUS_EFFECT::WET)          statusTimer_ = WET_DURATION;
+
+        return; // エフェクトは再生済みなのでここで抜ける
+    }
+
+    // 古いエフェクトがあれば止める
+    if (statusEffectHandle_ != -1) {
+        EffectManager::GetInstance().StopHandle(statusEffectHandle_);
+        statusEffectHandle_ = -1;
+    }
+
     currentStatus_ = status;
     burnTickTimer_ = 0.0f;
 
+    // 状態に応じた処理とエフェクトの再生
+    EffectManager& em = EffectManager::GetInstance();
     switch (status)
     {
     case STATUS_EFFECT::AMMONIUM_NITRATE:
         statusTimer_ = AMMONIUM_NITRATE_DURATION;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::AMMONIUM, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
         break;
 
     case STATUS_EFFECT::FROZEN:
         statusTimer_ = FROZEN_DURATION;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::FREEZE, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
+        SoundManager::GetInstance().Play(SoundManager::SOUND::SE_FREEZE);
+        break;
+
+    case STATUS_EFFECT::EXPLODED:
+        statusTimer_ = 2.0f;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::BLAST, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
+        SoundManager::GetInstance().Play(SoundManager::SOUND::SE_BLAST);
         break;
 
     case STATUS_EFFECT::BURN:
         statusTimer_ = BURN_DURATION;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::FIRE_BURN, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
         break;
 
     case STATUS_EFFECT::WET:
         statusTimer_ = WET_DURATION;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::WET, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
+        break;
+    }
+}
+
+// 状態異常エフェクトの再スタート
+void EnemyBase::RestartStatusEffect(void)
+{
+    EffectManager& em = EffectManager::GetInstance();
+
+    // 古いハンドルがあれば念のため止める
+    if (statusEffectHandle_ != -1) { em.StopHandle(statusEffectHandle_); }
+
+    switch (currentStatus_)
+    {
+    case STATUS_EFFECT::AMMONIUM_NITRATE:
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::AMMONIUM, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
+        break;
+
+    case STATUS_EFFECT::FROZEN:
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::FREEZE, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
         break;
 
     case STATUS_EFFECT::EXPLODED:
-        // 爆発は即座に終了
-        statusTimer_ = 0.0f;
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::BLAST, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
         break;
 
-    default:
+    case STATUS_EFFECT::BURN:
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::FIRE_BURN, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
+        break;
+
+    case STATUS_EFFECT::WET:
+        statusEffectHandle_ = em.PlayAndGetHandle(EffectManager::EFFECT::WET, trans_.pos, trans_.quaRot, 50.0f, SoundManager::SOUND::NONE);
         break;
     }
 }
@@ -186,6 +277,16 @@ void EnemyBase::ClearStatusEffect(void)
     currentStatus_ = STATUS_EFFECT::NONE;
     statusTimer_ = 0.0f;
     burnTickTimer_ = 0.0f;
+
+    // 自分専用のハンドルを持っていたら、それを指定して止める
+    if (statusEffectHandle_ != -1)
+    {
+        EffectManager::GetInstance().StopHandle(statusEffectHandle_);
+        statusEffectHandle_ = -1; // 止めたら忘れる
+    }
+
+    currentStatus_ = STATUS_EFFECT::NONE;
+    statusTimer_ = 0.0f;
 }
 
 // 現在の移動速度倍率を取得
@@ -236,21 +337,21 @@ void EnemyBase::Draw(void) const
     // モデル描画（UnitBaseの描画）
     UnitBase::Draw();
 
-    //// 状態異常のエフェクト描画
-    //DrawStatusEffect();
+    // 状態異常のエフェクト描画
+    DrawStatusEffect();
 
-    //// HPバーの表示
-    //VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 80, 0)));
-    //int barWidth = 60;
-    //int barHeight = 8;
-    //int barX = static_cast<int>(screenPos.x) - barWidth / 2;
-    //int barY = static_cast<int>(screenPos.y);
+    // HPバーの表示
+    VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(trans_.pos, VGet(0, 80, 0)));
+    int barWidth = 60;
+    int barHeight = 8;
+    int barX = static_cast<int>(screenPos.x) - barWidth / 2;
+    int barY = static_cast<int>(screenPos.y);
 
-    //float hpRate = hp_ / maxHp_;
-    //int hpBarWidth = static_cast<int>(barWidth * hpRate);
+    float hpRate = hp_ / maxHp_;
+    int hpBarWidth = static_cast<int>(barWidth * hpRate);
 
-    //DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
-    //DrawBox(barX, barY, barX + hpBarWidth, barY + barHeight, GetColor(0, 255, 0), true);
+    DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
+    DrawBox(barX, barY, barX + hpBarWidth, barY + barHeight, GetColor(0, 255, 0), true);
 
 #ifdef _DEBUG
     DrawCapsule3D(trans_.pos, trans_.pos, radius_, 12, 0xff0000, 0xff0000, false);
@@ -315,46 +416,13 @@ void EnemyBase::DrawStatusEffect(void) const
 
     float time = statusTimer_;
     VECTOR effectPos = VAdd(trans_.pos, VGet(0, 40, 0));
-
-    switch (currentStatus_)
-    {
-    case STATUS_EFFECT::AMMONIUM_NITRATE:
-        EffectManager::GetInstance().Play()
-
-        break;
-
-    case STATUS_EFFECT::FROZEN:
-        // 青白い氷のエフェクト
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 180);
-        DrawSphere3D(trans_.pos, radius_ * 1.1f, 12, GetColor(150, 200, 255), GetColor(150, 200, 255), FALSE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        break;
-
-    case STATUS_EFFECT::BURN:
-        // 炎のエフェクト
-    {
-        float flameOffset = sinf(time * 10.0f) * 5.0f;
-        SetDrawBlendMode(DX_BLENDMODE_ADD, 120);
-        DrawSphere3D(VAdd(effectPos, VGet(0, flameOffset, 0)), 15.0f, 8, GetColor(255, 100, 0), GetColor(255, 100, 0), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-    }
-    break;
-
-    case STATUS_EFFECT::WET:
-        // 水滴のエフェクト
-        SetDrawBlendMode(DX_BLENDMODE_ALPHA, 100);
-        DrawSphere3D(effectPos, radius_ * 0.6f, 8, GetColor(50, 150, 255), GetColor(50, 150, 255), TRUE);
-        SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 0);
-        break;
-
-    default:
-        break;
-    }
 }
 
 // 解放処理
 void EnemyBase::Release(void)
 {
+    ClearStatusEffect();
+
     for (auto& pair : ownColliders_)
     {
         if (pair.second != nullptr)
@@ -385,8 +453,26 @@ void EnemyBase::OnSwordHit(void)
 {
     TakeDamage(SWORD_DAMAGE);
 
-    // 硝酸アンモニウム状態を付与
-    ApplyStatusEffect(STATUS_EFFECT::AMMONIUM_NITRATE);
+    if (currentStatus_ == STATUS_EFFECT::FROZEN)
+    {
+        return;
+    }
+
+    if (currentStatus_ == STATUS_EFFECT::NONE)
+    {
+        // 硝酸アンモニウム状態を付与
+        ApplyStatusEffect(STATUS_EFFECT::AMMONIUM_NITRATE);
+    }
+    else if (currentStatus_ == STATUS_EFFECT::WET)
+    {
+        ApplyStatusEffect(STATUS_EFFECT::FROZEN);
+    }
+    else if (currentStatus_ == STATUS_EFFECT::BURN)
+    {
+        ApplyStatusEffect(STATUS_EFFECT::EXPLODED);
+    }
+
+   
 
     lastHitTime_ = HIT_COOLDOWN;
 }
@@ -399,15 +485,6 @@ void EnemyBase::OnFireHit(void)
         // 硝酸アンモニウム状態で火攻撃 → 爆発！
         TakeDamage(EXPLOSION_DAMAGE);
         ApplyStatusEffect(STATUS_EFFECT::EXPLODED);
-
-        // 爆発エフェクト（簡易版）
-        VECTOR explosionPos = trans_.pos;
-        for (int i = 0; i < 8; i++)
-        {
-            float angle = (i * DX_TWO_PI_F) / 8.0f;
-            VECTOR particlePos = VAdd(explosionPos, VGet(cosf(angle) * 50.0f, 30.0f, sinf(angle) * 50.0f));
-            // 実際のゲームではパーティクルシステムを使用
-        }
     }
     else if (currentStatus_ == STATUS_EFFECT::WET || currentStatus_ == STATUS_EFFECT::FROZEN)
     {
@@ -428,6 +505,9 @@ void EnemyBase::OnFireHit(void)
 // 水攻撃を受けた時の処理
 void EnemyBase::OnWaterHit(void)
 {
+    // すでに凍結しているなら、水で上書き（湿潤に戻るの）を防ぐ
+    if (currentStatus_ == STATUS_EFFECT::FROZEN) return;
+
     if (currentStatus_ == STATUS_EFFECT::AMMONIUM_NITRATE)
     {
         // 硝酸アンモニウム状態で水攻撃 → 凍結

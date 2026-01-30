@@ -306,78 +306,52 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
 
 bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
 {
+    // ここで 'capsule' と 'model' を定義しています
     const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>(capsuleCol);
     const ColliderModel* model = dynamic_cast<const ColliderModel*>(modelCol);
 
-    if (!capsule || !model) return false;
-
-    VECTOR capsuleStart = capsule->GetPosStart();
-    VECTOR capsuleEnd = capsule->GetPosEnd();
-    float capsuleRadius = capsule->GetRadius();
-
-    // カプセルの中心を計算
-    VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
+    // キャストに失敗（型が違う）した場合は何もしない
+    if (capsule == nullptr || model == nullptr) return false;
 
     int modelId = model->GetFollow()->modelId;
     if (modelId < 0) return false;
 
-    // モデルとの球体衝突判定（カプセル中心から検索）
-    MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(
-        modelId, -1, capsuleCenter, capsuleRadius + 50.0f
-    );
+    // 最新の姿勢を反映
+    MV1RefreshCollInfo(modelId, -1);
 
-    if (hitResult.HitNum > 0)
+    // ★第2引数を -1 にすることで、全フレーム（メッシュ）を判定対象にする
+    MV1_COLL_RESULT_POLY_DIM hit = MV1CollCheck_Capsule(modelId, -1,
+        capsule->GetPosStart(),
+        capsule->GetPosEnd(),
+        capsule->GetRadius());
+
+    bool isHit = false;
+    if (hit.HitNum > 0)
     {
-        float minDist = FLT_MAX;
-        VECTOR nearestPoint = capsuleCenter;
-        VECTOR nearestNormal = VGet(0.0f, 1.0f, 0.0f);
-        bool hasHit = false;
-
-        for (int i = 0; i < hitResult.HitNum; i++)
+        for (int i = 0; i < hit.HitNum; i++)
         {
-            MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
+            // ここでも 'model' 変数を使っています
+            if (model->IsExcludeFrame(hit.Dim[i].FrameIndex)) continue;
 
-            // 除外フレームチェック
-            if (model->IsExcludeFrame(poly.FrameIndex)) continue;
-
-            // ポリゴンの中心
-            VECTOR polyCenter = VScale(
-                VAdd(VAdd(poly.Position[0], poly.Position[1]), poly.Position[2]),
-                1.0f / 3.0f
-            );
-
-            // カプセル中心からポリゴン中心への距離
-            VECTOR diff = VSub(capsuleCenter, polyCenter);
-            float dist = VSize(diff);
-
-            if (dist < minDist)
-            {
-                minDist = dist;
-                nearestPoint = polyCenter;
-                nearestNormal = poly.Normal;
-                hasHit = true;
-            }
-        }
-
-        MV1CollResultPolyDimTerminate(hitResult);
-
-        if (hasHit && minDist < capsuleRadius + 50.0f)
-        {
             outInfo.myCollider = capsuleCol;
             outInfo.hitCollider = modelCol;
-            outInfo.hitPosition = nearestPoint;
-            outInfo.hitNormal = nearestNormal;
-            outInfo.penetration = (capsuleRadius + 50.0f) - minDist;
+            outInfo.hitPosition = hit.Dim[i].HitPosition;
+            outInfo.hitNormal = hit.Dim[i].Normal;
+
+            // 押し出し計算（capsule 変数を使用）
+            float dot = VDot(VSub(capsule->GetPosStart(), hit.Dim[i].HitPosition), hit.Dim[i].Normal);
+            outInfo.penetration = capsule->GetRadius() - dot;
+
+            if (outInfo.penetration < 0.1f) outInfo.penetration = 0.5f;
+
             outInfo.isValid = true;
-            return true;
+            isHit = true;
+            break;
         }
     }
-    else
-    {
-        MV1CollResultPolyDimTerminate(hitResult);
-    }
 
-    return false;
+    MV1CollResultPolyDimTerminate(hit);
+    return isHit;
 }
 
 bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG tagB) const
