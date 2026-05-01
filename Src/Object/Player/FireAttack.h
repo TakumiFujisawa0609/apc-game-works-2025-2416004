@@ -11,8 +11,8 @@ public:
     ~FireAttack(void) override;
 
     void Load(void) override;
-    void Init(void) override;
-    void Init(Player* player, const VECTOR& offsetPos);
+    void Initialize(void) override;
+    void Initialize(Player* player, const VECTOR& offsetPos);
     void Update(void) override;
     void Draw(void) const override;
     void Release(void) override;

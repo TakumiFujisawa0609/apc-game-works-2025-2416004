@@ -25,9 +25,9 @@ void EnemySlime::Load(int modelId)
 }
 
 // èâä˙âª
-void EnemySlime::Init(const VECTOR& startPos)
+void EnemySlime::Initialize(const VECTOR& startPos)
 {
-    EnemyBase::Init(startPos);
+    EnemyBase::Initialize(startPos);
     trans_.scl = VGet(0.5f, 0.5f, 0.5f);
     UpdateColliderOffset();
 }
@@ -120,7 +120,7 @@ void EnemySlime::Draw(void) const
         const ColliderSphere* sphere = dynamic_cast<const ColliderSphere*>(it->second);
         if (sphere)
         {
-            VECTOR colliderPos = sphere->GetPos();
+            VECTOR colliderPos = sphere->GetLocalPosition();
             DrawSphere3D(colliderPos, 10.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
             DrawLine3D(trans_.pos, colliderPos, GetColor(0, 255, 255));
 

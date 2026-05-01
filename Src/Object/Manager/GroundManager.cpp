@@ -39,7 +39,7 @@ void GroundManager::Load(void)
 }
 
 // 初期化
-void GroundManager::Init(void)
+void GroundManager::Initialize(void)
 {
     if (!isLoaded_)
     {
@@ -246,7 +246,7 @@ void GroundManager::Update(void) {
     if (!camera) return;
 
     VECTOR camPos = camera->GetPos();
-    VECTOR camDir = camera->GetFrontVec(); // カメラの注視方向
+    VECTOR camDir = camera->GetFrontVector(); // カメラの注視方向
 
     // 1. プレイヤーやカメラの周囲、一定範囲のグリッドを算出
     int centerX = static_cast<int>(round(camPos.x / TILE_SIZE));

@@ -31,7 +31,7 @@ void Application::CreateInstance(void)
 	if (instance_ == nullptr)
 	{
 		instance_ = new Application();
-		instance_->Init();
+		instance_->Initialize();
 	}
 }
 
@@ -40,7 +40,7 @@ Application& Application::GetInstance(void)
 	return *instance_;
 }
 
-void Application::Init(void)
+void Application::Initialize(void)
 {
 	//アプリケーションの初期設定
 	SetWindowText("Fly");
@@ -103,7 +103,7 @@ void Application::Init(void)
 	EffectManager::CreateInstance();
 
 	pauseMenu_ = new PauseMenu();
-	pauseMenu_->Init();
+	pauseMenu_->Initialize();
 	
 	activeUI_ = ActiveUI::NONE;
 

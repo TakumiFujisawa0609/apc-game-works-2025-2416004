@@ -14,7 +14,7 @@ void CollisionController::CreateInstance(void)
     if (instance_ == nullptr)
     {
         instance_ = new CollisionController();
-        instance_->Init();
+        instance_->Initialize();
     }
 }
 
@@ -40,7 +40,7 @@ CollisionController::~CollisionController(void)
 {
 }
 
-void CollisionController::Init(void)
+void CollisionController::Initialize(void)
 {
     actors_.clear();
     updateTimer_ = 0.0f;
@@ -105,7 +105,7 @@ void CollisionController::UpdateCollisionPairs(void)
                 {
                     auto col2 = pair2.second;
 
-                    if (CanCollide(col1->GetTag(), col2->GetTag()))
+                    if (CanCollide(col1->GetCollisionTag(), col2->GetCollisionTag()))
                     {
                         actor1->AddHitCollider(col2);
                         actor2->AddHitCollider(col1);
@@ -149,8 +149,8 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
 {
     if (!col1 || !col2) return false;
 
-    auto shape1 = col1->GetShape();
-    auto shape2 = col2->GetShape();
+    auto shape1 = col1->GetShapeType();
+    auto shape2 = col2->GetShapeType();
 
     if (shape1 == ColliderBase::SHAPE::CAPSULE && shape2 == ColliderBase::SHAPE::MODEL)
     {
@@ -203,11 +203,11 @@ bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const Co
 
     if (!line || !model) return false;
 
-    VECTOR start = line->GetPosStart();
-    VECTOR end = line->GetPosEnd();
+    VECTOR start = line->GetLocalStartPos();
+    VECTOR end = line->GetLocalEndPos();
 
     auto hit = MV1CollCheck_Line(
-        model->GetFollow()->modelId, -1, start, end
+        model->GetFollowTarget()->modelId, -1, start, end
     );
 
     if (hit.HitFlag > 0)
@@ -231,8 +231,8 @@ bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphere1, const
 
     if (!s1 || !s2) return false;
 
-    VECTOR pos1 = s1->GetPos();
-    VECTOR pos2 = s2->GetPos();
+    VECTOR pos1 = s1->GetLocalPosition();
+    VECTOR pos2 = s2->GetLocalPosition();
     float r1 = s1->GetRadius();
     float r2 = s2->GetRadius();
 
@@ -263,10 +263,10 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
 
     if (!s || !c) return false;
 
-    VECTOR sPos = s->GetPos();
+    VECTOR sPos = s->GetLocalPosition();
     float sRadius = s->GetRadius();
-    VECTOR cStart = c->GetPosStart();
-    VECTOR cEnd = c->GetPosEnd();
+    VECTOR cStart = c->GetLocalStartPos();
+    VECTOR cEnd = c->GetLocalEndPos();
     float cRadius = c->GetRadius();
 
     VECTOR capVec = VSub(cEnd, cStart);
@@ -313,7 +313,7 @@ bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, co
     // キャストに失敗（型が違う）した場合は何もしない
     if (capsule == nullptr || model == nullptr) return false;
 
-    int modelId = model->GetFollow()->modelId;
+    int modelId = model->GetFollowTarget()->modelId;
     if (modelId < 0) return false;
 
     // 最新の姿勢を反映
@@ -321,8 +321,8 @@ bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, co
 
     // ★第2引数を -1 にすることで、全フレーム（メッシュ）を判定対象にする
     MV1_COLL_RESULT_POLY_DIM hit = MV1CollCheck_Capsule(modelId, -1,
-        capsule->GetPosStart(),
-        capsule->GetPosEnd(),
+        capsule->GetLocalStartPos(),
+        capsule->GetLocalEndPos(),
         capsule->GetRadius());
 
     bool isHit = false;
@@ -331,7 +331,7 @@ bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, co
         for (int i = 0; i < hit.HitNum; i++)
         {
             // ここでも 'model' 変数を使っています
-            if (model->IsExcludeFrame(hit.Dim[i].FrameIndex)) continue;
+            if (model->IsExcludedFrame(hit.Dim[i].FrameIndex)) continue;
 
             outInfo.myCollider = capsuleCol;
             outInfo.hitCollider = modelCol;
@@ -339,7 +339,7 @@ bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, co
             outInfo.hitNormal = hit.Dim[i].Normal;
 
             // 押し出し計算（capsule 変数を使用）
-            float dot = VDot(VSub(capsule->GetPosStart(), hit.Dim[i].HitPosition), hit.Dim[i].Normal);
+            float dot = VDot(VSub(capsule->GetLocalStartPos(), hit.Dim[i].HitPosition), hit.Dim[i].Normal);
             outInfo.penetration = capsule->GetRadius() - dot;
 
             if (outInfo.penetration < 0.1f) outInfo.penetration = 0.5f;

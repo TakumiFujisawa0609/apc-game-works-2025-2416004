@@ -15,7 +15,7 @@ public:
 	void Load(void) override;
 
 	// ‰Šú‰»
-	void Init(void) override;
+	void Initialize(void) override;
 
 	// XVˆ—
 	void Update(void) override;

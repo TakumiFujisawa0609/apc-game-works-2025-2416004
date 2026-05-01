@@ -10,7 +10,7 @@ void Loading::CreateInstance(void)
     if (!instance_)
     {
         instance_ = new Loading();
-        instance_->Init();
+        instance_->Initialize();
     }
 }
 
@@ -41,7 +41,7 @@ Loading::~Loading(void)
 }
 
 // 初期化する
-void Loading::Init(void)
+void Loading::Initialize(void)
 {
     isLoading_ = false;
     progress_ = 0.0f;
@@ -60,7 +60,7 @@ void Loading::StartAsyncLoad(std::function<void()> loadFunc)
     }
 
     // 初期化してロード開始フラグを立てる
-    Init();
+    Initialize();
     isLoading_ = true;
 
     // スレッドを開始する（detachしない）
@@ -117,31 +117,26 @@ void Loading::Update(void)
 // 描画する
 void Loading::Draw(void)
 {
-    // 画面サイズを取得する
     const int screenW = Application::SCREEN_SIZE_X;
     const int screenH = Application::SCREEN_SIZE_Y;
 
-    // 画面をクリアして背景を黒で塗りつぶす
     ClearDrawScreen();
     DrawBox(0, 0, screenW, screenH, GetColor(0, 0, 0), TRUE);
 
-    // 進行バーのサイズを設定する
-    const int barW = 400;
-    const int barH = 40;
-
-    // 画面中央座標を求める
+    const int barW = 800;
+    const int barH = 60;
     const int centerX = screenW / 2;
     const int centerY = screenH / 2;
 
-    // 枠を描画する
-    DrawBox(centerX - barW / 2, centerY - barH / 2,
-        centerX + barW / 2, centerY + barH / 2,
-        GetColor(255, 255, 255), FALSE);
+    // --- 文字サイズの変更 ---
+    int prevFontSize = GetFontSize(); // 現在のサイズを保存
+    SetFontSize(40);                 // 文字を大きく設定（例: 40）
 
-    // 進捗バーを描画する（アトミック変数から安全に読み取る）
+    // 進捗率を取得
     float currentProgress = progress_.load(std::memory_order_acquire);
     int progressWidth = static_cast<int>(barW * currentProgress / 100.0f);
 
+    // 3. 進捗バーの描画
     if (progressWidth > 0)
     {
         DrawBox(centerX - barW / 2, centerY - barH / 2,
@@ -149,10 +144,21 @@ void Loading::Draw(void)
             GetColor(0, 255, 0), TRUE);
     }
 
-    // テキストを描画する
-    DrawFormatString(centerX - 80, centerY - 10,
+    // 1. テキストの描画 (バーの上側に配置)
+    // 文字の高さ分（約40px）上にずらして配置
+    DrawFormatString(centerX - 100, centerY - 15,
         GetColor(255, 255, 255),
         "Loading... %d%%", static_cast<int>(currentProgress));
+
+    // --- 文字サイズを元に戻す (他の画面に影響を与えないため) ---
+    SetFontSize(prevFontSize);
+
+    // 2. 枠の描画
+    DrawBox(centerX - barW / 2, centerY - barH / 2,
+        centerX + barW / 2, centerY + barH / 2,
+        GetColor(255, 255, 255), FALSE);
+
+
 }
 
 // ロード完了処理を行う

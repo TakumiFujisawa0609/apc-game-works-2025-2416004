@@ -14,7 +14,7 @@ void DamageManager::CreateInstance(void)
     if (instance_ == nullptr)
     {
         instance_ = new DamageManager();
-        instance_->Init();
+        instance_->Initialize();
     }
 }
 
@@ -54,7 +54,7 @@ DamageManager::~DamageManager(void)
 }
 
 // ‰Šú‰»
-void DamageManager::Init(void)
+void DamageManager::Initialize(void)
 {
     player_ = nullptr;
     criticalMultiplier_ = 1.5f;

@@ -1,89 +1,108 @@
 #pragma once
-#include<string>
-#include<unordered_map>
-#include<DxLib.h>
+#include <string>
+#include <unordered_map>
+#include <DxLib.h>
 
+/// @brief フォント管理クラス（シングルトン）
 class Font
 {
 public:
 
-	// ハッシュ関数の定義
-	struct PairHash {
-		std::size_t operator()(const std::pair<int, int>& p) const noexcept {
-			return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);
-		}
+	/// @brief ハッシュ関数の定義（pairをunordered_mapのキーにするため）
+	struct PairHash
+	{
+		std::size_t operator()(const std::pair<int, int>& p) const noexcept;
 	};
 
-	//フォントの定数
-	static constexpr int FONT_TYPE_NORMAL = DX_FONTTYPE_NORMAL;                             //通常のフォント
-	static constexpr int FONT_TYPE_EDGE = DX_FONTTYPE_EDGE;                                 //縁取りフォント
-	static constexpr int FONT_TYPE_ANTIALIASING = DX_FONTTYPE_ANTIALIASING;                 //アンチエイリアスフォント
-	static constexpr int FONT_TYPE_ANTIALIASING_EDGE = DX_FONTTYPE_ANTIALIASING_EDGE;       //アンチエイリアス + 縁取りフォント
+	// --- フォント定数関連 ---
+	static constexpr int FONT_TYPE_NORMAL = DX_FONTTYPE_NORMAL;                             // 通常のフォント
+	static constexpr int FONT_TYPE_EDGE = DX_FONTTYPE_EDGE;                                 // 縁取りフォント
+	static constexpr int FONT_TYPE_ANTIALIASING = DX_FONTTYPE_ANTIALIASING;                 // アンチエイリアスフォント
+	static constexpr int FONT_TYPE_ANTIALIASING_EDGE = DX_FONTTYPE_ANTIALIASING_EDGE;       // アンチエイリアス + 縁取りフォント
 
-	//デストラクタ
+	/// @brief デストラクタ
+	/// @param void 
 	~Font(void);
 
-	// インスタンスを明示的に生成
+	/// @brief インスタンスを明示的に生成
+	/// @param void 
 	static void CreateInstance(void);
 
-	//インスタンス取得
+	/// @brief インスタンス取得
+	/// @return Fontインスタンスの参照
 	static Font& GetInstance(void);
 
-	//フォントの初期化
-	void Init(void);
+	/// @brief フォントシステムの初期化
+	/// @param void 
+	void Initialize(void);
 
-	//フォントの追加
+	/// @brief フォントの追加（ファイルから読み込み）
+	/// @param fontId 識別用ID
+	/// @param internalFontName フォント名（OSが認識する名称）
+	/// @param fontPath フォントファイルのパス
+	/// @param fontSize 基本サイズ
+	/// @param fontWeight 太さ
+	/// @param fontType フォントタイプ
+	/// @return 成功ならtrue
 	bool AddFont(const std::string& fontId, const std::string& internalFontName, const std::string& fontPath, int fontSize, int fontWeight, int fontType);
 
-	//フォントの削除
+	/// @brief 特定のフォントに関連するハンドルをすべて削除
+	/// @param fontId 削除対象のID
 	void RemoveFont(const std::string& fontId);
 
-	//デフォルトフォントの設定
+	/// @brief デフォルトで使用するフォントを設定
+	/// @param fontId 設定するID
 	void SetDefaultFont(const std::string& fontId);
 
-	//テキスト描画
+	/// @brief 指定したフォントでテキスト描画
+	/// @param fontId 使用するフォントID
+	/// @param x 描画座標X
+	/// @param y 描画座標Y
+	/// @param text 描画文字列
+	/// @param color 色
+	/// @param fontSize サイズ変更（-1でデフォルト）
+	/// @param fontType タイプ変更（-1でデフォルト）
 	void DrawText(const std::string& fontId, int x, int y, const char* text, int color, int fontSize = -1, int fontType = -1);
 
-	//デフォルトフォントで描画
+	/// @brief デフォルトフォントでテキスト描画
+	/// @param x 描画座標X
+	/// @param y 描画座標Y
+	/// @param text 描画文字列
+	/// @param color 色
+	/// @param fontSize サイズ変更（-1でデフォルト）
+	/// @param fontType タイプ変更（-1でデフォルト）
 	void DrawDefaultText(int x, int y, const char* text, int color, int fontSize = -1, int fontType = -1);
 
-	//文字の横幅を取得
+	/// @brief デフォルトフォントでのテキスト横幅を取得
+	/// @param text 計測する文字列
+	/// @return ピクセル幅
 	int GetDefaultTextWidth(const std::string& text) const;
 
-	//解放
+	/// @brief フォントリソースの解放とインスタンスの破棄
+	/// @param void 
 	void Destroy(void);
 
 private:
 
-	//シングルトンインスタンス
-	static Font* instance_;
+	static Font* instance_; // シングルトンインスタンス
 
-	//フォントハンドルのマップ
-	std::unordered_map<std::string, std::unordered_map<std::pair<int, int>, int, PairHash>> fontHandles_;
+	// フォント関連
+	std::unordered_map<std::string, std::unordered_map<std::pair<int, int>, int, PairHash>> fontHandles_; // フォントハンドルの管理マップ（ID -> (サイズ, タイプ) -> ハンドル）
+	std::unordered_map<std::string, std::string> fontIdToInternalName_;                                   // フォントIDから内部フォント名を引くためのマップ
+	std::unordered_map<std::pair<int, int>, int, PairHash> dynamicFontHandles_;                           // 動的なフォント設定（サイズ/タイプ違い）のキャッシュ
+	std::string defaultFont_;                                                                             // デフォルトとして扱うフォントID
+	std::unordered_map<std::string, std::string> fontNameMap_;                                            // フォントIDに対応した内部フォント名のマップ
 
-	// フォントIDから内部フォント名を引くためのマップ
-	std::unordered_map<std::string, std::string> fontIdToInternalName_;
+	/// @brief コンストラクタ
+	/// @param void 
+	Font(void);
 
-	// 動的フォントサイズとタイプのキャッシュ
-	std::unordered_map<std::pair<int, int>, int, PairHash> dynamicFontHandles_;
-
-	//デフォルトフォント
-	std::string defaultFont_;
-
-	// フォントIDに対応した内部フォント名のマップ
-	std::unordered_map<std::string, std::string> fontNameMap_;
-
-	//コンストラクタはプライベート
-	Font();			
-
-	//一時的なフォントを取得または生成
-
-	/// <summary>
-	/// フォント表示設定
-	/// </summary>
-	/// <param name="fontSize">フォントの大きさ</param>
-	/// <param name="fontWeight">フォントの幅</param>
-	/// <param name="fontType">フォントのタイプ</param>
+	/// @brief 指定された条件のフォントハンドルを生成またはキャッシュから取得
+	/// @param internalFontName フォント名
+	/// @param fontSize フォントの大きさ
+	/// @param fontWeight フォントの太さ
+	/// @param fontType フォントのタイプ
+	/// @return 生成されたフォントハンドル
 	int GetDynamicFontHandle(const std::string& internalFontName, int fontSize, int fontWeight, int fontType);
 
 };

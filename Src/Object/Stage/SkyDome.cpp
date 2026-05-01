@@ -25,7 +25,7 @@ void SkyDome::Load(void)
 }
 
 // ‰Šú‰»
-void SkyDome::Init(void)
+void SkyDome::Initialize(void)
 {
 	// ƒXƒP[ƒ‹
 	trans_.scl = SKY_DOME_SCL;

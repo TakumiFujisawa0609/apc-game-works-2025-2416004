@@ -17,7 +17,7 @@ void ResourceManager::CreateInstance(void)
 	{
 		instance_ = new ResourceManager();
 	}
-	instance_->Init();
+	instance_->Initialize();
 }
 
 // インスタンス参照を返す
@@ -27,7 +27,7 @@ ResourceManager& ResourceManager::GetInstance(void)
 }
 
 // 共通初期化処理（今は空）
-void ResourceManager::Init(void)
+void ResourceManager::Initialize(void)
 {
 	Resource res;
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "SkyDome/skyDome.mv1");

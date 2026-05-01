@@ -7,7 +7,7 @@ class EnemyBase;
 class DamageManager
 {
 public:
-    // ★ダメージ属性
+    // ダメージ属性
     enum class DamageElement
     {
         PHYSICAL,   // 物理（無属性）
@@ -46,7 +46,7 @@ public:
     static void DestroyInstance(void);
 
     // 初期化
-    void Init(void);
+    void Initialize(void);
 
     // プレイヤーを登録
     void SetPlayer(Player* player);

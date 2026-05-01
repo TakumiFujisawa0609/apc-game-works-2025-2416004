@@ -14,7 +14,7 @@ public:
     void Load(void);
 
     // ‰Šú‰»
-    void Init(void);
+    void Initialize(void);
 
     // XVˆ—
     void Update(void);

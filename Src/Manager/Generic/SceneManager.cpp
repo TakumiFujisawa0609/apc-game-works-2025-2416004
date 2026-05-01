@@ -17,7 +17,7 @@ void SceneManager::CreateInstance(void)
     {
         instance_ = new SceneManager();
     }
-    instance_->Init();
+    instance_->Initialize();
 }
 
 // インスタンスを取得する
@@ -56,16 +56,16 @@ SceneManager::~SceneManager(void)
 }
 
 // 初期化する
-void SceneManager::Init(void)
+void SceneManager::Initialize(void)
 {
     SoundManager::CreateInstance();
-    SoundManager::GetInstance().Init();
+    SoundManager::GetInstance().Initialize();
     TimeManager::CreateInstance();
     Loading::CreateInstance();
     CollisionController::CreateInstance();
 
     // カメラを初期化する
-    camera_->Init();
+    camera_->Initialize();
 
     // ゲーム統計を初期化
     playerDistance_ = 0.0f;
@@ -141,7 +141,7 @@ void SceneManager::PushScene(std::shared_ptr<SceneBase> scene)
     // 即時ロード・初期化
     scene->Load();
     scene->EndLoad();
-    scene->Init();
+    scene->Initialize();
 }
 
 // シーンを外す（上を削除する）
@@ -197,7 +197,7 @@ void SceneManager::Update(void)
         {
             auto current = scenes_.back();
             current->EndLoad(); // ロード終了処理
-            current->Init();    // 初期化
+            current->Initialize();    // 初期化
             isSceneChanging_ = false; // ここで初めてロード終了フラグを立てる
         }
         return;

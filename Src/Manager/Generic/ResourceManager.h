@@ -86,7 +86,7 @@ public:
 	static ResourceManager& GetInstance(void); 
 
 	//初期化
-	void Init(void);
+	void Initialize(void);
 
 	//タイトルで使うリソース初期化
 	void InitTitle(void);

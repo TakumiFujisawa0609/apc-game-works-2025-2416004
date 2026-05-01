@@ -1,148 +1,143 @@
+ï»¿#include "../../Pch.h"
 #include "SoundManager.h"
-#include<DxLib.h>
-#include<cassert>
-#include <mutex>
 
-// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ì‰Šú‰»
+// ã‚·ãƒ³ã‚°ãƒ«ãƒˆãƒ³ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®åˆæœŸåŒ–
 SoundManager* SoundManager::instance_ = nullptr;
 
-// ‚±‚ê‚ğ’Ç‰ÁFÃ“Iƒƒ“ƒo•Ï”‚ÌÀ‘Ì‚ğ’è‹`‚·‚é
+// æ’ä»–åˆ¶å¾¡ç”¨ãƒŸãƒ¥ãƒ¼ãƒ†ãƒƒã‚¯ã‚¹ã®å®šç¾©
 std::mutex SoundManager::g_soundMutex;
 
-// ƒCƒ“ƒXƒ^ƒ“ƒX¶¬ƒƒ\ƒbƒh
-// –¢¶¬‚Ìê‡‚Ì‚İV‚µ‚¢ƒCƒ“ƒXƒ^ƒ“ƒX‚ğì¬‚·‚é
 void SoundManager::CreateInstance(void)
 {
-	if (instance_ == nullptr) {
+	if (instance_ == nullptr)
+	{
 		instance_ = new SoundManager();
 	}
 }
 
-// ƒCƒ“ƒXƒ^ƒ“ƒXæ“¾ƒƒ\ƒbƒh
 SoundManager& SoundManager::GetInstance(void)
 {
 	return *instance_;
 }
 
-void SoundManager::Init(void)
+void SoundManager::Initialize(void)
 {
-	masterVolumeBGM_ = 70;
-	masterVolumeSE_ = 80;
+	// åˆæœŸéŸ³é‡ã®è¨­å®š
+	masterVolumeBGM_ = DEFAULT_BGM_VOLUME;
+	masterVolumeSE_ = DEFAULT_SE_VOLUME;
 }
 
-// ƒTƒEƒ“ƒh’Ç‰Á
-void SoundManager::Add(const TYPE type, const SOUND sound, const int _data) {
-	if (sounds_.find(sound) != sounds_.end()) return;
+void SoundManager::Add(const TYPE type, const SOUND sound, const int _data)
+{
+	// ãƒãƒƒãƒ—ã¸ã®è¿½åŠ ã‚’ã‚¹ãƒ¬ãƒƒãƒ‰ã‚»ãƒ¼ãƒ•ã«ã™ã‚‹
+	std::lock_guard<std::mutex> lock(g_soundMutex);
+	if (sounds_.find(sound) != sounds_.end()) { return; }
 
+	// BGMãªã‚‰ãƒ«ãƒ¼ãƒ—å†ç”Ÿã€SEãªã‚‰ãƒãƒƒã‚¯ã‚°ãƒ©ã‚¦ãƒ³ãƒ‰å†ç”Ÿï¼ˆå˜ç™ºï¼‰ã‚’è¨­å®š
 	int mode = (type == TYPE::BGM) ? DX_PLAYTYPE_LOOP : DX_PLAYTYPE_BACK;
 	sounds_.emplace(sound, SOUND_DATA{ _data, type, mode });
 
-	// ’Ç‰Á‚ÉŒ»İ‚Ìƒ}ƒXƒ^[‰¹—Ê‚ğ‘¦À‚É”½‰f
+	// ç™»éŒ²ã—ãŸç¬é–“ã®ãƒã‚¹ã‚¿ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ ã‚’ãƒãƒ³ãƒ‰ãƒ«ã«å³åº§ã«åæ˜ ã•ã›ã‚‹
 	int targetVol = (type == TYPE::BGM) ? masterVolumeBGM_ : masterVolumeSE_;
-	ChangeVolumeSoundMem(targetVol * 255 / 100, _data);
+	ChangeVolumeSoundMem(ToDxVolume(targetVol), _data);
 }
+
 void SoundManager::Play(const SOUND _sound)
 {
-	// instance_ ‚Å‚Í‚È‚­ GetInstance() ‚ğŒÄ‚ñ‚ÅÀ‘Ì‚ğŠm”F
 	if (instance_ == nullptr) return;
-
-	// ƒƒbƒN‚ğ‚©‚¯‚é
 	std::lock_guard<std::mutex> lock(g_soundMutex);
 
-	// map ©‘Ì‚ª‰Šú‰»‚³‚ê‚Ä‚¢‚é‚©A—v‘f‚ª‚ ‚é‚©‚ğŠm”F
-	if (sounds_.empty()) return;
-
 	auto it = sounds_.find(_sound);
-	if (it == sounds_.end()) return;
-
-	// ƒnƒ“ƒhƒ‹‚ª—LŒøi³‚Ì”j‚©ƒ`ƒFƒbƒN‚µ‚Ä‚©‚çÄ¶
-	if (it->second.data > 0)
+	if (it != sounds_.end() && it->second.data > 0)
 	{
+		// ç™»éŒ²æ™‚ã«è¨­å®šã—ãŸå†ç”Ÿãƒ¢ãƒ¼ãƒ‰ã§å†ç”Ÿé–‹å§‹
 		PlaySoundMem(it->second.data, it->second.playMode);
 	}
 }
 
-// ’â~ˆ—
 void SoundManager::Stop(const SOUND _sound)
 {
-	std::lock_guard<std::mutex> lock(g_soundMutex); // ’Ç‰Á
+	std::lock_guard<std::mutex> lock(g_soundMutex);
 	auto it = sounds_.find(_sound);
-	if (it == sounds_.end()) return;
-	StopSoundMem(it->second.data);
+	if (it != sounds_.end())
+	{
+		StopSoundMem(it->second.data);
+	}
 }
 
-// ‘S‚Ä‚ÌBGM‚ğ’â~‚·‚é
 void SoundManager::StopAllBGM(void)
 {
-	// Ši”[‚³‚ê‚Ä‚¢‚é‘S‚Ä‚Ì‰¹ºƒf[ƒ^‚ğƒ`ƒFƒbƒN
+	std::lock_guard<std::mutex> lock(g_soundMutex);
 	for (auto& pair : sounds_)
 	{
-		const SOUND_DATA& data = pair.second;
-
-		// BGM‚Æ‚µ‚Ä“o˜^‚³‚ê‚Ä‚¢‚é‰¹º‚Ì‚İ‚ğ’â~
-		if (data.type == TYPE::BGM)
+		// ç®¡ç†ãƒãƒƒãƒ—ã®ä¸­ã‹ã‚‰BGMã‚¿ã‚¤ãƒ—ã®ã‚‚ã®ã ã‘ã‚’æŠ½å‡ºã—ã¦åœæ­¢
+		if (pair.second.type == TYPE::BGM)
 		{
-			StopSoundMem(data.data);
+			StopSoundMem(pair.second.data);
 		}
 	}
 }
 
-// ‘S‰¹ºƒf[ƒ^‚Ì‰ğ•úˆ—
 void SoundManager::Release(void)
 {
-	// ˜A‘z”z—ñ‚Ì‘S—v‘f‚ğíœ
+	std::lock_guard<std::mutex> lock(g_soundMutex);
+	for (auto& pair : sounds_)
+	{
+		// DXãƒ©ã‚¤ãƒ–ãƒ©ãƒªå´ã‹ã‚‰ãƒ¡ãƒ¢ãƒªã‚’è§£æ”¾
+		DeleteSoundMem(pair.second.data);
+	}
 	sounds_.clear();
 }
 
-// ‰¹—Ê’²ß
-void SoundManager::AdjustVolume(const SOUND sound, const int persent)
+void SoundManager::AdjustVolume(const SOUND sound, const int percent)
 {
-	std::lock_guard<std::mutex> lock(g_soundMutex); // ’Ç‰Á
+	std::lock_guard<std::mutex> lock(g_soundMutex);
 	auto it = sounds_.find(sound);
-	if (it == sounds_.end()) return;
-	ChangeVolumeSoundMem(255 * persent / 100, it->second.data);
+	if (it != sounds_.end())
+	{
+		// å€‹åˆ¥ã®éŸ³é‡è¨­å®šã‚’é©ç”¨ï¼ˆ0ã€œ255ã«å¤‰æ›ï¼‰
+		ChangeVolumeSoundMem(ToDxVolume(percent), it->second.data);
+	}
 }
 
-//‚È‚èI‚í‚Á‚Ä‚é‚©‚Ç‚¤‚©
 bool SoundManager::IsPlaying(SOUND sound)
 {
+	std::lock_guard<std::mutex> lock(g_soundMutex);
 	auto it = sounds_.find(sound);
-	if (it == sounds_.end()) return false; // ‘¶İ‚µ‚È‚¯‚ê‚ÎÄ¶‚µ‚Ä‚¢‚È‚¢
+	if (it == sounds_.end()) { return false; }
 
-	int handle = it->second.data;
-	return CheckSoundMem(handle) == 1;  // 1‚È‚çÄ¶’†
+	// DxLibä»•æ§˜ï¼š1ãªã‚‰å†ç”Ÿä¸­ã€0ãªã‚‰åœæ­¢ä¸­
+	return CheckSoundMem(it->second.data) == 1;
 }
 
-// ƒCƒ“ƒXƒ^ƒ“ƒX‚Ì”jŠüˆ—
 void SoundManager::Destroy(void)
 {
-	// ‘S‰¹ºƒf[ƒ^‚ğ‰ğ•ú‚µ‚Ä‚©‚çƒCƒ“ƒXƒ^ƒ“ƒX‚ğíœ
+	// å…¨éŸ³å£°ã‚’å‰Šé™¤ã—ã¦ã‹ã‚‰ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç ´æ£„
 	Release();
 	delete instance_;
+	instance_ = nullptr;
 }
 
-// ƒ}ƒXƒ^[‰¹—Ê‚Ìİ’è(BGM)
 void SoundManager::SetMasterVolumeBGM(int volume)
 {
-	masterVolumeBGM_ = std::clamp(volume, 0, 100);
+	// 0ã€œ100ã®ç¯„å›²å†…ã«åˆ¶é™ã—ã¦ä¿å­˜ã—ã€å…¨ä½“ã®éŸ³é‡ã‚’æ›´æ–°
+	masterVolumeBGM_ = std::clamp(volume, MIN_PERCENT, MAX_PERCENT);
 	ApplyMasterVolumes();
 }
 
-// ƒ}ƒXƒ^[‰¹—Ê‚Ìİ’è(SE)
 void SoundManager::SetMasterVolumeSE(int volume)
 {
-	masterVolumeSE_ = std::clamp(volume, 0, 100);
+	masterVolumeSE_ = std::clamp(volume, MIN_PERCENT, MAX_PERCENT);
 	ApplyMasterVolumes();
 }
 
-// ‚·‚×‚Ä‚Ì‰¹—Êİ’è‚ÌÄ“K—p
 void SoundManager::ApplyMasterVolumes(void)
 {
+	std::lock_guard<std::mutex> lock(g_soundMutex);
 	for (auto& pair : sounds_)
 	{
-		int targetVol = (pair.second.type == TYPE::BGM) ? masterVolumeBGM_ : masterVolumeSE_;
-
-		// ‰¹—Êİ’è‚Í 0 `@255 ‚È‚Ì‚Å•ÏŠ·‚µ‚Ä“K—p
-		ChangeVolumeSoundMem(targetVol * 255 / 100, pair.second.data);
+		// ç¨®é¡ã«å¿œã˜ã¦ç¾åœ¨ã®ãƒã‚¹ã‚¿ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ ã‚’å†è¨ˆç®—ã—ã¦ä¸€æ‹¬é©ç”¨
+		int targetPercent = (pair.second.type == TYPE::BGM) ? masterVolumeBGM_ : masterVolumeSE_;
+		ChangeVolumeSoundMem(ToDxVolume(targetPercent), pair.second.data);
 	}
 }

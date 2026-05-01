@@ -56,7 +56,7 @@ void SceneScore::EndLoad(void)
     SceneBase::EndLoad();
 }
 
-void SceneScore::Init(void)
+void SceneScore::Initialize(void)
 {
 
     // ƒTƒEƒ“ƒh
@@ -227,6 +227,11 @@ void SceneScore::Draw(void)
 
 void SceneScore::Release(void)
 {
+    if (bgMovieId_ != -1)
+    {
+        PauseMovieToGraph(bgMovieId_);
+        bgMovieId_ = -1;
+    }
 }
 
 void SceneScore::DrawDebug(void)

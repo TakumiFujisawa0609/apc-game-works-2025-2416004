@@ -55,7 +55,7 @@ void UnitBase::Load(void)
 {
 }
 
-void UnitBase::Init(void)
+void UnitBase::Initialize(void)
 {
 
 }
@@ -258,7 +258,7 @@ void UnitBase::AddHitCollidersInRange(const std::vector<const ColliderBase*>& co
 	for (const auto& collider : colliders)
 	{
 		// コライダの追従先座標を取得
-		VECTOR colliderPos = collider->GetFollow()->pos;
+		VECTOR colliderPos = collider->GetFollowTarget()->pos;
 
 		// 自分との距離を計算（XZ平面のみ、Y軸は無視）
 		float dx = colliderPos.x - trans_.pos.x;
@@ -297,7 +297,7 @@ void UnitBase::Collision(void)
 void UnitBase::CalcGravityPow(void)
 {
 	// 重力方向
-	VECTOR dirGravity = Utility::DIR_D;
+	VECTOR dirGravity = Utility::DIR_DOWN;
 
 	// 重力
 	VECTOR gravity = VScale(dirGravity, GRAVITY_POW);
@@ -325,26 +325,26 @@ void UnitBase::CollisionGravity(void)
 	ColliderLine* colliderLine = dynamic_cast<ColliderLine*>(ownColliders_.at(lineType));
 	if (!colliderLine) return;
 
-	VECTOR s = colliderLine->GetPosStart();
-	VECTOR e = colliderLine->GetPosEnd();
+	VECTOR s = colliderLine->GetLocalStartPos();
+	VECTOR e = colliderLine->GetLocalEndPos();
 
 	bool isGrounded = false;
 	float maxY = -FLT_MAX;
 
 	for (const auto& hitCol : hitColliders_)
 	{
-		if (hitCol->GetTag() != ColliderBase::TAG::STAGE &&
-			hitCol->GetTag() != ColliderBase::TAG::GROUND) continue;
+		if (hitCol->GetCollisionTag() != ColliderBase::TAG::STAGE &&
+			hitCol->GetCollisionTag() != ColliderBase::TAG::GROUND) continue;
 
 		const ColliderModel* colliderModel = dynamic_cast<const ColliderModel*>(hitCol);
 		if (!colliderModel) continue;
 
 		// 線分 vs モデル（地面）
-		auto hits = MV1CollCheck_LineDim(colliderModel->GetFollow()->modelId, -1, s, e);
+		auto hits = MV1CollCheck_LineDim(colliderModel->GetFollowTarget()->modelId, -1, s, e);
 
 		for (int i = 0; i < hits.HitNum; i++)
 		{
-			if (colliderModel->IsExcludeFrame(hits.Dim[i].FrameIndex)) continue;
+			if (colliderModel->IsExcludedFrame(hits.Dim[i].FrameIndex)) continue;
 
 			if (hits.Dim[i].HitPosition.y > maxY)
 			{
@@ -383,7 +383,7 @@ void UnitBase::CollisionSphereVsSphere(void)
 	for (const auto& hitCol : hitColliders_)
 	{
 		// 球体以外はスキップ
-		if (hitCol->GetShape() != ColliderBase::SHAPE::SPHERE) continue;
+		if (hitCol->GetShapeType() != ColliderBase::SHAPE::SPHERE) continue;
 
 		const ColliderSphere* hitSphere =
 			dynamic_cast<const ColliderSphere*>(hitCol);
@@ -391,8 +391,8 @@ void UnitBase::CollisionSphereVsSphere(void)
 		if (hitSphere == nullptr) continue;
 
 		// タグを取得
-		ColliderBase::TAG myTag = mySphere->GetTag();
-		ColliderBase::TAG hitTag = hitSphere->GetTag();
+		ColliderBase::TAG myTag = mySphere->GetCollisionTag();
+		ColliderBase::TAG hitTag = hitSphere->GetCollisionTag();
 
 		// 攻撃判定かどうかを先にチェック
 		bool isAttackTag = (hitTag == ColliderBase::TAG::FIRE_ATTACK ||
@@ -400,8 +400,8 @@ void UnitBase::CollisionSphereVsSphere(void)
 			hitTag == ColliderBase::TAG::SWORD);
 
 		// 球体同士の衝突判定
-		VECTOR myPos = mySphere->GetPos();
-		VECTOR hitPos = hitSphere->GetPos();
+		VECTOR myPos = mySphere->GetLocalPosition();
+		VECTOR hitPos = hitSphere->GetLocalPosition();
 		float myRadius = mySphere->GetRadius();
 		float hitRadius = hitSphere->GetRadius();
 
@@ -508,17 +508,17 @@ void UnitBase::CollisionWithEnemy(void)
 	for (const auto& hitCol : hitColliders_)
 	{
 		// 火・水攻撃はENEMYタグのみチェック
-		if (myCol->GetTag() == ColliderBase::TAG::FIRE_ATTACK ||
-			myCol->GetTag() == ColliderBase::TAG::WATER_ATTACK)
+		if (myCol->GetCollisionTag() == ColliderBase::TAG::FIRE_ATTACK ||
+			myCol->GetCollisionTag() == ColliderBase::TAG::WATER_ATTACK)
 		{
 			// 火・水攻撃の場合はエネミー以外スキップ
-			if (hitCol->GetTag() != ColliderBase::TAG::ENEMY) { continue; }
+			if (hitCol->GetCollisionTag() != ColliderBase::TAG::ENEMY) { continue; }
 		}
 		else
 		{
 			// それ以外（プレイヤー・エネミー）の既存ロジック
-			if (hitCol->GetTag() != ColliderBase::TAG::ENEMY && hitCol->GetTag() != ColliderBase::TAG::PLAYER) { continue; }
-			if (hitCol->GetTag() == myCol->GetTag()) { continue; }
+			if (hitCol->GetCollisionTag() != ColliderBase::TAG::ENEMY && hitCol->GetCollisionTag() != ColliderBase::TAG::PLAYER) { continue; }
+			if (hitCol->GetCollisionTag() == myCol->GetCollisionTag()) { continue; }
 		}
 
 		// 衝突判定
@@ -526,7 +526,7 @@ void UnitBase::CollisionWithEnemy(void)
 		bool isHit = false;
 
 		// カプセル同士の衝突判定
-		if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
+		if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
 			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
@@ -537,7 +537,7 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// カプセルと球体の衝突判定（自分がカプセル、相手が球体）
-		else if (myCol->GetShape() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
 			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
@@ -556,7 +556,7 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// 球体とカプセルの衝突判定（自分が球体、相手がカプセル）
-		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::CAPSULE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
 			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
@@ -567,15 +567,15 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// 球体同士の衝突判定
-		else if (myCol->GetShape() == ColliderBase::SHAPE::SPHERE && hitCol->GetShape() == ColliderBase::SHAPE::SPHERE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
 			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
 
 			if (mySphere && hitSphere)
 			{
-				VECTOR myPos = mySphere->GetPos();
-				VECTOR hitPos = hitSphere->GetPos();
+				VECTOR myPos = mySphere->GetLocalPosition();
+				VECTOR hitPos = hitSphere->GetLocalPosition();
 				VECTOR diff = VSub(hitPos, myPos);
 				float distSq = VDot(diff, diff);
 				float radiusSum = mySphere->GetRadius() + hitSphere->GetRadius();
@@ -587,8 +587,8 @@ void UnitBase::CollisionWithEnemy(void)
 
 					info.myCollider = mySphere;
 					info.hitCollider = hitSphere;
-					info.hitPosition = VAdd(mySphere->GetPos(), VScale(diff, mySphere->GetRadius() / dist));
-					info.hitNormal = dist > 0.0001f ? VScale(diff, 1.0f / dist) : Utility::DIR_U;
+					info.hitPosition = VAdd(mySphere->GetLocalPosition(), VScale(diff, mySphere->GetRadius() / dist));
+					info.hitNormal = dist > 0.0001f ? VScale(diff, 1.0f / dist) : Utility::DIR_UP;
 					info.penetration = radiusSum - dist;
 					info.isValid = true;
 					isHit = true;
@@ -602,7 +602,7 @@ void UnitBase::CollisionWithEnemy(void)
 		{
 			OnCollisionEnter(info);
 
-			if (myCol->GetTag() == ColliderBase::TAG::ENEMY && hitCol->GetTag() == ColliderBase::TAG::PLAYER)
+			if (myCol->GetCollisionTag() == ColliderBase::TAG::ENEMY && hitCol->GetCollisionTag() == ColliderBase::TAG::PLAYER)
 			{
 				// info.hitNormal が「EnemyからPlayer」への向きになっている場合、
 				// Enemyを戻すには「PlayerからEnemy」への向き（逆向き）に動かす必要があります。
@@ -640,7 +640,7 @@ void UnitBase::CollisionWithCapsule(void)
 	for (const auto& hitCol : hitColliders_)
 	{
 		// カプセル以外はスキップ
-		if (hitCol->GetShape() != ColliderBase::SHAPE::CAPSULE) continue;
+		if (hitCol->GetShapeType() != ColliderBase::SHAPE::CAPSULE) continue;
 
 		const ColliderCapsule* hitCapsule =
 			dynamic_cast<const ColliderCapsule*>(hitCol);

@@ -38,7 +38,7 @@ public:
     void Load(void) override;
 
     // 初期化
-    void Init(void) override;
+    void Initialize(void) override;
 
     // 更新処理
     void Update(void) override;
@@ -116,6 +116,8 @@ public:
     void DrawLevelInfo(void) const;
 
     void DrawDistanceUI(void) const;
+    
+    int GetHP(void);
 
 protected:
     // コライダーの初期化

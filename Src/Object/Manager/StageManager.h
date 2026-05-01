@@ -21,7 +21,7 @@ public:
     void Load(void);
 
     // ‰Šú‰»
-    void Init(EnemyManager* enemyManager);
+    void Initialize(EnemyManager* enemyManager);
 
     // XVˆ—
     void Update(const VECTOR& playerPos, float deltaTime);

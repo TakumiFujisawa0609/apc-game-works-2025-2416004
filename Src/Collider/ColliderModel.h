@@ -1,28 +1,40 @@
 #pragma once
+
+#include <unordered_set>
+#include <string>
+
 #include "ColliderBase.h"
 
+/// @brief モデルベースのコライダクラス（フレーム単位で当たり判定を制御）
 class ColliderModel : public ColliderBase
 {
 public:
-    // コンストラクタ
-    ColliderModel(TAG tag, const Transform* follow);
 
-    // デストラクタ
-    ~ColliderModel(void) override;
+    /// @brief コンストラクタ
+    /// @param collisionTag 衝突種別
+    /// @param followTarget 追従対象のTransform
+    ColliderModel(TAG collisionTag, const Transform* followTarget);
 
-    // 指定された文字を含むフレームを衝突判定から除外
-    void AddExcludeFrameIds(const std::string& name);
+    /// @brief デストラクタ
+    ~ColliderModel(void) override = default;
 
-    // 除外フレームのクリア
-    void ClearExcludeFrame(void);
+    /// @brief 指定文字列を含むフレームを当たり判定から除外
+    /// @param exclusionName 除外対象フレーム名に含まれる文字列
+    void AddExcludeFrameIds(const std::string& exclusionName);
 
-    // 除外フレーム判定
-    bool IsExcludeFrame(int frameIdx) const;
+    /// @brief 除外フレームのクリア
+    void ClearExcludedFrames(void);
+
+    /// @brief フレームが除外対象か判定
+    /// @param frameIndex フレーム番号
+    /// @return 除外対象ならtrue
+    bool IsExcludedFrame(int frameIndex) const;
+
 protected:
-    // デバッグ用描画(モデルは描画不要)
-    void DrawDebug(int color) override {};
+    /// @brief デバッグ描画（モデルコライダは描画しない）
+    void DrawDebug(int debugColor) const override {};
 
 private:
     // 衝突判定から除外するフレーム番号
-    std::vector<int> excludeFrameIds_;
+    std::unordered_set<int> excludedFrameIndices_;
 };

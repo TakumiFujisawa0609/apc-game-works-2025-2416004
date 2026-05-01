@@ -14,7 +14,7 @@ Grid::~Grid(void)
 }
 
 //‰Šú‰»
-void Grid::Init(void)
+void Grid::Initialize(void)
 {
 }
 

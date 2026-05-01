@@ -7,7 +7,7 @@ SceneBase::~SceneBase(void)
 }
 
 //‰Šú‰»
-void SceneBase::Init(void)
+void SceneBase::Initialize(void)
 {
 	isLoading_ = false;
 }

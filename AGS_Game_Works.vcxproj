@@ -121,7 +121,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(DXLIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Lib/DxLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -131,7 +131,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(DXLIB_DIR)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./Lib/DxLib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,7 +143,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(DXLIB_DIR)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Lib/DxLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -155,10 +155,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(DXLIB_DIR)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./Lib/DxLib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Scene\SceneCredit.h" />
     <ClInclude Include="Src\Scene\SceneOption.h" />
     <ClInclude Include="Src\Scene\SceneTutorial.h" />
@@ -174,7 +175,6 @@
     <ClInclude Include="Src\Collider\ColliderLine.h" />
     <ClInclude Include="Src\Collider\ColliderBase.h" />
     <ClInclude Include="Src\pch.h" />
-    <ClInclude Include="Src\Fps\FpsController.h" />
     <ClInclude Include="Src\Object\Enemy\EnemyData.h" />
     <ClInclude Include="Src\Object\Manager\EnemyManager.h" />
     <ClInclude Include="Src\Object\Enemy\EnemySlime.h" />
@@ -216,6 +216,7 @@
     <ClInclude Include="Src\Object\Stage\Tower.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Fps\FpsController.cpp" />
     <ClCompile Include="Src\Scene\SceneCredit.cpp" />
     <ClCompile Include="Src\Scene\SceneOption.cpp" />
     <ClCompile Include="Src\Scene\SceneTutorial.cpp" />
@@ -236,7 +237,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Src\Fps\FpsController.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemyData.cpp" />
     <ClCompile Include="Src\Object\Manager\EnemyManager.cpp" />
     <ClCompile Include="Src\Object\Enemy\EnemySlime.cpp" />

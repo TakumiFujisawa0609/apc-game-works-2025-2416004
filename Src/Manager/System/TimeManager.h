@@ -20,7 +20,7 @@ public:
 	void Reset(void);
 
 	//‰Šú‰»
-	void Init(void);
+	void Initialize(void);
 
 	//XVˆ—
 	void Update(void);

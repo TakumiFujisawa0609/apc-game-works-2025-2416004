@@ -11,7 +11,7 @@ SceneCredit::SceneCredit(void)
     handle_ = -1;
 }
 
-void SceneCredit::Init(void)
+void SceneCredit::Initialize(void)
 {
     // ‰æ–Ê’†‰›(0)‚ğŠî€‚ÉAã‰º‚É‚Ç‚ê‚­‚ç‚¢‚¸‚ç‚·‚©‚ğİ’è
     credits_ =

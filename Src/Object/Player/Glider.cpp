@@ -26,7 +26,7 @@ void Glider::Load(void)
 }
 
 // 初期化
-void Glider::Init(void)
+void Glider::Initialize(void)
 {
     // グライダーはコライダを持たないため、空実装
     InitCollider();

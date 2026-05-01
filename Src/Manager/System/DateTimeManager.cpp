@@ -10,7 +10,7 @@ DateTimeManager::DateTimeManager(void)
 	lastRecordedHour_ = -1;
 }
 
-void DateTimeManager::Init(void)
+void DateTimeManager::Initialize(void)
 {
 	currentDay_ = 0;
 

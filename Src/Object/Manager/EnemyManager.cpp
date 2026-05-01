@@ -25,7 +25,7 @@ void EnemyManager::Load(void)
 }
 
 // 初期化
-void EnemyManager::Init(void)
+void EnemyManager::Initialize(void)
 {
     enemies_.clear();
     spawners_.clear();
@@ -393,7 +393,7 @@ void EnemyManager::ProcessSpawners(const EnemyData& data, const VECTOR& playerPo
         if (!enemy) continue;
 
         // エネミーを初期化
-        enemy->Init(spawnPos);
+        enemy->Initialize(spawnPos);
 
         // スポナーのレベルを適用
         enemy->SetLevel(spawner->GetEnemyLevel());

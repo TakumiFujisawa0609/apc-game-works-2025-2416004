@@ -1,159 +1,131 @@
 #pragma once
-#include<unordered_map>
+#include <unordered_map>
+#include <mutex>
 
-/// <summary>
-/// サウンド管理クラス
-/// DxLibの3D空間上の音声再生機能を利用して、
-/// 音声に距離感を持たせることが可能なサウンド管理システム
-/// </summary>
+/// @brief サウンド管理クラス（シングルトン）
 class SoundManager
 {
 public:
-	/// <summary>
-	/// 再生の種類を分類する列挙型
-	/// </summary>
+	/// @brief サウンドの分類
 	enum class TYPE
 	{
 		NONE,
-		BGM,   // バックグラウンドミュージック
-		SE     // サウンドエフェクト
+		BGM,
+		SE
 	};
 
-	/// <summary>
-	/// 使用する音声データの種類を定義する列挙型
-	/// </summary>
+	/// @brief 個別サウンドの識別子
 	enum class SOUND
 	{
-		//ここに使用する音楽や効果音などを羅列
 		NONE,
-		BGM_TITLE,      // タイトル画面BGM
-		BGM_GAME,       // ゲーム画面BGM
-		BGM_FAITE,      // 戦闘BGM
-		BGM_SCORE,      // スコア画面BGM
-		SE_CANCEL,      // キャンセル音
-		SE_SELECT,      // 選択音
-		SE_PUSH,        // 決定音 
-		SE_WATER,       // 水攻撃音
-		SE_FIRE,        // 火の攻撃音
-		SE_FREEZE,      // 凍結音
-		SE_BLAST,       // 爆発音
-		SE_LEVER_UP,    // レベルアップ音
-		SE_SLASH,       // 斬撃音
-		SE_GLIDER       // グライダー音
-
+		BGM_TITLE, BGM_GAME, BGM_FAITE, BGM_SCORE,
+		SE_CANCEL, SE_SELECT, SE_PUSH, SE_WATER,
+		SE_FIRE, SE_FREEZE, SE_BLAST, SE_LEVER_UP,
+		SE_SLASH, SE_GLIDER
 	};
 
-	/// <summary>
-	/// 音声データを格納する構造体
-	/// </summary>
+	/// @brief サウンドのリソースデータ構造体
 	struct SOUND_DATA
 	{
-		int data;       // 音声データ格納
-		TYPE type;      // 音声データの種類 ※この要素は削除するかも
-		int playMode;   // 音声データの再生タイプ
+		int data;     // DxLibのサウンドハンドル
+		TYPE type;    // BGMかSEか
+		int playMode; // 再生モード（ループか単発か）
 	};
 
-	/// <summary>
-	/// インスタンスを生成する
-	/// シングルトンパターンの実装
-	/// </summary>
+	/// @brief インスタンスを明示的に生成
+	/// @param void 
 	static void CreateInstance(void);
 
-	/// <summary>
-	/// インスタンスを取得する
-	/// </summary>
-	/// <returns>SoundManagerの唯一のインスタンス</returns>
+	/// @brief インスタンス取得
+	/// @return SoundManagerインスタンスの参照
 	static SoundManager& GetInstance(void);
 
-	void Init(void);
+	/// @brief 初期化処理
+	/// @param void 
+	void Initialize(void);
 
-	/// <summary>
-	/// サウンドの追加
-	/// </summary>
-	/// <param name="_type">音の種類分け(SEかBGMか)</param>
-	/// <param name="_sound">具体的な用途</param>
-	/// <param name="_data">音のデータ</param>
+	/// @brief サウンドリソースの登録
+	/// @param type サウンドの種類
+	/// @param sound 識別用ID
+	/// @param _data DxLibサウンドハンドル
 	void Add(const TYPE type, const SOUND sound, const int _data);
 
-	/// <summary>
-	/// 音声データの再生
-	/// </summary>
-	/// <param name="_sound">再生する音声データ</param>
+	/// @brief サウンドの再生
+	/// @param _sound 再生するサウンドID
 	void Play(const SOUND _sound);
 
-	/// <summary>
-	/// 音声データの停止処理
-	/// </summary>
-	/// <param name="_sound">停止する音声データ</param>
+	/// @brief 指定したサウンドの停止
+	/// @param _sound 停止するサウンドID
 	void Stop(const SOUND _sound);
 
-	/// <summary>
-	/// すべてのBGMを停止する
-	/// BGMとして登録されている音声データを停止します。
-	/// </summary>
+	/// @brief 全てのBGMを停止
+	/// @param void 
 	void StopAllBGM(void);
 
-	/// <summary>
-	/// 音声データの解放処理
-	/// </summary>
+	/// @brief 全リソースの解放
+	/// @param void 
 	void Release(void);
 
-	/// <summary>
-	/// 音量調節
-	/// </summary>
-	/// <param name="_sound">調整対象の音声</param>
-	/// <param name="_persent">調整割合(0%～100%)</param>
-	void AdjustVolume(const SOUND _sound, const int _persent);
+	/// @brief 音量の個別調整
+	/// @param _sound 対象のサウンドID
+	/// @param _percent 音量（0-100）
+	void AdjustVolume(const SOUND _sound, const int _percent);
 
-	//なり終わってるかどうか
+	/// @brief サウンドが再生中か確認
+	/// @param sound 対象のサウンドID
+	/// @return 再生中ならtrue
 	bool IsPlaying(SOUND sound);
 
-	/// <summary>
-	/// インスタンスの破棄
-	/// </summary>
+	/// @brief インスタンスの破棄
+	/// @param void 
 	void Destroy(void);
 
-	// マスター音量の設定(BGM)
+	/// @brief BGMのマスターボリューム設定
+	/// @param volume 音量（0-100）
 	void SetMasterVolumeBGM(int volume);
 
-	// マスター音量の設定(SE)
+	/// @brief SEのマスターボリューム設定
+	/// @param volume 音量（0-100）
 	void SetMasterVolumeSE(int volume);
 
-	// 現在のマスター音量を取得(BGM)
+	/// @brief BGMのマスターボリューム取得
+	/// @return 現在の音量設定（0-100）
 	int GetMasterVolumeBGM(void) const { return masterVolumeBGM_; }
 
-	// 現在のマスター音量を取得(SE)
+	/// @brief SEのマスターボリューム取得
+	/// @return 現在の音量設定（0-100）
 	int GetMasterVolumeSE(void) const { return masterVolumeSE_; }
 
-	// すべての音量設定を再適用
+	/// @brief マスターボリュームを現在読み込まれている全てのサウンドに適用
+	/// @param void 
 	void ApplyMasterVolumes(void);
 
 private:
-	//インスタンス用
-	static SoundManager* instance_;
+	// 定数関連
+	static constexpr int MAX_PERCENT = 100;       // パーセントの最大値
+	static constexpr int MIN_PERCENT = 0;         // パーセントの最小値
+	static constexpr int DX_MAX_VOLUME = 255;     // DxLibの最大音量設定値
+	static constexpr int DEFAULT_BGM_VOLUME = 70; // BGMの初期音量
+	static constexpr int DEFAULT_SE_VOLUME = 80;  // SEの初期音量
 
-	/// <summary>
-	/// 音声データ格納用マップ
-	/// SOUND列挙型をキーとして、対応する音声データを管理
-	/// </summary>
-	std::unordered_map<SOUND, SOUND_DATA>sounds_;
+	static SoundManager* instance_; // シングルトンインスタンス
+	static std::mutex g_soundMutex; // スレッドセーフ用ミューテックス
 
-	// スレッド間の交通整理用
-	static std::mutex g_soundMutex;
+	// メンバ変数
+	std::unordered_map<SOUND, SOUND_DATA> sounds_; // サウンドハンドルの管理マップ
+	int masterVolumeBGM_;                          // BGMの主音量（0-100）
+	int masterVolumeSE_;                           // SEの主音量（0-100）
 
-	// マンスタ音量(BGM)
-	int masterVolumeBGM_;
+	/// @brief コンストラクタ
+	/// @param void 
+	SoundManager(void) = default;
 
-	// マスター音量(SE)
-	int masterVolumeSE_;
+	/// @brief デストラクタ
+	/// @param void 
+	~SoundManager(void) = default;
 
-	/// <summary>
-	/// コンストラクタ（シングルトンパターンのため外部からのインスタンス化を防止）
-	/// </summary>
-	SoundManager() = default;
-
-	/// <summary>
-	/// デストラクタ
-	/// </summary>
-	~SoundManager() = default;
+	/// @brief 音量パーセントをDxLib用の値(0-255)に変換するヘルパー
+	/// @param percent 変換前のパーセント値
+	/// @return DxLib形式の音量値
+	int ToDxVolume(int percent) const { return percent * DX_MAX_VOLUME / MAX_PERCENT; }
 };

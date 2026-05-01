@@ -87,7 +87,7 @@ public:
 	/// <summary>
 	/// ‰Šú‰»ˆ—
 	/// </summary>
-	void Init(void);
+	void Initialize(void);
 
 	/// <summary>
 	/// XVˆ—

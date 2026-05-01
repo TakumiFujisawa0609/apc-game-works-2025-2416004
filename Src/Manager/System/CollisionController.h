@@ -31,7 +31,7 @@ public:
     static void Destroy(void);
 
     // 初期化
-    void Init(void);
+    void Initialize(void);
 
     // 更新（全ての衝突判定を実行）
     void Update(void);

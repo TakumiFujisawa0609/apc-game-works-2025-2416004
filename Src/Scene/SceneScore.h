@@ -14,7 +14,7 @@ public:
     // “Ç‚İ‚İŠ®—¹
     void EndLoad(void) override;
     // ‰Šú‰»ˆ—
-    void Init(void) override;
+    void Initialize(void) override;
     // XVˆ—
     void Update(void) override;
     // •`‰æˆ—

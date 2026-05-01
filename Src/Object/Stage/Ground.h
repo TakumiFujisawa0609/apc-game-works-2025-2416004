@@ -12,7 +12,7 @@ public:
     ~Ground(void) override;
 
     // ‰Šú‰»
-    void Init(const VECTOR& pos, int modelId);
+    void Initialize(const VECTOR& pos, int modelId);
 
     // ‰Šú‰»iCollisionController“o˜^‚È‚µ)
     void InitWithoutRegister(const VECTOR& pos, int modelId);

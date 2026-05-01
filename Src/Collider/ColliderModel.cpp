@@ -1,49 +1,44 @@
+#include "../Pch.h"
 #include "ColliderModel.h"
 
-// コンストラクタ
 ColliderModel::ColliderModel(TAG tag, const Transform* follow)
     : ColliderBase(SHAPE::MODEL, tag, follow)
 {
 }
 
-// デストラクタ
-ColliderModel::~ColliderModel(void)
+void ColliderModel::AddExcludeFrameIds(const std::string& exclusionName)
 {
-}
+    // モデル未設定なら処理しない
+    if (!followTarget_ || followTarget_->modelId == -1) { return; }
 
-// 指定された文字を含むフレームを衝突判定から除外
-void ColliderModel::AddExcludeFrameIds(const std::string& name)
-{
-    if (!follow_ || follow_->modelId == -1) { return; }
-
-    // フレーム数を取得
-    int num = MV1GetFrameNum(follow_->modelId);
+    // モデルのフレーム総数を取得
+    int num = MV1GetFrameNum(followTarget_->modelId);
 
     for (int i = 0; i < num; i++)
     {
         // フレーム名を取得
-        const char* frameName = MV1GetFrameName(follow_->modelId, i);
+        const char* frameName = MV1GetFrameName(followTarget_->modelId, i);
         std::string frameNameStr = frameName;
 
-        // 指定された文字列が含まれているか
-        if (frameNameStr.find(name) != std::string::npos)
+        // 指定文字列を含むフレームか判定
+        if (frameNameStr.find(exclusionName) != std::string::npos)
         {
-            // 除外フレームに追加
-            excludeFrameIds_.push_back(i);
+            // 該当フレームを除外リストに登録
+            excludedFrameIndices_.insert(i);
         }
     }
 }
 
-// 除外フレームのクリア
-void ColliderModel::ClearExcludeFrame(void)
+void ColliderModel::ClearExcludedFrames(void)
 {
-    excludeFrameIds_.clear();
+    // 除外リストを全削除
+    excludedFrameIndices_.clear();
 }
 
-// 除外フレーム判定
-bool ColliderModel::IsExcludeFrame(int frameIdx) const
+bool ColliderModel::IsExcludedFrame(int frameIdx) const
 {
-    return std::find(excludeFrameIds_.begin(), excludeFrameIds_.end(), frameIdx) != excludeFrameIds_.end();
+    // セットに存在するかで判定
+    return excludedFrameIndices_.count(frameIdx) > 0;
 }
 
 

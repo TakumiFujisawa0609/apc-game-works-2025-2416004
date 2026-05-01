@@ -48,7 +48,7 @@ void SceneOption::EndLoad(void)
 }
 
 
-void SceneOption::Init(void) 
+void SceneOption::Initialize(void) 
 {
     SetMouseDispFlag(TRUE);
 
@@ -56,7 +56,6 @@ void SceneOption::Init(void)
     auto& sm = SoundManager::GetInstance();
     bgmSlider_.value = sm.GetMasterVolumeBGM() / 100.0f;
     seSlider_.value = sm.GetMasterVolumeSE() / 100.0f;
-    sensitivitySlider_.value = InputManager::GetInstance().GetMouseSensitivity();
 
 
     TimeManager::GetInstance().SetPaused(true);
@@ -74,6 +73,10 @@ void SceneOption::Init(void)
     // ‘€ìà–¾ƒ{ƒ^ƒ“‚Ì•¶ŽšˆÊ’u‚ðŒvŽZ
     controlBtn_.textX = controlBtn_.x + ((controlBtn_.w - font.GetDefaultTextWidth(controlBtn_.label)) / 2) / 2;
     controlBtn_.textY = controlBtn_.y + (controlBtn_.h - 24) / 2;
+
+    if (camera) {
+        sensitivitySlider_.value = camera->GetSensitivity();
+    }
 
     camera->ChangeMode(Camera::MODE::FIXED_POINT);
 }
@@ -161,8 +164,15 @@ void SceneOption::UpdateSlider(Slider& slider, int mx)
             else if (slider.label[0] == 'S' && slider.label[1] == 'E') {
                 sm.SetMasterVolumeSE(static_cast<int>(slider.value * 100));
             }
-            else if (slider.label[0] == 'M') {
-                im.SetMouseSensitivity(slider.value);
+            else if (slider.label[0] == 'M')
+            {
+                // InputManager ‚Å‚Í‚È‚­ƒJƒƒ‰‚ð’¼Ú‚¢‚¶‚é
+                auto camera = SceneManager::GetInstance().GetCamera();
+                if (camera)
+                {
+                    // slider.value(0.0~1.0) ‚ð‚»‚Ì‚Ü‚ÜA‚ ‚é‚¢‚Í”{—¦‚ð‚©‚¯‚Ä“n‚·
+                    camera->SetSensitivity(slider.value);
+                }
             }
         }
     }

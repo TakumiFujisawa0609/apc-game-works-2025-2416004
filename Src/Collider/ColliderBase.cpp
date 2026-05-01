@@ -1,73 +1,62 @@
+#include "../Pch.h"
 #include "ColliderBase.h"
 
-// コンストラクタ
-ColliderBase::ColliderBase(SHAPE shape, TAG tag, const Transform* follow)
-	: shape_(shape)             // コライダー形状
-	, tag_(tag)                 // 衝突判定用のタグ
-	, follow_(follow)           // 追従先の transform(位置・回転情報)
-	, isValid_(true)            // 有効フラグ
+ColliderBase::ColliderBase(SHAPE shapeType, TAG collisionTag, const Transform* followTarget)
+	: shapeType_(shapeType)             
+	, collisionTag_(collisionTag)                 
+	, followTarget_(followTarget)          
+	, isActive_(true)
 {
 }
 
-// デストラクタ
-ColliderBase::~ColliderBase(void)
-{
-
-}
-
-// 描画
 void ColliderBase::Draw(void)
 {
-	int color = COLOR_INVALID;
+	int color = DEBUG_COLOR_INACTIVE;
 
-	if (isValid_)
+	// 譛牙柑縺ｪ繧ｳ繝ｩ繧､繝縺ｪ繧芽牡繧貞､画峩
+	if (isActive_)
 	{
-		color = COLOR_VALID;
+		color = DEBUG_COLOR_ACTIVE;
 	}
 
 	DrawDebug(color);
 }
 
-VECTOR ColliderBase::GetRotPos(const VECTOR& localPos) const
+VECTOR ColliderBase::TransformLocalToWorld(const VECTOR& localPos) const
 {
-	// 追従相手の回転に合わせて指定ローカル座標を回転し、
-	// 基準座標に加えることでワールド座標へ変換
-	VECTOR localRotPos = follow_->quaRot.PosAxis(localPos);
-	return VAdd(follow_->pos, localRotPos);
+	// 繝ｭ繝ｼ繧ｫ繝ｫ蠎ｧ讓吶ｒ蝗櫁ｻ｢縺輔○縺ｦ繝ｯ繝ｼ繝ｫ繝牙ｺｧ讓吶∈螟画鋤
+	VECTOR localRotPos = followTarget_->quaRot.PosAxis(localPos);
+
+	// 菴咲ｽｮ繧貞刈邂励＠縺ｦ譛邨ら噪縺ｪ繝ｯ繝ｼ繝ｫ繝牙ｺｧ讓吶↓縺吶ｋ
+	return VAdd(followTarget_->pos, localRotPos);
 }
 
-// 追従先の取得
-const Transform* ColliderBase::GetFollow(void) const
+const Transform* ColliderBase::GetFollowTarget(void) const
 {
-	return follow_;
+	return followTarget_;
 }
 
-// 追従先の設定
-void ColliderBase::SetFollow(Transform* follow)
+void ColliderBase::SetFollowTarget(Transform* followTarget)
 {
-	follow_ = follow;
+	followTarget_ = followTarget;
 }
 
-// 形状の取得
-ColliderBase::SHAPE ColliderBase::GetShape(void) const
+ColliderBase::SHAPE ColliderBase::GetShapeType(void) const
 {
-	return shape_;
+	return shapeType_;
 }
 
-// 衝突種別の取得
-ColliderBase::TAG ColliderBase::GetTag(void) const
+ColliderBase::TAG ColliderBase::GetCollisionTag(void) const
 {
-	return tag_;
+	return collisionTag_;
 }
 
-// 有効フラグの取得
-bool ColliderBase::IsValid(void) const
+bool ColliderBase::IsActive(void) const
 {
-	return isValid_;
+	return isActive_;
 }
 
-// 有効フラグの設定
-void ColliderBase::SetValid(bool valid)
+void ColliderBase::SetActive(bool isActive)
 {
-	isValid_ = valid;
+	isActive_ = isActive;
 }

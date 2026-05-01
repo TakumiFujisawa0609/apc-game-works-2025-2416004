@@ -10,7 +10,7 @@ void TimeManager::CreateInstance(void)
 		instance_ = new TimeManager();
 	}
 
-	instance_->Init();
+	instance_->Initialize();
 }
 
 TimeManager& TimeManager::GetInstance(void)
@@ -34,7 +34,7 @@ void TimeManager::Reset(void)
 	prevTime_ = std::chrono::steady_clock::now();
 }
 
-void TimeManager::Init(void)
+void TimeManager::Initialize(void)
 {
 	gameTime_ = 0.0f;
 	gameSpeed_ = 1.0f;

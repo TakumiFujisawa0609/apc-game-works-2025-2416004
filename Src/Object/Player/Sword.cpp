@@ -26,7 +26,7 @@ void Sword::Load(void)
 }
 
 // 初期化
-void Sword::Init(void)
+void Sword::Initialize(void)
 {
     // カプセルコライダの半径
     radius_ = CAPSULE_RADIUS;
@@ -99,8 +99,8 @@ void Sword::Draw(void) const
         const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>(it->second);
         if (capsule)
         {
-            VECTOR start = capsule->GetPosStart();
-            VECTOR end = capsule->GetPosEnd();
+            VECTOR start = capsule->GetLocalStartPos();
+            VECTOR end = capsule->GetLocalEndPos();
             float r = capsule->GetRadius();
 
             // 攻撃中は赤、それ以外は青
@@ -150,7 +150,7 @@ void Sword::SetAttacking(bool attacking)
     auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::CAPSULE));
     if (it != ownColliders_.end())
     {
-        it->second->SetValid(attacking);
+        it->second->SetActive(attacking);
     }
 }
 // 攻撃中かどうか

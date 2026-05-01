@@ -25,7 +25,7 @@ public:
     virtual void Load(int modelId);
 
     // ‰Šú‰»
-    virtual void Init(void) override;
+    virtual void Initialize(void) override;
 
     // XVˆ—
     virtual void Update(void) override;

@@ -25,7 +25,7 @@ void FireAttack::Load(void)
     // エフェクトのみなので特に読み込みなし
 }
 
-void FireAttack::Init(void)
+void FireAttack::Initialize(void)
 {
     trans_.pos = Utility::VECTOR_ZERO;
     trans_.scl = VGet(1.0f, 1.0f, 1.0f);
@@ -34,7 +34,7 @@ void FireAttack::Init(void)
     isActive_ = false;
 }
 
-void FireAttack::Init(Player* player, const VECTOR& offsetPos)
+void FireAttack::Initialize(Player* player, const VECTOR& offsetPos)
 {
     player_ = player;
     offsetPos_ = offsetPos;

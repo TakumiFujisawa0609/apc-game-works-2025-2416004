@@ -21,7 +21,7 @@ public:
     static void DestroyInstance(void);
 
     // ‰Šú‰»‚·‚é
-    void Init(void);
+    void Initialize(void);
 
     // XV‚·‚é
     void Update(void);

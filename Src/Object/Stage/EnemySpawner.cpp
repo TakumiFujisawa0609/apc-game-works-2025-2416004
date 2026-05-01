@@ -24,9 +24,9 @@ EnemySpawner::EnemySpawner(const VECTOR& position, float spawnRange, const std::
     trans_.scl = VGet(6.0f, 6.0f, 6.0f);
 }
 
-void EnemySpawner::Init(void)
+void EnemySpawner::Initialize(void)
 {
-    UnitBase::Init();
+    UnitBase::Initialize();
 
     trans_.Update();
 

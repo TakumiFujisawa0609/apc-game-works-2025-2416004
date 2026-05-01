@@ -9,7 +9,7 @@ public:
     SceneCredit(void);
     ~SceneCredit(void) override = default;
 
-    void Init(void) override;
+    void Initialize(void) override;
     void Update(void) override;
     void Draw(void) override;
     void Release(void) override;
@@ -17,7 +17,8 @@ public:
     void EndLoad(void) override {}
 
 private:
-    struct CreditLine {
+    struct CreditLine
+    {
         std::string text;
         int offsetCenterY; // 画面中央からの上下オフセット
         unsigned int color;

@@ -53,7 +53,7 @@ public:
 	static Application& GetInstance(void);
 
 	//初期化
-	void Init(void);
+	void Initialize(void);
 
 	//ゲームループ開始
 	void Run(void);

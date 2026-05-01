@@ -1,391 +1,478 @@
+﻿#include "../Pch.h"
 #include "Easing.h"
 
 
-//time			= �i�s�x
-//totalTime		= �ڕW����
-//start			= �J�n�l
-//end			= �ڕW�l
+//time        = 進行度
+//totalTime   = 目標時間
+//start       = 開始値
+//end         = 目標値
+//s           = 助走量（Back系のみ）
 
-//��BackIn BackOut BackInOut�̂�
-//s				= ������
-
-// �������Ȃ���l��ω�������i�񎟊֐��j
-float QuadIn(float time, float totalTime, float start, float end)
+namespace
 {
-	end -= start;
-	time /= totalTime;
+    // Back (行き過ぎ・助走)
+    static constexpr float BACK_OVERSHOOT = 1.70158f;         // 助走・超過の振幅
+    static constexpr float BACK_INOUT_SCALE = 1.525f;         // InOut時の振幅補正
 
-	return -end * time * time + start;
+    // Elastic (弾性)
+    static constexpr float ELASTIC_PERIOD_RATIO = 0.3f;       // 振動の基本周期
+    static constexpr float ELASTIC_INOUT_PERIOD_SCALE = 1.5f; // InOut時の周期補正
+    static constexpr float ELASTIC_PHASE_DIVISOR = 4.0f;      // 位相計算の補正値
+
+    // Exponential (指数)
+    static constexpr float EXPONENTIAL_POWER = 10.0f;         // 指数カーブの強さ
+
+    // Bounce (跳ね返り)
+    static constexpr float BOUNCE_COEFFICIENT = 7.5625f;      // 落下加速度係数
+    static constexpr float BOUNCE_DIVISOR = 2.75f;            // 段階判定の基準時間
+
+    // バウンド各段階の接地時間オフセット
+    static constexpr float BOUNCE_STEP2_OFFSET = 0.75f;       // 第2段階の接地タイミング
+    static constexpr float BOUNCE_STEP3_OFFSET = 0.9375f;     // 第3段階の接地タイミング
+    static constexpr float BOUNCE_STEP4_OFFSET = 0.984375f;   // 第4段階の接地タイミング
 }
 
-// �������Ȃ���l��ω�������i�񎟊֐��j
-float QuadQut(float time, float totalTime, float start, float end)
+float Easing::QuadIn(float currentTime, float totalTime, float startValue, float endValue)
 {
-	end -= start;
-	time /= totalTime;
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float changeAmount = endValue - startValue;         // 全体の変化量
 
-	return -end * time * (time - 2) + start;
+    // 二次関数による加速
+    return changeAmount * normalizedTime * normalizedTime + startValue;
 }
 
-// �������Ă��猸������i�񎟊֐��j
-float QuadInOut(float time, float totalTime, float start, float end)
+float Easing::QuadOut(float currentTime, float totalTime, float startValue, float endValue)
 {
-	end -= start;
-	time /= totalTime / 2;
-	if (time < 1) return end / 2 * time * time + start;
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float changeAmount = endValue - startValue;         // 全体の変化量
 
-	time = time - 1;
-
-	return -end / 2 * (time * (time - 2) - 1) + start;
+    // 二次関数による減速
+    return -changeAmount * normalizedTime * (normalizedTime - 2.0f) + startValue;
 }
 
-// ���ɂ����������i�O���֐��j
-float CubicIn(float time, float totalTime, float start, float end)
+float Easing::QuadInOut(float currentTime, float totalTime, float startValue, float endValue)
 {
-	end -= start;
-	time /= totalTime;
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
 
-	return end * time * time * time * time * time + start;
-}
-
-// �������Ȃ���I���i�O���֐��j
-float CubicOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time = time / totalTime - 1;
-
-	return end * (time * time * time + 1) + start;
-}
-
-// �������Ă��猸������i�O���֐��j
-float CubicInOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime / 2;
-	if (time < 1) return end / 2 * time * time * time + start;
-
-	time = time - 2;
-
-	return end / 2 * (time * time * time + 2) + start;
-}
-
-// ���ɂ����������i�l���֐��j
-float QuartIn(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime;
-
-	return end * time * time * time * time + start;
-}
-
-// �}���Ɍ����i�l���֐��j
-float QuartOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time = time / totalTime - 1;
-
-	return -end * (time * time * time * time - 1) + start;
-}
-
-// �������Ă��猸������i�l���֐��j
-float QuartInOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime / 2;
-	if (time < 1) return end / 2 * time * time * time * time + start;
-
-	time = time - 2;
-
-	return -end / 2 * (time * time * time * time - 2) + start;
-}
-
-// ���ɂ����������i�܎��֐��j
-float QuintIn(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime;
-
-	return end * time * time * time * time * time + start;
-}
-
-// �}���Ɍ����i�܎��֐��j
-float QuintOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time = time / totalTime - 1;
-
-	return end * (time * time * time * time * time + 1) + start;
-}
-
-// �������Ă��猸������i�܎��֐��j
-float QuintInOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime / 2;
-	if (time < 1) return end / 2 * time * time * time * time * time + start;
-
-	time = time - 2;
-
-	return end / 2 * (time * time * time * time * time + 2) + start;
-}
-
-// �������n�܂芊�炩�ɉ����i�T�C���֐��j
-float SineIn(float time, float totalTime, float start, float end)
-{
-	end -= start;
-
-	return -end * cos(time * (DX_PI_F * 90 / 180) / totalTime) + end + start;
-}
-
-// �ŏ������A�ɂ₩�ɒ�~�i�T�C���֐��j
-float SineOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-
-	return end * sin(time * (DX_PI_F * 90 / 180) / totalTime) + start;
-}
-
-// �����E���������炩�Ɂi�T�C���֐��j
-float SineInOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-
-	return -end / 2 * (cos(time * DX_PI_F / totalTime) - 1) + start;
-}
-
-// �}���ɉ����i�w���֐��j
-float ExpIn(float time, float totalTime, float start, float end)
-{
-    end -= start;
- 
-	return time == 0.0f ? start : end * powf(2, 10 * (time / totalTime - 1)) + start;
-}
-
-// �}���Ɍ����i�w���֐��j
-float ExpOut(float time, float totalTime, float start, float end)
-{
-    end -= start;
-  
-	return time == totalTime ? end + start : end * (-powf(2, -10 * time / totalTime) + 1) + start;
-}
-
-// �����E���������ɋ}�i�w���֐��j
-float ExpInOut(float time, float totalTime, float start, float end)
-{
-    if (time == 0.0f) return start;
-    if (time == totalTime) return end;
-    end -= start;
-    time /= totalTime / 2;
-
-    if (time < 1) return end / 2 * powf(2, 10 * (time - 1)) + start;
-
-    time = time - 1;
-
-    return end / 2 * (-powf(2, -10 * time) + 2) + start;
-
-}
-
-// ���X�ɉ����i�~�֐��j
-float CircIn(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime;
-
-	return -end * (sqrt(1 - time * time) - 1) + start;
-}
-
-// ���X�Ɍ����i�~�֐��j
-float CircOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time = time / totalTime - 1;
-
-	return end * sqrt(1 - time * time) + start;
-}
-
-// �������Ă��猸���i�~�֐��j
-float CircInOut(float time, float totalTime, float start, float end)
-{
-	end -= start;
-	time /= totalTime / 2;
-	if (time < 1) return -end / 2 * (sqrt(1 - time * time) - 1) + start;
-
-	time = time - 2;
-
-	return end / 2 * (sqrt(1 - time * time) + 1) + start;
-}
-
-// �e�ނ悤�ɉ����i�e���֐��j
-float ElasticIn(float time, float totalTime, float start, float end)
-{
-    end -= start;
-    time /= totalTime;
-
-    float s = 1.70158f;
-    float p = totalTime * 0.3f;
-    float a = end;
-
-    if (time == 0) return start;
-    if (time == 1) return start + end;
-
-    if (a < abs(end))
+    // 前半：加速
+    if (normalizedTime < 1.0f)
     {
-        a = end;
-        s = p / 4;
-    }
-    else
-    {
-        s = p / (2 * DX_PI_F) * asin(end / a);
+        return halfChange * normalizedTime * normalizedTime + startValue;
     }
 
-    time = time - 1;
-    return -(a * powf(2, 10 * time) * sin((time * totalTime - s) * (2 * DX_PI_F) / p)) + start;
+    normalizedTime -= 1.0f;
+
+    // 後半：減速
+    return -halfChange * (normalizedTime * (normalizedTime - 2.0f) - 1.0f) + startValue;
 }
 
-// �e�ނ悤�Ɍ����i�e���֐��j
-float ElasticOut(float time, float totalTime, float start, float end)
+float Easing::CubicIn(float currentTime, float totalTime, float startValue, float endValue)
 {
-    end -= start;
-    time /= totalTime;
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float changeAmount = endValue - startValue;         // 全体の変化量
 
-    float s = 1.70158f;
-    float p = totalTime * 0.3f; ;
-    float a = end;
-
-    if (time == 0) return start;
-    if (time == 1) return start + end;
-
-    if (a < abs(end))
-    {
-        a = end;
-        s = p / 4;
-    }
-    else
-    {
-        s = p / (2 * DX_PI_F) * asin(end / a);
-    }
-
-    return a * powf(2, -10 * time) * sin((time * totalTime - s) * (2 * DX_PI_F) / p) + end + start;
+    // 三次関数による加速
+    return changeAmount * normalizedTime * normalizedTime * normalizedTime + startValue;
 }
 
-// �e�ނ悤�ɉ������Č����i�e���֐��j
-float ElasticInOut(float time, float totalTime, float start, float end)
+float Easing::CubicOut(float currentTime, float totalTime, float startValue, float endValue)
 {
-    end -= start;
-    time /= totalTime / 2;
+    const float changeAmount = endValue - startValue;                // 全体の変化量
+    const float normalizedTime = (currentTime / totalTime) - 1.0f;   // 時間を0～1へ正規化し、-1～0へシフト
 
-    float s = 1.70158f;
-    float p = totalTime * (0.3f * 1.5f);
-    float a = end;
-
-    if (time == 0) return start;
-    if (time == 2) return start + end;
-
-    if (a < abs(end))
-    {
-        a = end;
-        s = p / 4;
-    }
-    else
-    {
-        s = p / (2 * DX_PI_F) * asin(end / a);
-    }
-
-    if (time < 1)
-    {
-        return -0.5f * (a * powf(2, 10 * (time -= 1)) * sin((time * totalTime - s) * (2 * DX_PI_F) / p)) + start;
-    }
-
-    time = time - 1;
-
-    return a * powf(2, -10 * time) * sin((time * totalTime - s) * (2 * DX_PI_F) / p) * 0.5f + end + start;
+    // 三次関数による減速
+    return changeAmount * (normalizedTime * normalizedTime * normalizedTime + 1.0f) + startValue;
 }
 
-// �����t�����ɓ����Ă�������i�o�b�N�֐��j
-float BackIn(float time, float totalTime, float start, float end, float s)
+float Easing::CubicInOut(float currentTime, float totalTime, float startValue, float endValue)
 {
-    end -= start;
-    time /= totalTime;
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
 
-    return end * time * time * ((s + 1) * time - s) + start;
-}
-
-// �����E�������t�����ɂ������i�o�b�N�֐��j
-float BackOut(float time, float totalTime, float start, float end, float s)
-{
-    end -= start;
-    time = time / totalTime - 1;
-
-    return end * (time * time * ((s + 1) * time + s) + 1) + start;
-}
-
-// ���˂�悤�ɉ����i�o�E���h�֐��j
-float BackInOut(float time, float totalTime, float start, float end, float s)
-{
-    end -= start;
-    s *= 1.525f;
-    time /= totalTime / 2;
-    if (time < 1) return end / 2 * (time * time * ((s + 1) * time - s)) + start;
-
-    time = time - 2;
-
-    return end / 2 * (time * time * ((s + 1) * time + s) + 2) + start;
-}
-
-// ���˂�悤�Ɍ����i�o�E���h�֐��j
-float BounceIn(float time, float totalTime, float start, float end)
-{
-    end -= start;
-
-    return end - BounceOut(totalTime - time, totalTime, 0, end) + start;
-}
-
-// ���˂�悤�Ɍ����i�o�E���h�֐��j
-float BounceOut(float time, float totalTime, float start, float end)
-{
-    end -= start;
-    time /= totalTime;
-
-    if (time < 1.0f / 2.75f)
+    // 前半：三次加速
+    if (normalizedTime < 1.0f)
     {
-        return end * (7.5625f * time * time) + start;
+        return halfChange * normalizedTime * normalizedTime * normalizedTime + startValue;
     }
-    else if (time < 2.0f / 2.75f)
-    {
-        time -= 1.5f / 2.75f;
-        return end * (7.5625f * time * time + 0.75f) + start;
-    }
-    else if (time < 2.5f / 2.75f)
-    {
-        time -= 2.25f / 2.75f;
-        return end * (7.5625f * time * time + 0.9375f) + start;
-    }
-    else
-    {
-        time -= 2.625f / 2.75f;
-        return end * (7.5625f * time * time + 0.984375f) + start;
-    }
+
+    normalizedTime -= 2.0f;
+
+    // 後半：三次減速
+    return halfChange * (normalizedTime * normalizedTime * normalizedTime + 2.0f) + startValue;
 }
 
-// ���˂Ȃ�������E�����i�o�E���h�֐��j
-float BounceInOut(float time, float totalTime, float start, float end)
+float Easing::QuartIn(float currentTime, float totalTime, float startValue, float endValue)
 {
-    if (time < totalTime / 2)
-    {
-        return BounceIn(time * 2, totalTime, 0, end - start) * 0.5f + start;
-    }
-    else
-    {
-        return BounceOut(time * 2 - totalTime, totalTime, 0, end - start) * 0.5f + start + (end - start) * 0.5f;
-    }
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+
+    // 四次関数による加速
+    return changeAmount * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime) + startValue;
 }
 
-// ��葬�x�Œ����I�ɕω��i���`��ԁj
-float Linear(float time, float totalTime, float start, float end)
+float Easing::QuartOut(float currentTime, float totalTime, float startValue, float endValue)
 {
-    return (end - start) * time / totalTime + start;
+    const float changeAmount = endValue - startValue;                // 全体の変化量
+    const float normalizedTime = (currentTime / totalTime) - 1.0f;   // 時間を0～1へ正規化し、-1～0へシフト
+
+    // 四次関数による減速
+    return -changeAmount * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime - 1.0f) + startValue;
 }
 
+float Easing::QuartInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
 
+    // 前半：四次加速
+    if (normalizedTime < 1.0f)
+    {
+        return halfChange * (normalizedTime * normalizedTime * 
+               normalizedTime * normalizedTime) + startValue;
+    }
 
+    normalizedTime -= 2.0f;
 
+    // 後半：四次減速
+    return -halfChange * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime - 2.0f) + startValue;
+}
+
+float Easing::QuintIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float normalizedTime = currentTime / totalTime;     // 全体の変化量
+    const float changeAmount = endValue - startValue;         // 時間を0～1へ正規化し、-1～0へシフト
+
+    // 五次関数による減速
+    return changeAmount * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime * normalizedTime) + startValue;
+}
+
+float Easing::QuintOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;                // 全体の変化量
+    const float normalizedTime = (currentTime / totalTime) - 1.0f;   // 時間を0～1へ正規化し、-1～0へシフト
+
+    // 五次関数による減速
+    return changeAmount * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime * normalizedTime + 1.0f) + startValue;
+}
+
+float Easing::QuintInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
+
+    // 前半：五次加速
+    if (normalizedTime < 1.0f)
+    {
+        return halfChange * (normalizedTime * normalizedTime * 
+               normalizedTime * normalizedTime * normalizedTime) + startValue;
+    }
+
+    normalizedTime -= 2.0f;
+
+    // 後半：五次減速
+    return halfChange * (normalizedTime * normalizedTime * 
+           normalizedTime * normalizedTime * normalizedTime + 2.0f) + startValue;
+}
+
+float Easing::SineIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 正弦波（余弦）による加速
+    return -changeAmount * cosf(normalizedTime * (DX_PI_F / 2.0f)) + changeAmount + startValue;
+}
+
+float Easing::SineOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 正弦波による減速
+    return changeAmount * sinf(normalizedTime * (DX_PI_F / 2.0f)) + startValue;
+}
+
+float Easing::SineInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 正弦波による加速・減速
+    return -halfChange * (cosf(normalizedTime * DX_PI_F) - 1.0f) + startValue;
+}
+
+float Easing::ExpIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 開始時間以前は開始値を返す
+    if (currentTime <= 0.0f) { return startValue; }           
+
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 指数関数による急激な加速
+    return changeAmount * powf(2.0f, EXPONENTIAL_POWER * (normalizedTime - 1.0f)) + startValue;
+}
+
+float Easing::ExpOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 終了時間以降は終了値を返す
+    if (currentTime >= totalTime) { return endValue; }
+
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 指数関数による急激な減速
+    return changeAmount * (-powf(2.0f, -EXPONENTIAL_POWER * normalizedTime) + 1.0f) + startValue;
+}
+
+float Easing::ExpInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 開始時間以前は開始値を返す
+    if (currentTime <= 0.0f) { return startValue; }
+
+    // 終了時間以降は終了値を返す
+    if (currentTime >= totalTime) { return endValue; }
+
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
+
+    // 前半：指数加速
+    if (normalizedTime < 1.0f)
+    {
+        return halfChange * powf(2.0f, EXPONENTIAL_POWER * (normalizedTime - 1.0f)) + startValue;
+    }
+
+    normalizedTime -= 1.0f;
+
+    // 後半：指数減速
+    return halfChange * (-powf(2.0f, -EXPONENTIAL_POWER * normalizedTime) + 2.0f) + startValue;
+}
+
+float Easing::CircIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 円の公式を用いた加速
+    return -changeAmount * (sqrtf(1.0f - normalizedTime * normalizedTime) - 1.0f) + startValue;
+}
+
+float Easing::CircOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;                // 全体の変化量
+    const float normalizedTime = (currentTime / totalTime) - 1.0f;   // 時間を0～1へ正規化し、-1～0へシフト
+
+    // 円の公式を用いた減速
+    return changeAmount * sqrtf(1.0f - normalizedTime * normalizedTime) + startValue;
+}
+
+float Easing::CircInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount / 2.0f;             // 変化量の半分
+    float normalizedTime = currentTime / (totalTime / 2.0f);  // 前半・後半判定用の正規化
+
+    // 前半：円の加速
+    if (normalizedTime < 1.0f)
+    {
+        return -halfChange * (sqrtf(1.0f - normalizedTime * normalizedTime) - 1.0f) + startValue;
+    }
+
+    normalizedTime -= 2.0f;
+
+    // 後半：円の減速
+    return halfChange * (sqrtf(1.0f - normalizedTime * normalizedTime) + 1.0f) + startValue;
+}
+
+float Easing::ElasticIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 開始時間以前は開始値を返す
+    if (currentTime <= 0.0f) { return startValue; }
+
+    // 終了時間以降は終了値を返す
+    if (currentTime >= totalTime) { return endValue; }
+
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float period = totalTime * ELASTIC_PERIOD_RATIO;    // 振動周期
+    const float phaseShift = period / ELASTIC_PHASE_DIVISOR;  // 位相の補正
+    const float shiftedTime = normalizedTime - 1.0f;          // 計算用に時間をシフト
+
+    // 指数加速と正弦波による弾性的な動き（入り）
+    return -(changeAmount * powf(2.0f, EXPONENTIAL_POWER * shiftedTime) * 
+           sinf((shiftedTime * totalTime - phaseShift) * (2.0f * DX_PI_F) / period)) + startValue;
+}
+
+float Easing::ElasticOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 開始時間以前は開始値を返す
+    if (currentTime <= 0.0f) { return startValue; }
+
+    // 終了時間以降は終了値を返す
+    if (currentTime >= totalTime) { return endValue; }
+
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+    const float period = totalTime * ELASTIC_PERIOD_RATIO;    // 振動周期
+    const float phaseShift = period / ELASTIC_PHASE_DIVISOR;  // 位相の補正
+
+    // 指数減速と正弦波による弾性的な動き（戻り）
+    return changeAmount * powf(2.0f, -EXPONENTIAL_POWER * normalizedTime) * 
+        sinf((normalizedTime * totalTime - phaseShift) * (2.0f * DX_PI_F) / period) +
+        changeAmount + startValue;
+}
+
+float Easing::ElasticInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    // 開始時間以前は開始値を返す
+    if (currentTime <= 0.0f) { return startValue; }
+
+    // 終了時間以降は終了値を返す
+    if (currentTime >= totalTime) { return endValue; }
+
+    const float changeAmount = endValue - startValue;                                      // 全体の変化量
+    const float halfChange = changeAmount * 0.5f;                                          // 変化量の半分
+    const float halfTotalTime = totalTime * 0.5f;                                          // 所要時間の半分
+    float normalizedTime = currentTime / halfTotalTime;                                    // 前半・後半判定用の正規化
+    const float period = totalTime * (ELASTIC_PERIOD_RATIO * ELASTIC_INOUT_PERIOD_SCALE);  // 補正後の周期
+    const float phaseShift = period / ELASTIC_PHASE_DIVISOR;                               // 位相の補正
+
+    // 前半：弾性的な加速
+    if (normalizedTime < 1.0f)
+    {
+        normalizedTime -= 1.0f;
+
+        return -halfChange * (powf(2.0f, EXPONENTIAL_POWER * normalizedTime) * 
+               sinf((normalizedTime * totalTime - phaseShift) * 
+               (2.0f * DX_PI_F) / period)) + startValue;
+    }
+
+    normalizedTime -= 1.0f;
+
+    // 後半：弾性的な減速
+    return (halfChange * powf(2.0f, -EXPONENTIAL_POWER * normalizedTime) * 
+           sinf((normalizedTime * totalTime - phaseShift) * (2.0f * DX_PI_F) / period)) +
+           changeAmount + startValue;
+}
+
+float Easing::BackIn(float currentTime, float totalTime, float startValue, float endValue, float overshoot)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float normalizedTime = currentTime / totalTime;     // 時間を0～1へ正規化
+
+    // 少し逆方向に引いてから加速
+    return changeAmount * normalizedTime * normalizedTime * 
+           ((overshoot + 1.0f) * normalizedTime - overshoot) + startValue;
+}
+
+float Easing::BackOut(float currentTime, float totalTime, float startValue, float endValue, float overshoot)
+{
+    const float changeAmount = endValue - startValue;                // 全体の変化量
+    const float normalizedTime = (currentTime / totalTime) - 1.0f;   // 時間を0～1へ正規化し、-1～0へシフト
+
+    // 目標値を少し通り過ぎてから戻る
+    return changeAmount * (normalizedTime * normalizedTime * 
+           ((overshoot + 1.0f) * normalizedTime + overshoot) + 1.0f) + startValue;
+}
+
+float Easing::BackInOut(float currentTime, float totalTime, float startValue, float endValue, float overshoot)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount * 0.5f;             // 変化量の半分
+    const float halfTotalTime = totalTime * 0.5f;             // 所要時間の半分
+    float normalizedTime = currentTime / halfTotalTime;       // 前半・後半判定用の正規化
+    const float overValue = overshoot * BACK_INOUT_SCALE;     // InOut用の超過量補正
+
+    // 前半：加速（予備動作あり）
+    if (normalizedTime < 1.0f)
+    {
+        return halfChange * (normalizedTime * normalizedTime * 
+               ((overValue + 1.0f) * normalizedTime - overValue)) + startValue;
+    }
+
+    normalizedTime -= 2.0f;
+
+    // 後半：減速（超過後の戻りあり）
+    return halfChange * (normalizedTime * normalizedTime * 
+           ((overValue + 1.0f) * normalizedTime + overValue) + 2.0f) + startValue;
+}
+
+float Easing::BounceIn(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+
+    // BounceOutを時間的に反転させて計算
+    return changeAmount - BounceOut(totalTime - currentTime, 
+           totalTime, 0.0f, changeAmount) + startValue;
+}
+
+float Easing::BounceOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    float normalizedTime = currentTime / totalTime;           // 時間を0～1へ正規化
+
+    // 1回目の落下
+    if (normalizedTime < (1.0f / BOUNCE_DIVISOR))
+    {
+        return changeAmount * (BOUNCE_COEFFICIENT * normalizedTime * normalizedTime) + startValue;
+    }
+
+    // 2回目のバウンド
+    if (normalizedTime < (2.0f / BOUNCE_DIVISOR))
+    {
+        normalizedTime -= (1.5f / BOUNCE_DIVISOR);
+        return changeAmount * (BOUNCE_COEFFICIENT * normalizedTime * 
+               normalizedTime + BOUNCE_STEP2_OFFSET) + startValue;
+    }
+
+    // 3回目のバウンド
+    if (normalizedTime < (2.5f / BOUNCE_DIVISOR))
+    {
+        normalizedTime -= (2.25f / BOUNCE_DIVISOR);
+        return changeAmount * (BOUNCE_COEFFICIENT * normalizedTime * 
+               normalizedTime + BOUNCE_STEP3_OFFSET) + startValue;
+    }
+
+    // 最後の微小バウンド
+    normalizedTime -= (2.625f / BOUNCE_DIVISOR);
+    return changeAmount * (BOUNCE_COEFFICIENT * normalizedTime * 
+           normalizedTime + BOUNCE_STEP4_OFFSET) + startValue;
+}
+
+float Easing::BounceInOut(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+    const float halfChange = changeAmount * 0.5f;             // 変化量の半分
+    const float halfTotalTime = totalTime * 0.5f;             // 所要時間の半分
+
+    // 前半：バウンドしながら加速
+    if (currentTime < halfTotalTime)
+    {
+        return BounceIn(currentTime * 2.0f, totalTime, 0.0f, changeAmount) * 0.5f + startValue;
+    }
+
+    // 後半：バウンドしながら減速
+    return BounceOut(currentTime * 2.0f - totalTime, totalTime, 
+           0.0f, changeAmount) * 0.5f + halfChange + startValue;
+}
+
+float Easing::Linear(float currentTime, float totalTime, float startValue, float endValue)
+{
+    const float changeAmount = endValue - startValue;         // 全体の変化量
+
+    // 一定速度での変化（線形補間）
+    return changeAmount * currentTime / totalTime + startValue;
+}

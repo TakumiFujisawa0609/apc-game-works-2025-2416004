@@ -32,7 +32,7 @@ void SceneTutorial::EndLoad(void)
 }
 
 // ‰Šú‰»ˆ—
-void SceneTutorial::Init(void)
+void SceneTutorial::Initialize(void)
 {
     SetMouseDispFlag(TRUE);
 

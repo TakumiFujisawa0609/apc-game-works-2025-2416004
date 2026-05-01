@@ -11,7 +11,7 @@ public:
     ~EnemySpawner() = default;
 
     // UnitBaseのオーバーライド
-    void Init(void) override;
+    void Initialize(void) override;
     void Update(void) override;       
     void Draw(void) const override;
     void Release(void) override;

@@ -10,7 +10,6 @@
 #include "../Scene/SceneCredit.h"
 #include "../Object/Grid.h"
 #include "../Application.h"
-#include "../DrawUI/Font.h"
 #include "../Manager/System/TimeManager.h"
 #include "../Manager/System/Loading.h"
 
@@ -67,11 +66,11 @@ void SceneTitle::Load(void)
 
     // UI 初期化
     uiMain_ = std::make_unique<SceneUi>();
-    uiMain_->AddCharctor("開始");
-    uiMain_->AddCharctor("遊び方");
-    uiMain_->AddCharctor("設定");
-    uiMain_->AddCharctor("クレジット");
-    uiMain_->AddCharctor("ゲーム終了");
+    uiMain_->AddCharacter("開始");
+    uiMain_->AddCharacter("遊び方");
+    uiMain_->AddCharacter("設定");
+    uiMain_->AddCharacter("クレジット");
+    uiMain_->AddCharacter("ゲーム終了");
     uiMain_->SetCurrentIndex(0);
 
     //時間カウントリセット
@@ -85,7 +84,7 @@ void SceneTitle::EndLoad(void)
     SceneBase::EndLoad();
 }
 
-void SceneTitle::Init(void)
+void SceneTitle::Initialize(void)
 {
     // タイトルBGM
     SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_TITLE).handleId_);
@@ -118,7 +117,7 @@ void SceneTitle::Init(void)
 
     // --- グリッド生成 ---
     grid_ = new Grid();
-    grid_->Init();
+    grid_->Initialize();
 
     // --- UI初期化 ---
     howToPlayPage_ = 0;
@@ -298,6 +297,14 @@ void SceneTitle::Draw(void)
 void SceneTitle::Release(void)
 {
     SetMouseDispFlag(FALSE);
+
+    if (movieHandle_ != -1)
+    {
+        PauseMovieToGraph(movieHandle_);
+        // ResourceManagerで管理している場合でも、
+        // 明示的に消すかハンドルを無効化しないと再ロードで詰まることがあります
+        movieHandle_ = -1;
+    }
 
     grid_->Release();
     delete grid_;

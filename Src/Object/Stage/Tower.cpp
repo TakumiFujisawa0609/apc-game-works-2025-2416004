@@ -27,9 +27,9 @@ void Tower::Load(int modelId)
 }
 
 // ‰Šú‰»
-void Tower::Init(void)
+void Tower::Initialize(void)
 {
-    UnitBase::Init();
+    UnitBase::Initialize();
     attackTimer_ = 0.0f;
 
     // ƒXƒP[ƒ‹‚ğ‰Šúİ’è

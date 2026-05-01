@@ -15,7 +15,7 @@ Ground::~Ground(void)
 }
 
 // ‰Šú‰»
-void Ground::Init(const VECTOR& pos, int modelId)
+void Ground::Initialize(const VECTOR& pos, int modelId)
 {
     // À•W‚ğİ’è
     trans_.pos = pos;

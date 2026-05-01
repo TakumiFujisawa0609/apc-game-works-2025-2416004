@@ -40,7 +40,7 @@ public:
 	virtual void Load(void);
 
 	// ‰Šú‰»
-	virtual void Init(void);
+	virtual void Initialize(void);
 
 	// XVˆ—
 	virtual void Update(void);

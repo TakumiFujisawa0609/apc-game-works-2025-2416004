@@ -18,7 +18,7 @@ public:
     void Load(void);
 
     // 初期化
-    void Init(void);
+    void Initialize(void);
 
     // カメラ位置に近いタイルのモデルIDと位置を取得
     std::vector<std::pair<int, VECTOR>> GetNearbyTiles(const VECTOR& cameraPos, float range) const;

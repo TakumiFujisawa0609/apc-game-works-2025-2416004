@@ -1,4 +1,7 @@
 #include "FpsController.h"
+#include <DxLib.h>
+#include <string>
+#include <thread>
 
 FpsController::FpsController(int fixedFps)
     :
@@ -22,7 +25,7 @@ FpsController::~FpsController(void)
 {
 }
 
-void FpsController::Wait()
+void FpsController::Wait(void)
 {
 
     // åªç›éûä‘
@@ -82,7 +85,7 @@ void FpsController::Wait()
 
 }
 
-void FpsController::Draw()
+void FpsController::Draw(void)
 {
 	DrawFormatString(POS_X, POS_Y, COLOR, "FPS : %.2f", fps_);
 }

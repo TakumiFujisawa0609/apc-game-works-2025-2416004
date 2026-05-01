@@ -17,7 +17,7 @@ public:
 	void Load(int modelId) override;
 
 	// ‰Šú‰»
-	void Init(const VECTOR& startPos) override;
+	void Initialize(const VECTOR& startPos) override;
 
 	// ’Ç]‘ÎÛ‚ğİ’è
 	void SetTargetPos(const VECTOR& pos);

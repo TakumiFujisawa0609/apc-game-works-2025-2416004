@@ -21,7 +21,7 @@ public:
 	//デストラクタ
 	~DateTimeManager(void) = default;
 
-	void Init(void);
+	void Initialize(void);
 	void Update(void);
 
 	void Reset(void);

@@ -1,140 +1,109 @@
 #pragma once
+#include <DxLib.h>
+#include <unordered_map>
+#include "SoundManager.h"
+#include "../../Common/Quaternion.h"
 
-#include<DxLib.h>
-#include<unordered_map>
-#include<string>
-
-#include"SoundManager.h"
-#include"../../Common/Quaternion.h"
-
-/// <summary>
-/// エフェクト管理クラス
-/// ゲーム内で使用される視覚エフェクトを管理する
-/// </summary>
+/// @brief エフェクト管理クラス（Effekseer対応）
 class EffectManager
 {
 public:
-    /// <summary>
-    /// 各種エフェクトの上限数
-    /// </summary>
-    static constexpr int NONE_MAX = 5;
+	/// @brief エフェクトの種類定義
+	enum class EFFECT
+	{
+		FIRE,
+		WATER,
+		BLAST,
+		FREEZE,
+		FIRE_BURN,
+		WET,
+		AMMONIUM,
+		LEVER_UP
+	};
 
-    /// <summary>
-    /// エフェクトの種類を定義する列挙型
-    /// </summary>
-    enum class EFFECT
-    {
-        FIRE,        // 火のエフェクト
-        WATER,       // 水のエフェクト
-        BLAST,       // 爆発エフェクト
-        FREEZE,      // 凍結エフェクト
-        FIRE_BURN,   // やけどエフェクト
-        WET,         // 湿潤エフェクト
-        AMMONIUM,    // 硝酸アンモニウムエフェクト
-        LEVER_UP     // レベルアップエフェクト
-    };
+	/// @brief インスタンスを明示的に生成
+	/// @param void 
+	static void CreateInstance(void);
 
-    /// <summary>
-    /// インスタンスを生成する
-    /// シングルトンパターンの実装
-    /// </summary>
-    static void CreateInstance(void);
+	/// @brief インスタンス取得
+	/// @return EffectManagerインスタンスの参照
+	static EffectManager& GetInstance(void);
 
-    /// <summary>
-    /// インスタンスを取得する
-    /// </summary>
-    /// <returns>EffectManagerの唯一のインスタンス</returns>
-    static EffectManager& GetInstance(void);
+	/// @brief インスタンス破棄
+	/// @param void 
+	static void Destroy(void);
 
-    /// <summary>
-    /// エフェクトの追加
-    /// </summary>
-    /// <param name="_efc">エフェクト種類名</param>
-    /// <param name="_data">エフェクトのデータ</param>
-    void Add(const EFFECT& efc, int data);
+	/// @brief エフェクトリソースの追加
+	/// @param efc エフェクトの種類
+	/// @param resourceHandle 読み込み済みのリソースハンドル
+	void Add(const EFFECT& efc, int resourceHandle);
 
-    /// <summary>
-    /// エフェクトの再生
-    /// </summary>
-    /// <param name="_efc">エフェクト種類名</param>
-    /// <param name="_pos">再生位置</param>
-    /// <param name="_qua">角度</param>
-    /// <param name="_size">大きさ</param>
-    /// <param name="_sound">効果音</param>
-    void Play(const EFFECT& _efc,
-        const VECTOR& pos, const Quaternion& qua, const float& _size,
-        const SoundManager::SOUND _sound);
+	/// @brief 全てのリソースを解放
+	/// @param void 
+	void Release(void);
 
-    // 個別にエフェクトを管理する用
-    int PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qya, const float& size, const SoundManager::SOUND sound);
+	/// @brief エフェクトを再生する
+	/// @param efc エフェクトの種類
+	/// @param pos 再生座標
+	/// @param qua 回転（クォータニオン）
+	/// @param size スケール
+	/// @param sound 同時に再生するSE（デフォルトは無し）
+	void Play(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size, SoundManager::SOUND sound = SoundManager::SOUND::NONE);
 
-    // ハンドル指定でエフェクト停止
-    void StopHandle(int handle);
+	/// @brief 特定の種類のエフェクトを停止
+	/// @param efc エフェクトの種類
+	void Stop(const EFFECT& efc);
 
-    /// <summary>
-    /// エフェクトの再生停止
-    /// </summary>
-    /// <param name="_efc">エフェクト種類名</param>
-    void Stop(const EFFECT& _efc);
+	/// @brief 再生中のエフェクト座標・回転を同期
+	/// @param efc エフェクトの種類
+	/// @param pos 同期する座標
+	/// @param qua 同期する回転
+	/// @param size 同期するスケール
+	void SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size);
 
-    /// <summary>
-    /// エフェクトの各パラメータ同期
-    /// 位置、回転、大きさをリアルタイムで更新する
-    /// </summary>
-    /// <param name="_efc">エフェクト名</param>
-    /// <param name="_pos">位置情報</param>
-    /// <param name="_qua">回転情報</param>
-    /// <param name="_size">大きさ</param>
-    void SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size);
+	/// @brief 特定のエフェクトが再生中か確認
+	/// @param efc エフェクトの種類
+	/// @return 再生中ならtrue
+	bool IsPlayEffect(const EFFECT& efc);
 
-    // 個体ごと管理用
-    void SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, const float& size);
+	/// @brief エフェクトを再生し、個別の再生ハンドルを取得
+	/// @param efc エフェクトの種類
+	/// @param pos 再生座標
+	/// @param qua 回転
+	/// @param size スケール
+	/// @param sound SE
+	/// @return 再生中のハンドル
+	int  PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size, SoundManager::SOUND sound = SoundManager::SOUND::NONE);
 
-    /// <summary>
-    /// エフェクトの再生確認
-    /// </summary>
-    /// <param name="_efc">エフェクト名</param>
-    /// <returns>再生中ならtrue、停止中ならfalse</returns>
-    bool IsPlayEffect(const EFFECT& _efc);
+	/// @brief 指定したハンドルを停止
+	/// @param handle 再生ハンドル
+	void StopHandle(int handle);
 
-    // エフェクトの再生確認(個体ごと管理用)
-    bool IsPlayEffect(int handle);
+	/// @brief 指定したハンドルのエフェクトを同期
+	/// @param handle 再生ハンドル
+	/// @param pos 座標
+	/// @param qua 回転
+	/// @param size スケール
+	void SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, float size);
 
-    /// <summary>
-    /// 解放処理
-    /// エフェクトリソースの解放
-    /// </summary>
-    void Release(void);
-
-    /// <summary>
-    /// 消去処理
-    /// インスタンスの破棄
-    /// </summary>
-    void Destroy(void);
+	/// @brief 指定したハンドルが再生中か確認
+	/// @param handle 再生ハンドル
+	/// @return 再生中ならtrue
+	bool IsPlayEffect(int handle);
 
 private:
-    /// <summary>
-    /// インスタンス用
-    /// シングルトンパターンのためのインスタンス保持用変数
-    /// </summary>
-    static EffectManager* instance_;
+	/// @brief コンストラクタ
+	/// @param void 
+	EffectManager(void);
 
-    /// <summary>
-    /// エフェクトデータ格納用マップ
-    /// </summary>
-    std::unordered_map<EFFECT, int> effectRes_;   /// <summary>初期データ</summary>
-    std::unordered_map<EFFECT, int> effectPlay_;  /// <summary>再生データ</summary>
-    //std::unordered_map<EFFECT,int[]> effectTest_;  //再生データ
-    std::unordered_map<EFFECT, int> effectMax_;   /// <summary>再生データの最大所持数</summary>
+	/// @brief デストラクタ
+	/// @param void 
+	~EffectManager(void) = default;
 
-    /// <summary>
-    /// コンストラクタ
-    /// シングルトンパターンのため外部からのインスタンス化を防止
-    /// </summary>
-    EffectManager(void);
+private:
+	static EffectManager* instance_; // シングルトンインスタンス
 
-    /// <summary>
-    /// デストラクタ
-    /// </summary>
-    ~EffectManager() = default;
+	// エフェクト関連
+	std::unordered_map<EFFECT, int> resourceMap_;   // エフェクトのリソースハンドル（読み込みデータ）
+	std::unordered_map<EFFECT, int> playHandleMap_; // 現在再生中のインスタンスハンドル（簡易再生用）
 };

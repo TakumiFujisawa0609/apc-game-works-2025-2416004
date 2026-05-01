@@ -53,7 +53,7 @@ void EnemyBase::Load(int modelId)
 }
 
 // 初期化
-void EnemyBase::Init(const VECTOR& startPos)
+void EnemyBase::Initialize(const VECTOR& startPos)
 {
     trans_.pos = startPos;
     prePos_ = startPos;
@@ -362,8 +362,8 @@ void EnemyBase::Draw(void) const
         const ColliderLine* line = dynamic_cast<const ColliderLine*>(it->second);
         if (line)
         {
-            VECTOR start = line->GetPosStart();
-            VECTOR end = line->GetPosEnd();
+            VECTOR start = line->GetLocalStartPos();
+            VECTOR end = line->GetLocalEndPos();
             DrawLine3D(start, end, GetColor(255, 255, 0));
             DrawSphere3D(start, 5.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
             DrawSphere3D(end, 5.0f, 8, GetColor(255, 0, 0), GetColor(255, 0, 0), TRUE);
@@ -427,7 +427,7 @@ void EnemyBase::Release(void)
     {
         if (pair.second != nullptr)
         {
-            pair.second->SetValid(false);
+            pair.second->SetActive(false);
         }
     }
 
@@ -541,20 +541,20 @@ void EnemyBase::OnCollisionEnter(const CollisionInfo& info)
     }
 
     // 剣との衝突
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::SWORD &&
-        info.hitCollider->GetShape() == ColliderBase::SHAPE::CAPSULE)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::SWORD &&
+        info.hitCollider->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
     {
         OnSwordHit();
     }
 
     // 火攻撃との衝突
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::FIRE_ATTACK)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::FIRE_ATTACK)
     {
         OnFireHit();
     }
 
     // 水攻撃との衝突
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::WATER_ATTACK)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::WATER_ATTACK)
     {
         OnWaterHit();
     }

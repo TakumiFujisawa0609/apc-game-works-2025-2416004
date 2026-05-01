@@ -44,7 +44,7 @@ void StageManager::Load(void)
 }
 
 // 初期化
-void StageManager::Init(EnemyManager* enemyManager)
+void StageManager::Initialize(EnemyManager* enemyManager)
 {
     if (!enemyManager)
     {
@@ -424,7 +424,7 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
         spawner->SetActive(false);
 
         // 4. 重要：ここで強制的に初期化（Init内で行われる InitCollider を確実に呼ぶ）
-        spawner->Init();
+        spawner->Initialize();
     }
 
     // スポナー情報を記録
@@ -510,7 +510,7 @@ void StageManager::CreateTower(int gridX, int gridZ)
 
     // 自分専用のIDを渡す
     tower->Load(myModelId);
-    tower->Init();
+    tower->Initialize();
     // リストに追加
     int towerIndex = static_cast<int>(towers_.size());
     towers_.push_back(std::move(tower));

@@ -80,8 +80,6 @@ void SceneGame::Load()
 
 	Loading::GetInstance()->SetProgress(60.0f);
 
-	// サウンドの読み込み
-	
 	
 
 
@@ -101,7 +99,7 @@ void SceneGame::EndLoad()
 }
 
 // 初期化
-void SceneGame::Init()
+void SceneGame::Initialize()
 {
 
 	if (Loading::GetInstance()->IsLoading()) return;
@@ -118,21 +116,24 @@ void SceneGame::Init()
 
 	isStartFont_ = true;
 
-	//ステージの初期化
-	groundManager_->Init();
+
+	// サウンドの読み込み
+		//ステージの初期化
+	groundManager_->Initialize();
+
 
 	//エネミーマネージャー初期化
-	enemyManager_->Init();
+	enemyManager_->Initialize();
 
 	//プレイヤーの初期化
-	player_->Init();
-	camera->SetFollow(&player_->GetTransform());
+	player_->Initialize();
+	camera->SetFollowTarget(&player_->GetTransform());
 
 	// ステージマネージャーの初期化
-	stageManager_->Init(enemyManager_.get());
+	stageManager_->Initialize(enemyManager_.get());
 
 	// スカイドームの初期化
-	skyDome_->Init();
+	skyDome_->Initialize();
 	skyDome_->SetFollowTarget(&player_->GetPos());
 
 	// エネミースポナーの配置設定
@@ -190,9 +191,6 @@ void SceneGame::Update(void)
 	auto camera = SceneManager::GetInstance().GetCamera();
 	auto loader = Loading::GetInstance();
 
-
-	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
-
 	// プレイヤーの更新
 	player_->Update();
 
@@ -229,9 +227,8 @@ void SceneGame::Update(void)
 	// 時間を取得
 	float times = time.GetGameTime();
 
-	if (times >= LIMIT_TIME)
+	if (times >= LIMIT_TIME || player_->GetHP() <= 0 )
 	{
-		sound.Play(SoundManager::SOUND::SE_PUSH);
 
 		auto newScene = std::make_shared<SceneScore>();
 
@@ -252,10 +249,10 @@ void SceneGame::Draw(void)
 	auto camera = SceneManager::GetInstance().GetCamera();
 
 	// --- 3D描画 ---
-	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVec());
+	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVector());
 	skyDome_->Draw();
-	stageManager_->Draw(player_->GetPos(), camera->GetFrontVec());
-	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVec());
+	stageManager_->Draw(player_->GetPos(), camera->GetFrontVector());
+	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVector());
 	player_->Draw();
 
 	// --- UI描画 (2D) ---

@@ -27,7 +27,7 @@ public:
     virtual void Load(int modelId);
 
     // ‰Šú‰»
-    virtual void Init(const VECTOR& startPos);
+    virtual void Initialize(const VECTOR& startPos);
 
     // XVˆ—
     void Update(void) override;

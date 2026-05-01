@@ -13,7 +13,7 @@ public:
     // “Ç‚İ‚İŠ®—¹
     void EndLoad(void) override;
 
-    void Init(void) override;
+    void Initialize(void) override;
     void Update(void) override;
     void Draw(void) override;
     void Release(void) override;

@@ -114,7 +114,7 @@ void Player::Load(void)
     glider_->Load();
 }
 
-void Player::Init(void)
+void Player::Initialize(void)
 {
     auto& res = ResourceManager::GetInstance();
 
@@ -153,10 +153,10 @@ void Player::Init(void)
     InitCollider();
     CollisionController::GetInstance().RegisterUnit(this);
 
-    sword_->Init();
-    fireAttack_->Init();
-    waterAttack_->Init();
-    glider_->Init();
+    sword_->Initialize();
+    fireAttack_->Initialize();
+    waterAttack_->Initialize();
+    glider_->Initialize();
 }
 
 void Player::InitCollider(void)
@@ -397,11 +397,11 @@ void Player::ProcessGlide(void)
     if (forwardInput != 0.0f || rightInput != 0.0f)
     {
         // カメラの向きに基づいた移動方向の計算
-        VECTOR camForward = camera->GetFrontVec();
+        VECTOR camForward = camera->GetFrontVector();
         camForward.y = 0.0f;
         camForward = VNorm(camForward);
 
-        VECTOR camRight = camera->GetRightVec();
+        VECTOR camRight = camera->GetRightVector();
         camRight.y = 0.0f;
         camRight = VNorm(camRight);
 
@@ -516,7 +516,7 @@ void Player::FireAttackAction(void)
 {
     if (!fireAttack_) return;
 
-    fireAttack_->Init(this, Utility::VECTOR_ZERO);
+    fireAttack_->Initialize(this, Utility::VECTOR_ZERO);
     SoundManager::GetInstance().Play(SoundManager::SOUND::SE_FIRE);
     fireAttackCoolTime_ = FIRE_ATTACK_COOL_TIME_MAX;
 }
@@ -525,7 +525,7 @@ void Player::WaterAttackAction(void)
 {
     if (!waterAttack_) return;
 
-    waterAttack_->Init(this, Utility::VECTOR_ZERO);
+    waterAttack_->Initialize(this, Utility::VECTOR_ZERO);
     SoundManager::GetInstance().Play(SoundManager::SOUND::SE_WATER);
     waterAttackCoolTime_ = WATER_ATTACK_COOL_TIME_MAX;
 }
@@ -692,10 +692,10 @@ void Player::ProcessMove(void)
 
     if (rightInput != 0.0f && forwardInput == 0.0f)
     {
-        camera->SetFreezeFollow(true);
+        camera->SetFollowFreeze(true);
 
         float keyRotSpeed = rightInput * 1.5f;
-        camera->SetKeyRotation(keyRotSpeed);
+        camera->SetKeyRotationSpeed(keyRotSpeed);
 
         VECTOR camPos = camera->GetPos();
         VECTOR toPlayer = VSub(trans_.pos, camPos);
@@ -734,15 +734,15 @@ void Player::ProcessMove(void)
     }
     else
     {
-        camera->SetFreezeFollow(false);
+        camera->SetFollowFreeze(false);
 
         if (forwardInput != 0.0f || rightInput != 0.0f)
         {
-            VECTOR camForward = camera->GetFrontVec();
+            VECTOR camForward = camera->GetFrontVector();
             camForward.y = 0.0f;
             camForward = VNorm(camForward);
 
-            VECTOR camRight = camera->GetRightVec();
+            VECTOR camRight = camera->GetRightVector();
             camRight.y = 0.0f;
             camRight = VNorm(camRight);
 
@@ -775,8 +775,8 @@ void Player::DrawCollisionCapsuleDebug(void) const
 
         if (capsule)
         {
-            VECTOR start = capsule->GetPosStart();
-            VECTOR end = capsule->GetPosEnd();
+            VECTOR start = capsule->GetLocalStartPos();
+            VECTOR end = capsule->GetLocalEndPos();
             float r = capsule->GetRadius();
 
             DrawCapsule3D(start, end, r, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), false);
@@ -818,9 +818,9 @@ void Player::DrawSkillUI(void) const
 
 void Player::OnCollisionEnter(const CollisionInfo& info)
 {
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::ENEMY)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::ENEMY)
     {
-        if (info.myCollider->GetShape() == ColliderBase::SHAPE::CAPSULE || info.myCollider->GetShape() == ColliderBase::SHAPE::SPHERE)
+        if (info.myCollider->GetShapeType() == ColliderBase::SHAPE::CAPSULE || info.myCollider->GetShapeType() == ColliderBase::SHAPE::SPHERE)
         {
             if (lastHitEnemyTime_ > 0.0f) { return; }
 
@@ -835,16 +835,16 @@ void Player::OnCollisionEnter(const CollisionInfo& info)
 
 void Player::OnCollisionStay(const CollisionInfo& info)
 {
-    if (info.hitCollider->GetTag() == ColliderBase::TAG::GROUND || info.hitCollider->GetTag() == ColliderBase::TAG::STAGE)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::GROUND || info.hitCollider->GetCollisionTag() == ColliderBase::TAG::STAGE)
     {
-        if (info.myCollider->GetShape() == ColliderBase::SHAPE::LINE)
+        if (info.myCollider->GetShapeType() == ColliderBase::SHAPE::LINE)
         {
             if (jumpPow_.y > 0.1f)
             {
                 return;
             }
 
-            trans_.pos = VAdd(info.hitPosition, VScale(Utility::DIR_U, 2.0f));
+            trans_.pos = VAdd(info.hitPosition, VScale(Utility::DIR_UP, 2.0f));
             jumpPow_ = Utility::VECTOR_ZERO;
             isGround_ = true;
         }
@@ -860,21 +860,21 @@ void Player::CollisionWithModel(void)
     if (!myCapsule) return;
 
     // カプセルの情報を取得
-    VECTOR capsuleStart = myCapsule->GetPosStart();
-    VECTOR capsuleEnd = myCapsule->GetPosEnd();
+    VECTOR capsuleStart = myCapsule->GetLocalStartPos();
+    VECTOR capsuleEnd = myCapsule->GetLocalEndPos();
     float capsuleRadius = myCapsule->GetRadius();
     // 判定用の中心点（簡易的に足元から少し上の位置などで調整）
     VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
 
     for (const auto& hitCol : hitColliders_)
     {
-        if (hitCol->GetTag() != ColliderBase::TAG::STAGE) continue;
-        if (hitCol->GetShape() != ColliderBase::SHAPE::MODEL) continue;
+        if (hitCol->GetCollisionTag() != ColliderBase::TAG::STAGE) continue;
+        if (hitCol->GetShapeType() != ColliderBase::SHAPE::MODEL) continue;
 
         const ColliderModel* hitModel = dynamic_cast<const ColliderModel*>(hitCol);
         if (!hitModel) continue;
 
-        int modelId = hitModel->GetFollow()->modelId;
+        int modelId = hitModel->GetFollowTarget()->modelId;
         if (modelId < 0) continue;
 
         // 1. 周辺ポリゴンを取得（検索半径はカプセル半径 + 余裕分）
@@ -886,7 +886,7 @@ void Player::CollisionWithModel(void)
             for (int i = 0; i < hitResult.HitNum; i++)
             {
                 MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
-                if (hitModel->IsExcludeFrame(poly.FrameIndex)) continue;
+                if (hitModel->IsExcludedFrame(poly.FrameIndex)) continue;
 
                 // 2. ★重要：ポリゴン平面との距離で押し出しを計算
                 // poly.Position[0]（ポリゴンの1頂点）から中心点へのベクトル
@@ -907,7 +907,7 @@ void Player::CollisionWithModel(void)
                         trans_.pos = VAdd(trans_.pos, VScale(pushNormal, pushDist));
 
                         // 座標更新に合わせてカプセルの中心もズラす（連続衝突への対応）
-                        capsuleCenter = VScale(VAdd(myCapsule->GetPosStart(), myCapsule->GetPosEnd()), 0.5f);
+                        capsuleCenter = VScale(VAdd(myCapsule->GetLocalStartPos(), myCapsule->GetLocalEndPos()), 0.5f);
                     }
                 }
             }
@@ -944,7 +944,7 @@ void Player::CalcGravityPow(void)
         return;
     }
 
-    VECTOR dirGravity = Utility::DIR_D;
+    VECTOR dirGravity = Utility::DIR_DOWN;
     VECTOR gravity = VScale(dirGravity, GRAVITY_POW);
     jumpPow_ = VAdd(jumpPow_, gravity);
 
@@ -1100,4 +1100,9 @@ void Player::DrawDistanceUI(void) const
     // 4. 描画 (視認性を高めるために縁取りフォントを使用)
     unsigned int color = GetColor(255, 255, 255); // 白
     font.DrawDefaultText(drawX, drawY, distStr, color, 42, Font::FONT_TYPE_ANTIALIASING_EDGE);
+}
+
+int Player::GetHP(void)
+{
+    return param_.hp;
 }

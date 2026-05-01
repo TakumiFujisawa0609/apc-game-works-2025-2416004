@@ -108,12 +108,12 @@ VECTOR Transform::GetLeft(void) const
 
 VECTOR Transform::GetUp(void) const
 {
-	return GetDir(Utility::DIR_U);
+	return GetDir(Utility::DIR_UP);
 }
 
 VECTOR Transform::GetDown(void) const
 {
-	return GetDir(Utility::DIR_D);
+	return GetDir(Utility::DIR_DOWN);
 }
 
 VECTOR Transform::GetDir(const VECTOR& vec) const
