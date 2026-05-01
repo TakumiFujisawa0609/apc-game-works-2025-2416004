@@ -308,6 +308,20 @@ void SceneGame::Release(void)
 	enemyData_.reset();
 }
 
+void SceneGame::OnResume(void)
+{
+	auto camera = SceneManager::GetInstance().GetCamera();
+	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
+	camera->SetFollowTarget(&player_->GetTransform());
+
+	SetMouseDispFlag(FALSE);
+	SetMousePoint(
+		Application::SCREEN_SIZE_X / 2,
+		Application::SCREEN_SIZE_Y / 2
+	);
+}
+
+
 // 描画(デバック)
 void SceneGame::DrawDebug(void)
 {

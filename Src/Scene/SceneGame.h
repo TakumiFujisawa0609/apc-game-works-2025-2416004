@@ -39,6 +39,8 @@ public:
 	// ‰ğ•úˆ—
 	void Release(void) override;
 
+	void OnResume(void) override;
+
 private:
 	// ƒvƒŒƒCƒ„[
 	std::shared_ptr<Player> player_;
