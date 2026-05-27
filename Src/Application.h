@@ -31,7 +31,6 @@ public:
 	static constexpr int FRAME_RATE = 1000 / 60;
 
 	//データパス関連
-	//----------------------------------------
 	static const std::string PATH_IMAGE;
 	static const std::string PATH_MODEL;
 	static const std::string PATH_ANIM;
@@ -44,7 +43,6 @@ public:
 	static const std::string PATH_MOVIE;
 	static const std::string PATH_MAP_DATA;
 	static const std::string PATH_CSV;
-	//----------------------------------------
 
 	//明治的にインスタンスを生成する
 	static void CreateInstance(void);
@@ -53,13 +51,13 @@ public:
 	static Application& GetInstance(void);
 
 	//初期化
-	void Init(void);
+	void Initialize(void);
 
 	//ゲームループ開始
 	void Run(void);
 
 	//リソースの破棄
-	void Destroy(void);
+	void   DestroyInstance(void);
 
 	//初期化成功/失敗の判定
 	bool IsInitFail(void) const;

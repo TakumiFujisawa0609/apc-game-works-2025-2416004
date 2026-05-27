@@ -16,11 +16,13 @@
 #include <list>
 #include <mutex>
 #include <thread>
+#include <tuple>
 #include <iostream>
 #include <crtdbg.h>
 #include <unordered_map>
 #include <math.h>
 #include <unordered_set>
+#include <numeric>
 
 
 

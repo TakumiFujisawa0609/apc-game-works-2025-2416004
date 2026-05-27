@@ -1,43 +1,59 @@
 #pragma once
+
+#include <DxLib.h>
+
 #include "ColliderBase.h"
 
 class Transform;
 
+// @brief 球体コライダクラス
 class ColliderSphere : public ColliderBase
 {
 public:
    
-    // コンストラクタ
-    ColliderSphere(TAG tag, const Transform* follow, const VECTOR& localPos, float radius);
+    // @brief コンストラクタ
+    // @param collisionTag 衝突種別
+    // @param followTarget 追従対象のTransform
+    // @param localPosition ローカル空間での中心位置
+    // @param radius 球体の半径
+    ColliderSphere(TAG collisionTag, const Transform* followTarget, const VECTOR& localPosition, float radius);
 
-    // デストラクタ
-    ~ColliderSphere(void) override;
+    // @brief デストラクタ
+    ~ColliderSphere(void) override = default;
 
-    // ローカル座標の設定
-    void SetLocalPos(const VECTOR& pos);
+    // @brief ローカル座標の設定
+    // @param position ローカル空間での中心位置
+    void SetLocalPosition(const VECTOR& position);
 
-    // 衝突半径の設定
+    // @brief 半径の設定
+    // @param radius 球体の半径
     void SetRadius(float radius);
 
-    // ローカル座標の取得
-    const VECTOR& GetLocalPos(void) const;
+    // @brief ローカル座標の取得
+    // @return ローカル空間での中心位置
+    const VECTOR& GetLocalPosition(void) const;
 
-    // ワールド座標の取得
-    VECTOR GetPos(void) const;
+    // @brief ワールド座標の取得
+    // @return ワールド空間での中心位置
+    VECTOR GetWorldPosition(void) const;
 
-    // 半径の取得
+    // @brief 半径の取得
+    // @return 球体の半径
     float GetRadius(void) const;
 
 protected:
-    // デバッグ用描画
-    void DrawDebug(int color) override;
+
+    // @brief デバッグ描画
+    // @param color 描画色
+    void DrawDebug(int color) const override;
 
 private:
+
     // デバッグ表示の球体ポリゴン分割数
-    static constexpr int DIV_NUM = 16;
+    static constexpr int DEBUG_SEGMENT_COUNT = 16;
 
     // 球体の中心座標(ローカル)
-    VECTOR localPos_;
+    VECTOR localPosition_;
 
     // 球体の半径
     float radius_;

@@ -1,64 +1,74 @@
 #pragma once
-#include<DxLib.h>
+#include <DxLib.h>
 
-/// <summary>
-/// 整数の3次元ベクトルを表すクラス
-/// </summary>
+/// @brief 整数の3次元ベクトルを表すクラス
 class IntVector3
 {
 public:
+    // 座標関連
+    int x; // X座標
+    int y; // Y座標
+    int z; // Z座標
 
-	int x;			///x座標
-	int y;			///y座標
-	int z;			///z座標
+public:
+    /// @brief ゼロベクトルで初期化
+    IntVector3(void);
 
-	/// <summary>
-	/// ゼロベクトルで初期化するコンストラクタ
-	/// </summary>
-	IntVector3();
+    /// @brief デストラクタ
+    ~IntVector3(void) = default;
 
-	/// <summary>
-	/// 指定した3つの値で初期化するコンストラクタ
-	/// </summary>
-	/// <param name="vX">X成分</param>
-	/// <param name="vY">Y成分</param>
-	/// <param name="vZ">Z成分</param>
-	IntVector3(int vX, int vY, int vZ);
+    /// @brief 指定した座標値で初期化
+    /// @param initialX 初期X座標
+    /// @param initialY 初期Y座標
+    /// @param initialZ 初期Z座標
+    IntVector3(int initialX, int initialY, int initialZ);
 
-	/// <summary>
-	/// DxLibのVECTOR構造体から初期化するコンストラクタ
-	/// </summary>
-	/// <param name="v">VECTOR型のベクトル</param>
-	IntVector3(VECTOR v);
+    /// @brief DxLibのVECTOR(float)から四捨五入して初期化
+    /// @param floatVector 変換元の浮動小数点ベクトル
+    IntVector3(const VECTOR& floatVector);
 
-	/// <summary>
-	/// デストラクタ
-	/// </summary>
-	~IntVector3(void);
+    /// @brief 未満比較
+    /// @param other 比較対象のベクトル
+    /// @return 自身が小さい場合 true
+    bool operator<(const IntVector3& other) const;
 
-	/// <summary>
-	/// 辞書順比較を行う演算子。主にstd::setなどでの順序付けに使用。
-	/// </summary>
-	/// <param name="value">比較対象のIntVector3</param>
-	/// <returns>this が value より小さい場合 true</returns>
-	bool operator<(const IntVector3& value) const;
-	
-	/// <summary>
-	/// 全ての要素に整数値を加算する
-	/// </summary>
-	/// <param name="v">加算する整数値</param>
-	void Add(int v);
+    /// @brief 等価比較
+    /// @param other 比較対象のベクトル
+    /// @return 同値の場合 true
+    bool operator==(const IntVector3& other) const;
 
-	/// <summary>
-	/// 全ての要素から整数値を減算する
-	/// </summary>
-	/// <param name="v">減算する整数値</param>
-	void Sub(int v);
+    /// @brief 不等価比較
+    /// @param other 比較対象のベクトル
+    /// @return 異なる値の場合 true
+    bool operator!=(const IntVector3& other) const;
 
-	/// <summary>
-	/// 全ての要素を整数値でスケーリング（乗算）する
-	/// </summary>
-	/// <param name="v">スケーリング係数</param>
-	void Scale(int v);
+    /// @brief 加算代入
+    /// @param addVector 加算するベクトル
+    /// @return 加算後の自身の参照
+    IntVector3& operator+=(const IntVector3& addVector);
+
+    /// @brief 減算代入
+    /// @param subVector 減算するベクトル
+    /// @return 減算後の自身の参照
+    IntVector3& operator-=(const IntVector3& subVector);
+
+    /// @brief スカラー乗算代入
+    /// @param scaleValue 乗算する値
+    /// @return 乗算後の自身の参照
+    IntVector3& operator*=(int scaleValue);
+
+    /// @brief 加算
+    /// @param addVector 加算するベクトル
+    /// @return 加算結果
+    IntVector3 operator+(const IntVector3& addVector) const;
+
+    /// @brief 減算
+    /// @param subVector 減算するベクトル
+    /// @return 減算結果
+    IntVector3 operator-(const IntVector3& subVector) const;
+
+    /// @brief スカラー乗算
+    /// @param scaleValue 乗算する値
+    /// @return 乗算結果
+    IntVector3 operator*(int scaleValue) const;
 };
-

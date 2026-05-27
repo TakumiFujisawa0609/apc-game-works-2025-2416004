@@ -503,7 +503,7 @@ void Utility::DrawLineXYZ(const VECTOR& pos, const MATRIX& rot, float len)
 	DrawLineDir(pos, dir, 0xff0000, len);
 
 	// Y
-	dir = VTransform(Utility::DIR_U, rot);
+	dir = VTransform(Utility::DIR_UP, rot);
 	DrawLineDir(pos, dir, 0x00ff00, len);
 
 	// Z

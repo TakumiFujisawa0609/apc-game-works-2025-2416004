@@ -18,16 +18,16 @@ public:
     ~Fps(void);
 
     // 初期化
-    void FpsControll_Initialize(void);
+    void FpsControl_Initialize(void);
    
     // 更新処理
-    bool FpsControll_Update(void);
+    bool FpsControl_Update(void);
     
     // 描画処理
-    void FpsControll_Draw(void);
+    void FpsControl_Draw(void);
     
     // フレーム待機処理
-    void FpsControll_Wait();
+    void FpsControl_Wait();
 
 private:
 

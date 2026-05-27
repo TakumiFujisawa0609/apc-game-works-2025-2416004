@@ -3,27 +3,22 @@
 #include<DxLib.h>
 
 
-//コンストラクタ
 Grid::Grid(void)
 {
 }
 
-//デストラクタ
 Grid::~Grid(void)
 {
 }
 
-//初期化
-void Grid::Init(void)
+void Grid::Initialize(void)
 {
 }
 
-//更新処理
 void Grid::Update(void)
 {
 }
 
-//描画処理
 void Grid::Draw(void)
 {
 	// X軸方向の線（Z方向に並べる）→ 赤
@@ -57,7 +52,6 @@ void Grid::Draw(void)
 	DrawLine3D(yStart, yEnd, 0x00ff00);
 }
 
-//解放処理
 void Grid::Release(void)
 {
 	

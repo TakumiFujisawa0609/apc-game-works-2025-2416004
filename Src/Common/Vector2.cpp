@@ -1,143 +1,132 @@
 #include "Vector2.h"
 
-// x_ と y_ を 0 に初期化するデフォルトコンストラクタ
 Vector2::Vector2(void)
 {
+	// 初期値として原点を設定
 	x = 0;
 	y = 0;
 }
 
-// 指定された値で初期化するコンストラクタ
 Vector2::Vector2(int vX, int vY)
 {
+	// 指定された座標で初期化
 	x = vX;
 	y = vY;
 }
 
-// デストラクタ（特に処理はなし）
 Vector2::~Vector2(void)
 {
 }
 
-// ベクトル同士の加算（新しいベクトルを返す）
-Vector2 Vector2::operator+(const Vector2 value)const
+Vector2 Vector2::operator+(const Vector2 value) const
 {
+	// 各成分を足し合わせた新しいベクトルを生成して返す
 	return Vector2(x + value.x, y + value.y);
 }
 
-// ベクトル同士の加算（自分自身に加算）
 void Vector2::operator+=(const Vector2 value)
 {
-	x = value.x;
-	y = value.y;
+	// 引数のベクトルの値を自身の成分に直接加算する
+	x += value.x;
+	y += value.y;
 }
 
-// ベクトル同士の減算（新しいベクトルを返す）
-Vector2 Vector2::operator-(const Vector2 value)const
+Vector2 Vector2::operator-(const Vector2 value) const
 {
+	// 各成分の差を持つ新しいベクトルを生成して返す
 	return Vector2(x - value.x, y - value.y);
 }
 
-// ベクトル同士の減算（自分自身に減算）
 void Vector2::operator-=(const Vector2 value)
 {
-	x = y - value.x;
-	y = y - value.y;
+	// 自身の成分から引数のベクトルの値を減算する
+	x -= value.x;
+	y -= value.y;
 }
 
-// スカラーとの乗算（新しいベクトルを返す）
-Vector2 Vector2::operator*(const int value)const
+Vector2 Vector2::operator*(const int value) const
 {
+	// 全ての成分を指定された倍率でスケールさせたベクトルを返す
 	return Vector2(x * value, y * value);
 }
 
-// スカラーとの乗算（自分自身に乗算）
 void Vector2::operator*=(const int value)
 {
-	x = x * value;
-	y = y * value;
+	// 自身の成分に倍率を掛けて更新する
+	x *= value;
+	y *= value;
 }
 
-// スカラーとの除算（新しいベクトルを返す）
-Vector2 Vector2::operator/(const int value)const
+Vector2 Vector2::operator/(const int value) const
 {
+	// 各成分を指定された値で割った結果を返す
 	return Vector2(x / value, y / value);
 }
 
-// スカラーとの除算（自分自身に除算）
 void Vector2::operator/=(const int value)
 {
-	x = x / value;
-	y = y / value;
+	// 自身の成分を割った値で更新する
+	x /= value;
+	y /= value;
 }
 
-// x と y を 0.0f に初期化するデフォルトコンストラクタ
 Vector2F::Vector2F(void)
 {
+	// 浮動小数点数で原点リセット
 	x = 0.0f;
 	y = 0.0f;
 }
 
-// 指定された値で x と y を初期化するコンストラクタ
 Vector2F::Vector2F(float vX, float vY)
 {
 	x = vX;
 	y = vY;
 }
 
-// デストラクタ（特に処理はなし）
 Vector2F::~Vector2F(void)
 {
 }
 
-// ベクトル同士を加算した結果を新しいベクトルとして返す
-Vector2F Vector2F::operator+(const Vector2F value)const
+Vector2F Vector2F::operator+(const Vector2F value) const
 {
 	return Vector2F(x + value.x, y + value.y);
 }
 
-// 自身に別のベクトルを加算する
 void Vector2F::operator+=(const Vector2F value)
 {
-	x = x + value.x;
-	y = y + value.y;
+	x += value.x;
+	y += value.y;
 }
 
-// ベクトル同士を減算した結果を新しいベクトルとして返す
-Vector2F Vector2F::operator-(const Vector2F value)const
+Vector2F Vector2F::operator-(const Vector2F value) const
 {
 	return Vector2F(x - value.x, y - value.y);
 }
 
-// 自身から別のベクトルを減算する
 void Vector2F::operator-=(const Vector2F value)
 {
-	x = x - value.x;
-	y = y - value.y;
+	x -= value.x;
+	y -= value.y;
 }
 
-// 自身のベクトルにスカラーを掛けた結果を新しいベクトルとして返す
-Vector2F Vector2F::operator*(const float value)const
+Vector2F Vector2F::operator*(const float value) const
 {
 	return Vector2F(x * value, y * value);
 }
 
-// 自身のベクトルにスカラーを掛ける
 void Vector2F::operator*=(const float value)
 {
-	x = x * value;
-	y = y * value;
+	x *= value;
+	y *= value;
 }
 
-// 自身のベクトルをスカラーで割った結果を新しいベクトルとして返す
-Vector2F Vector2F::operator/(const float value)const
+Vector2F Vector2F::operator/(const float value) const
 {
 	return Vector2F(x / value, y / value);
 }
 
-// 自身のベクトルをスカラーで割る
-void Vector2F::operator/=(const float  value)
+void Vector2F::operator/=(const float value)
 {
-	x = x / value;
-	y = y / value;
+	x /= value;
+	y /= value;
 }

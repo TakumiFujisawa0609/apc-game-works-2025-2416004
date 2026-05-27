@@ -1,11 +1,11 @@
-﻿#include "StageManager.h"
+﻿#include "../../Pch.h"
+#include "StageManager.h"
 #include "EnemyManager.h"
 #include "../Stage/EnemySpawner.h"
 #include "../../Utility/Utility.h"
 #include "../../Manager/Generic/ResourceManager.h"
 #include "../Stage/Tower.h"
 
-// コンストラクタ
 StageManager::StageManager(void)
     : enemyManager_(nullptr)
     , isLoaded_(false)
@@ -14,22 +14,20 @@ StageManager::StageManager(void)
     , activationRange_(800.0f)
     , spawnInterval_(5.0f)
     , maxEnemies_(5)
-    , useDynamicLevel_(false)          
-    , levelIncreaseDistance_(1000.0f)  
-    , originPos_(Utility::VECTOR_ZERO) 
-    , maxEnemyLevel_(10)               
+    , useDynamicLevel_(false)
+    , levelIncreaseDistance_(1000.0f)
+    , originPos_(Utility::VECTOR_ZERO)
+    , maxEnemyLevel_(10)
     , lastPlayerPos_(Utility::VECTOR_ZERO)
     , updateTimer_(0.0f)
     , towerModelId_(-1)
 {
 }
 
-// デストラクタ
 StageManager::~StageManager(void)
 {
 }
 
-// 読み込み
 void StageManager::Load(void)
 {
     if (isLoaded_) return;
@@ -43,8 +41,7 @@ void StageManager::Load(void)
     isLoaded_ = true;
 }
 
-// 初期化
-void StageManager::Init(EnemyManager* enemyManager)
+void StageManager::Initialize(EnemyManager* enemyManager)
 {
     if (!enemyManager)
     {
@@ -59,27 +56,31 @@ void StageManager::Init(EnemyManager* enemyManager)
     updateTimer_ = 0.0f;
 }
 
-// 更新処理
 void StageManager::Update(const VECTOR& playerPos, float deltaTime)
 {
+    const float updateInterval = 0.2f;
+
+    // 全タワーの更新
     for (const auto& tower : towers_)
     {
-        if (tower) tower->Update();
+        if (tower) { tower->Update(); }
     }
 
-    // 一定間隔で周辺のスポナーを更新
+    // 負荷軽減のため、一定時間ごとに周辺状況を更新
     updateTimer_ += deltaTime;
 
-    if (updateTimer_ >= 0.2f)
+    if (updateTimer_ >= updateInterval)
     {
         updateTimer_ = 0.0f;
+
+        // プレイヤー周辺のスポナーとタワーの配置状況を更新
         RegisterNearbySpawners(playerPos);
         UpdateTowerPlacement(playerPos);
+
         lastPlayerPos_ = playerPos;
     }
 }
 
-// 描画処理
 void StageManager::Draw(void) const
 {
     for (const auto& tower : towers_)
@@ -87,25 +88,24 @@ void StageManager::Draw(void) const
         tower->Draw();
     }
 #ifdef _DEBUG
-    // アクティブなスポナー位置を可視化
-    for (const auto& pair : spawners_)
-    {
-        const auto& info = pair.second;
-        if (info.isActive)
-        {
-            // アクティブなスポナーはオレンジ色
-            DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
-        }
-        else
-        {
-            // 非アクティブなスポナーはグレー
-            DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
-        }
-    }
+    //// アクティブなスポナー位置を可視化
+    //for (const auto& pair : spawners_)
+    //{
+    //    const auto& info = pair.second;
+    //    if (info.isActive)
+    //    {
+    //        // アクティブなスポナーはオレンジ色
+    //        DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
+    //    }
+    //    else
+    //    {
+    //        // 非アクティブなスポナーはグレー
+    //        DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
+    //    }
+    //}
 #endif
 }
 
-// 描画処理（カリング対応）
 void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
 {
     // カリング距離を大きくする
@@ -121,9 +121,9 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
 
         VECTOR towerPos = tower->GetPos();
 
-        //プレイヤー位置（camearPos）からの距離をXZ平面のみで計算（高さを無視）
+        // XZ平面での水平距離を計算
         VECTOR toTower = VSub(towerPos, cameraPos);
-        toTower.y = 0.0f;  // Y軸を無視して水平距離のみ計算
+        toTower.y = 0.0f;
         float distSq = VSquareSize(toTower);
         float dist = sqrtf(distSq);
 
@@ -137,61 +137,48 @@ void StageManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const
         // 描画
         tower->Draw();
         drawnTowers++;
-
-#ifdef _DEBUG
-        // タワー位置に緑色の球体を描画
-        DrawSphere3D(towerPos, 50.0f, 8, GetColor(0, 200, 50), GetColor(0, 255, 0), TRUE);
-
-        // 最も近いタワーの距離を表示
-        static float nearestDist = FLT_MAX;
-        if (dist < nearestDist)
-        {
-            nearestDist = dist;
-        }
-#endif
     }
 
 #ifdef _DEBUG
 
-    // スポナー位置を可視化（カリング適用）
-    int drawnSpawners = 0;
-    int culledSpawners = 0;
+    //// スポナー位置を可視化（カリング適用）
+    //int drawnSpawners = 0;
+    //int culledSpawners = 0;
 
-    for (const auto& pair : spawners_)
-    {
-        const auto& info = pair.second;
+    //for (const auto& pair : spawners_)
+    //{
+    //    const auto& info = pair.second;
 
-        // プレイヤー位置からの距離をXZ平面のみで計算（高さを無視）
-        VECTOR toSpawner = VSub(info.gridPos, cameraPos);
-        toSpawner.y = 0.0f;  // Y軸を無視して水平距離のみ計算
-        float distSq = VSquareSize(toSpawner);
+    //    // プレイヤー位置からの距離をXZ平面のみで計算（高さを無視）
+    //    VECTOR toSpawner = VSub(info.gridPos, cameraPos);
+    //    toSpawner.y = 0.0f;  // Y軸を無視して水平距離のみ計算
+    //    float distSq = VSquareSize(toSpawner);
 
-        // 距離カリング
-        if (distSq > cullDistance * cullDistance)
-        {
-            culledSpawners++;
-            continue;
-        }
+    //    // 距離カリング
+    //    if (distSq > cullDistance * cullDistance)
+    //    {
+    //        culledSpawners++;
+    //        continue;
+    //    }
 
-        // 描画
-        if (info.isActive)
-        {
-            // アクティブなスポナーはオレンジ色
-            DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
-        }
-        else
-        {
-            // 非アクティブなスポナーはグレー
-            DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
-        }
+    //    // 描画
+    //    if (info.isActive)
+    //    {
+    //        // アクティブなスポナーはオレンジ色
+    //        DrawSphere3D(info.gridPos, 30.0f, 8, GetColor(255, 200, 0), GetColor(255, 200, 0), TRUE);
+    //    }
+    //    else
+    //    {
+    //        // 非アクティブなスポナーはグレー
+    //        DrawSphere3D(info.gridPos, 20.0f, 8, GetColor(128, 128, 128), GetColor(128, 128, 128), TRUE);
+    //    }
 
-        drawnSpawners++;
-    }
+    //    drawnSpawners++;
+    //}
 
 #endif // _DEBUG
 }
 
-// 解放処理
 void StageManager::Release(void)
 {
     spawners_.clear();
@@ -202,7 +189,6 @@ void StageManager::Release(void)
     isLoaded_ = false;
 }
 
-// スポナー設定
 void StageManager::SetSpawnerSettings(float spawnRange, const std::string& enemyType,
     float activationRange, float spawnInterval, int maxEnemies)
 {
@@ -213,19 +199,16 @@ void StageManager::SetSpawnerSettings(float spawnRange, const std::string& enemy
     maxEnemies_ = maxEnemies;
 }
 
-// スポナー数を取得
 int StageManager::GetSpawnerCount(void) const
 {
     return static_cast<int>(spawners_.size());
 }
 
-// アクティブなスポナー数を取得
 int StageManager::GetActiveSpawnerCount(void) const
 {
     return static_cast<int>(activeSpawners_.size());
 }
 
-// 動的レベル設定を有効化
 void StageManager::EnableDynamicLevel(bool enable, float distancePerLevel)
 {
     useDynamicLevel_ = enable;
@@ -233,28 +216,24 @@ void StageManager::EnableDynamicLevel(bool enable, float distancePerLevel)
 
 }
 
-// 原点座標を設定
 void StageManager::SetOriginPos(const VECTOR& origin)
 {
     originPos_ = origin;
 
 }
 
-// グリッド座標からキーを生成
 int StageManager::GetGridKey(int gridX, int gridZ) const
 {
     // カントール対関数を使用してユニークなキーを生成
     return ((gridX + gridZ) * (gridX + gridZ + 1)) / 2 + gridZ;
 }
 
-// ワールド座標からグリッド座標を取得
 void StageManager::WorldToGrid(const VECTOR& worldPos, int& outGridX, int& outGridZ) const
 {
     outGridX = static_cast<int>(floorf(worldPos.x / SPAWNER_INTERVAL));
     outGridZ = static_cast<int>(floorf(worldPos.z / SPAWNER_INTERVAL));
 }
 
-// グリッド座標からワールド座標を取得
 VECTOR StageManager::GridToWorld(int gridX, int gridZ) const
 {
     float worldX = (gridX * SPAWNER_INTERVAL) + (SPAWNER_INTERVAL * 0.5f);
@@ -262,8 +241,8 @@ VECTOR StageManager::GridToWorld(int gridX, int gridZ) const
     return VGet(worldX, 0.0f, worldZ);
 }
 
-// 周辺のグリッド座標を取得
-std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& centerPos, float range) const
+std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& centerPos, 
+    float range) const
 {
     std::vector<std::pair<int, int>> grids;
 
@@ -298,10 +277,9 @@ std::vector<std::pair<int, int>> StageManager::GetNearbyGrids(const VECTOR& cent
     return grids;
 }
 
-// 周辺のスポナーを登録・解除
 void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
 {
-    if (!enemyManager_) return;
+    if (!enemyManager_) { return; }
 
     // 登録すべきグリッド座標を取得
     auto nearbyGrids = GetNearbyGrids(playerPos, REGISTER_RANGE);
@@ -383,15 +361,11 @@ void StageManager::RegisterNearbySpawners(const VECTOR& playerPos)
             }
         }
     }
-
-#ifdef _DEBUG
-#endif
 }
 
-// スポナーを生成（グリッド座標指定）
 void StageManager::CreateSpawner(int gridX, int gridZ)
 {
-    if (!enemyManager_) return;
+    if (!enemyManager_) { return; }
 
     int key = GetGridKey(gridX, gridZ);
     if (spawners_.find(key) != spawners_.end()) return;
@@ -399,7 +373,6 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
     VECTOR worldPos = GridToWorld(gridX, gridZ);
     int enemyLevel = CalculateEnemyLevelByDistance(worldPos);
 
-    // 1. EnemyManagerにスポナーを追加
     enemyManager_->AddSpawner(worldPos, spawnRange_, enemyType_, enemyLevel);
 
     int spawnerIndex = enemyManager_->GetSpawnerCount() - 1;
@@ -407,24 +380,19 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
 
     if (spawner)
     {
-        // 2. スポナーにモデルをセットする (ここでモデルIDが渡される)
-        // もし ResourceManager からモデルを取得しているなら、ここで Duplicate して渡す
         auto& res = ResourceManager::GetInstance();
-        // スポナー用のモデルリソースがある場合（例: MODEL_SPAWNER）
-        int masterModelId = res.GetHandle(ResourceManager::SRC::MODEL_ENEMYSPAWNER); // 仮でタワーと同じにしてますが適宜変更
+        int masterModelId = res.GetHandle(ResourceManager::SRC::MODEL_ENEMYSPAWNER);
         int myModelId = MV1DuplicateModel(masterModelId);
 
         spawner->SetModelId(myModelId);
 
-        // 3. 各種設定
         spawner->SetActivationRange(activationRange_);
         spawner->SetRequirePlayerInRange(true);
         spawner->SetSpawnInterval(spawnInterval_);
         spawner->SetMaxEnemies(maxEnemies_);
         spawner->SetActive(false);
 
-        // 4. 重要：ここで強制的に初期化（Init内で行われる InitCollider を確実に呼ぶ）
-        spawner->Init();
+        spawner->Initialize();
     }
 
     // スポナー情報を記録
@@ -435,7 +403,6 @@ void StageManager::CreateSpawner(int gridX, int gridZ)
     spawners_[key] = info;
 }
 
-// スポナーを削除（グリッド座標指定）
 void StageManager::RemoveSpawner(int gridX, int gridZ)
 {
     int key = GetGridKey(gridX, gridZ);
@@ -443,20 +410,17 @@ void StageManager::RemoveSpawner(int gridX, int gridZ)
     auto it = spawners_.find(key);
     if (it != spawners_.end())
     {
-        // EnemyManagerからは削除しない（パフォーマンスのため非アクティブ化のみ）
-        // 完全に削除したい場合は enemyManager_->RemoveSpawner() を呼ぶ
 
         activeSpawners_.erase(key);
         spawners_.erase(it);
     }
 }
 
-// 距離に応じたレベル計算
 int StageManager::CalculateEnemyLevelByDistance(const VECTOR& spawnPos) const
 {
     if (!useDynamicLevel_)
     {
-        return 1;  // 動的レベルが無効な場合はレベル1
+        return 1;
     }
 
     // 原点からの距離を計算（XZ平面のみ、Y軸は無視）
@@ -494,12 +458,13 @@ void StageManager::CreateTower(int gridX, int gridZ)
     // ワールド座標を計算（オフセット適用）
     // 元のグリッド座標からワールド座標を取得
     VECTOR baseWorldPos = GridToWorld(gridX, gridZ);
+    const float towerOffset = 0.25f;
 
     // タワーをスポナーからずらす（グリッドの半分だけオフセット）
     VECTOR worldPos = VGet(
-        baseWorldPos.x + (SPAWNER_INTERVAL * 0.25f), // X方向に1/4グリッド分ずらす
+        baseWorldPos.x + (SPAWNER_INTERVAL * towerOffset), 
         baseWorldPos.y,
-        baseWorldPos.z + (SPAWNER_INTERVAL * 0.25f)  // Z方向に1/4グリッド分ずらす
+        baseWorldPos.z + (SPAWNER_INTERVAL * towerOffset)
     );
 
     // タワーを生成
@@ -510,19 +475,17 @@ void StageManager::CreateTower(int gridX, int gridZ)
 
     // 自分専用のIDを渡す
     tower->Load(myModelId);
-    tower->Init();
+    tower->Initialize();
     // リストに追加
     int towerIndex = static_cast<int>(towers_.size());
     towers_.push_back(std::move(tower));
 
     // 配置情報を記録
     TowerInfo info;
-    info.gridPos = worldPos;  // オフセット適用後の座標を記録
+    info.gridPos = worldPos; 
     info.towerIndex = towerIndex;
     placedTowers_[key] = info;
 
-#ifdef _DEBUG
-#endif
 }
 
 void StageManager::UpdateTowerPlacement(const VECTOR& playerPos)
@@ -532,7 +495,7 @@ void StageManager::UpdateTowerPlacement(const VECTOR& playerPos)
     auto nearbyGrids = GetNearbyGrids(playerPos, REGISTER_RANGE);
 
     // タワー配置の間隔（スポナーより密に配置）
-    const int TOWER_INTERVAL = 2; // 2グリッドごとに配置
+    const int TOWER_INTERVAL = 2; 
 
     // 周辺のグリッドをチェック
     for (const auto& grid : nearbyGrids)
@@ -540,7 +503,7 @@ void StageManager::UpdateTowerPlacement(const VECTOR& playerPos)
         int gx = grid.first;
         int gz = grid.second;
 
-        // タワー配置の間隔チェック（2グリッドごと）
+        // タワー配置の間隔チェック
         if (gx % TOWER_INTERVAL != 0 || gz % TOWER_INTERVAL != 0)
         {
             continue;
@@ -551,7 +514,7 @@ void StageManager::UpdateTowerPlacement(const VECTOR& playerPos)
         // 既にタワーが配置されているかチェック
         if (placedTowers_.count(key) == 0)
         {
-            // タワーを生成 (CreateTower内で placedTowers_ に登録されます)
+            // タワーを生成
             CreateTower(gx, gz);
         }
     }

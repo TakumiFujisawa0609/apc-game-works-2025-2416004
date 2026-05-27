@@ -1,134 +1,140 @@
 #pragma once
-#include "../../Application.h"
+#include <list>
+#include <memory>
+#include <mutex>
+#include <chrono>
 
 class SceneBase;
 class Camera;
 
+/// @brief シーンのスタック管理、遷移を管理するクラス（シングルトン）
 class SceneManager 
 {
 public:
 
-    // インスタンスを生成する
+    /// @brief インスタンスを明示的に生成する
     static void CreateInstance(void);
 
-    // インスタンスを取得する
+    /// @brief インスタンスを取得する
+    /// @return SceneManagerの参照
     static SceneManager& GetInstance(void);
 
-    // インスタンスを破棄する
-    static void DestroyInstance(void);
+    /// @brief インスタンスを破棄する
+    static void  DestroyInstanceInstance(void);
 
-    // 初期化する
-    void Init(void);
+    /// @brief システムおよび3D描画設定を初期化する
+    void Initialize(void);
 
-    // 更新する
+    /// @brief 現在のシーンおよびデルタタイムの更新
     void Update(void);
 
-    // 描画する
+    /// @brief シーンの描画処理を呼び出す
     void Draw(void);
 
-    // 解放する
+    /// @brief 全シーンの解放処理
     void Release(void);
 
-    // シーンを変更する（全削除→新規追加）
+    /// @brief シーンを変更する（現在のスタックを全削除して新しいシーンを追加）
+    /// @param scene 次に実行するシーンのポインタ
     void ChangeScene(std::shared_ptr<SceneBase> scene);
 
-    // シーンを積む（上に追加する）
+    /// @brief シーンを積む（現在のシーンを残したまま上に重ねる）
+    /// @param scene 重ねるシーンのポインタ
     void PushScene(std::shared_ptr<SceneBase> scene);
 
-    // シーンを外す（上を削除する）
+    /// @brief シーンを外す（スタックの最上位シーンを削除する）
     void PopScene(void);
 
-    // シーンをジャンプする（全削除→新規ロード）
+    /// @brief シーンをジャンプする（全削除→新規ロード、ChangeSceneと同様の動作）
+    /// @param scene 遷移先シーンのポインタ
     void JumpScene(std::shared_ptr<SceneBase> scene);
 
-    // ゲーム終了フラグを取得する
+    /// @brief ゲーム終了フラグの状態を取得する
+    /// @return 終了する場合はtrue
     bool GetGameEnd(void) const;
 
-    // デルタタイムを取得する
+    /// @brief 前フレームからの経過時間を取得する
+    /// @return デルタタイム（秒）
     float GetDeltaTime(void) const;
 
-    // カメラを取得する
+    /// @brief 現在管理しているカメラを取得する
+    /// @return カメラオブジェクトの共有ポインタ
     std::shared_ptr<Camera> GetCamera(void) const;
 
-    // ゲームを終了させる
+    /// @brief ゲーム終了フラグを立てる
     void GameEnd(void);
 
-    // プレイヤーの移動距離を設定
+    /// @brief プレイヤーの累計移動距離を設定する
+    /// @param distance 距離
     void SetPlayerDistance(float distance);
     
-    // プレイヤーの移動距離を取得
+    /// @brief プレイヤーの累計移動距離を取得する
+    /// @return 移動距離
     float GetPlayerDistance(void) const;
     
-    // プレイヤーの移動距離をリセット
+    /// @brief プレイヤーの累計移動距離をリセット
     void ResetPlayerDistance(void);
 
-    // エネミーの死亡数を設定
+    /// @brief エネミーの累計死亡数を設定する
+    /// @param count 死亡数
     void SetEnemyDeathCount(int count);
    
-    // エネミーの死亡数を取得
+    /// @brief エネミーの累計死亡数を取得する
+    /// @return 死亡数
     int GetEnemyDeathCount(void) const;
     
-    // エネミーの死亡数をリセット
+    /// @brief エネミーの累計死亡数をリセット
     void ResetEnemyDeathCount(void);
     
-    // エネミーの死亡数を加算
+    /// @brief エネミーの死亡数を加算する
+    /// @param add 加算する数
     void AddEnemyDeathCount(int add = 1);
 
-    // ゲーム統計をリセット（距離と死亡数を一括リセット）
+    /// @brief ゲーム統計（距離、死亡数）を一括リセットする
     void ResetGameStats(void);
 
 private:
     // 唯一のインスタンス
     static SceneManager* instance_;
 
-    // シーンを保持する（スタック構造）
-    std::list<std::shared_ptr<SceneBase>> scenes_;
+    // シーン管理関連
+    std::list<std::shared_ptr<SceneBase>> scenes_; // シーンを保持する（スタック構造）
+    std::mutex sceneMutex_;                        // シーンアクセスを保護するミューテックス
+    bool isGameEnd_;                               // ゲーム終了フラグ
+    bool isSceneChanging_;                         // シーン切り替え中フラグ
 
-    // シーンアクセスを保護するミューテックス
-    std::mutex sceneMutex_;
+    // 時間・計測関連
+    std::chrono::system_clock::time_point preTime_; // 前フレームの時刻
+    float deltaTime_;                               // デルタタイム
 
-    // ゲーム終了フラグ
-    bool isGameEnd_;
-
-    // シーン切り替え中フラグ
-    bool isSceneChanging_;
+    // ゲーム統計関連
+    float playerDistance_;  // プレイヤーの移動距離
+    int enemyDeathCount_;   // エネミーの死亡数
 
     // カメラ
     std::shared_ptr<Camera> camera_;
 
-    // 前フレームの時刻
-    std::chrono::system_clock::time_point preTime_;
-
-    // デルタタイム
-    float deltaTime_;
-
-    // プレイヤーの移動距離
-    float playerDistance_;
-    
-    // エネミーの死亡数
-    int enemyDeathCount_;
-
-    // 3D描画設定を初期化する
+    /// @brief 3D描画に関する初期設定
     void Init3D(void);
 
-    // デルタタイムをリセットする
+    /// @brief デルタタイム計算用の時刻をリセットする
     void ResetDeltaTime(void);
 
-    // コンストラクタ
+    /// @brief コンストラクタ
     SceneManager(void);
 
-    // デストラクタ
+    /// @brief デストラクタ
     ~SceneManager(void);
 
-    // コピーコンストラクタを禁止する
+    /// @brief コピーコンストラクタを禁止する
     SceneManager(const SceneManager&) = delete;
 
-    // 代入演算子を禁止する
+    /// @brief 代入演算子を禁止する
     SceneManager& operator=(const SceneManager&) = delete;
 
-    // ムーブコンストラクタを禁止する
+    /// @brief ムーブコンストラクタを禁止する
     SceneManager(SceneManager&&) = delete;
 
-    // ムーブ代入演算子を禁止する
+    /// @brief ムーブ代入演算子を禁止する
     SceneManager& operator=(SceneManager&&) = delete;
 };

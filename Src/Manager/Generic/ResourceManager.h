@@ -1,18 +1,19 @@
 #pragma once
-#include<map>
-#include<string>
-#include"Resource.h"
+#include <map>
+#include <mutex>
+#include "Resource.h"
 
+/// @brief 画像、モデル、音源などの全リソースを一括管理するクラス（シングルトン）
 class ResourceManager
 {
 public:
 
-	//リソース名
+	/// @brief 管理するリソースの識別子定義
 	enum class SRC
 	{
 		//ここに保存しておきたい画像やモデル、音源などの名前を記す
 
-		/*例*/
+		// ロゴ
 		TYTLE_LOGO,				//タイトルロゴ
 		GAMEOVER_LOGO,			//ゲームオーバー
 		GAMECLERA_LOGO,			//ゲームクリア
@@ -79,52 +80,59 @@ public:
 		BG_MOVIE,               // 背景映像
 	};
 
-	//明示的にインスタンスを生成する
+	/// @brief 明示的にインスタンスを生成する
 	static void CreateInstance(void);
 
-	//静的インスタンスの取得
+	/// @brief 静的インスタンスの取得
+	/// @return ResourceManagerの参照
 	static ResourceManager& GetInstance(void); 
 
-	//初期化
-	void Init(void);
+	/// @brief システム全体の初期化
+	void Initialize(void);
 
-	//タイトルで使うリソース初期化
+	/// @brief タイトルシーン用リソースの読み込み登録
 	void InitTitle(void);
 
-	//ゲームで使うリソース初期化
+	/// @brief ゲームシーン用リソースの読み込み登録
 	void InitGame(void);
 
-	//ゲームオーバーで使うリソース初期化
+	/// @brief ゲームオーバー用リソースの読み込み登録
 	void InitGameOver(void);
 
-	//ゲームクリアで使うリソース初期化
+	/// @brief ゲームクリア用リソースの読み込み登録
 	void InitGameClear(void);
 
-	// チュートリアルで使うリソース初期化
+	/// @brief チュートリアル用リソースの読み込み登録
 	void InitTutorial(void);
 
-	// 設定で使うリソース初期化
+	/// @brief 設定画面用リソースの読み込み登録
 	void InitOption(void);
 
-	//プレイヤーが使うリソース初期化
+	/// @brief プレイヤー用リソースの読み込み登録
 	void ResourcePlayer(void);
 
-	//敵が使うリソース
+	/// @brief 敵キャラクター用リソースの読み込み登録
 	void ResourceEnemy(void);
 
-	//解放(シーン切り替え時に一旦解放)
+	/// @brief シーン切り替え時などのリソース解放
 	void Release(void);
 
-	//リソース完全破棄
-	void Destroy(void);
+	/// @brief プログラム終了時のリソース完全破棄
+	void  DestroyInstance(void);
 
-	//リソースのロード
+	/// @brief リソースの読み込み（未ロードなら実行）
+	/// @param src リソース識別子
+	/// @return Resourceオブジェクト
 	Resource Load(SRC src);
 
-	//リソースの複製ロード(モデル用)
+	/// @brief モデルリソースを複製して読み込む（個別の動きをさせる場合に使用）
+	/// @param src モデルのリソース識別子
+	/// @return 複製されたモデルのハンドルID
 	int LoadModelDuplicate(SRC src);
 
-	// ハンドルを取得
+	/// @brief ロード済みリソースのハンドルを取得する
+	/// @param src リソース識別子
+	/// @return ハンドルID
 	int GetHandle(SRC src);
 
 private:
@@ -138,31 +146,33 @@ private:
 	//読み込み済みリソース
 	std::map<SRC, Resource*> loadedMap_;
 
+	// スレッドセーフ用ミューテックス
 	static std::mutex g_resMutex;
 
-	// デフォルトコンストラクタをprivateにして、
-	// 外部から生成できない様にする
+	/// @brief コンストラクタ
 	ResourceManager(void);
 
-	//デストラクタも同様
+	/// @brief デストラクタ
 	~ResourceManager(void) = default;
 
-	// コピー禁止コンストラクタ
+	/// @brief コピー禁止コンストラクタ
 	ResourceManager(const ResourceManager&) = delete;
 
-	// コピー代入演算子禁止
+	/// @brief コピー代入演算子禁止
 	ResourceManager& operator=(const ResourceManager&) = delete;
 
-	// ムーブコンストラクタ禁止
+	/// @brief ムーブコンストラクタ禁止
 	ResourceManager(ResourceManager&&) = delete;
 
-	// ムーブ代入演算子禁止
+	/// @brief ムーブ代入演算子禁止
 	ResourceManager& operator=(ResourceManager&&) = delete;
 
-	// アドレス取得演算子(参照演算子)禁止
+	/// @brief アドレス取得演算子(参照演算子)禁止
 	ResourceManager* operator&() = delete;
 
-	//内部ロード
+	/// @brief 内部読み込み処理の実体
+	/// @param src リソース識別子
+	/// @return 内部管理用ポインタ
 	Resource* _Load(SRC src);
 
 };

@@ -4,68 +4,64 @@
 #include "../Object/Manager/EnemyManager.h"
 #include "../Object/Manager/StageManager.h"
 
-
 class Player;
 class EnemyData;
 class SkyDome;
 
+/// @brief ゲーム本編のメインロジックを管理するシーンクラス
 class SceneGame : public SceneBase
 {
 public:
-	// 制限時間（秒）
-	static constexpr float LIMIT_TIME = 120.0f;
+    // 定数関連
+    /// @brief ゲームの制限時間（秒）
+    static constexpr float LIMIT_TIME = 120.0f;
 
-	// コンストラクタ
-	SceneGame(void);
+    /// @brief コンストラクタ
+    SceneGame(void);
 
-	// デストラクタ
-	~SceneGame(void) = default;
+    /// @brief デストラクタ
+    ~SceneGame(void) = default;
 
-	// 読み込み
-	void Load(void) override;
+    /// @brief リソースの読み込み開始
+    void Load(void) override;
 
-	// 読み込み終了
-	void EndLoad(void) override;
+    /// @brief リソースの読み込み完了処理
+    void EndLoad(void) override;
 
-	// 初期化
-	void Init(void) override;
+    /// @brief 初期化処理
+    void Initialize(void) override;
 
-	// 更新処理
-	void Update(void) override;
+    /// @brief 更新処理
+    void Update(void) override;
 
-	// 描画処理
-	void Draw(void) override;
+    /// @brief 描画処理
+    void Draw(void) override;
 
-	// 解放処理
-	void Release(void) override;
+    /// @brief 解放処理
+    void Release(void) override;
+
+    /// @brief ポーズ解除などの再開処理
+    void OnResume(void) override;
 
 private:
-	// プレイヤー
-	std::shared_ptr<Player> player_;
+    // 操作キャラクター
+    std::shared_ptr<Player> player_;            
 
-	// ステージ
-	std::shared_ptr<GroundManager> groundManager_;
+    // ステージ・環境関連
+    std::shared_ptr<GroundManager> groundManager_; // 地面・地形の管理
+    std::shared_ptr<SkyDome> skyDome_;             // 空の描画・制御
+    std::unique_ptr<StageManager> stageManager_;   // ステージ全体の進行管理
 
-	// エネミーデータ
-	std::shared_ptr<EnemyData> enemyData_;
+    // エネミー関連
+    std::shared_ptr<EnemyData> enemyData_;      // 敵の基礎パラメータデータ
+    std::unique_ptr<EnemyManager> enemyManager_; // 敵の生成・更新・削除管理
 
-	// スカイドーム
-	std::shared_ptr<SkyDome> skyDome_;
+    // スタート時の文字表示フラグ
+    bool isStartFont_;                         
 
-	// エネミーマネージャー
-	std::unique_ptr<EnemyManager> enemyManager_;
+    /// @brief エネミースポナーの配置と初期設定を行う
+    void SetupEnemySpawners();
 
-	// ステージマネージャー
-	std::unique_ptr<StageManager> stageManager_;
-
-
-
-	// スタート時のフォント表示フラグ
-	bool isStartFont_;
-
-	// エネミースポナーの配置設定
-	void SetupEnemySpawners();
-
-	// 描画(デバック)
-	void DrawDebug(void);
+    /// @brief デバッグ情報の描画
+    void DrawDebug(void);
 };

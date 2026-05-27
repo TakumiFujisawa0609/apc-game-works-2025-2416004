@@ -1,3 +1,7 @@
+#pragma once
+#include <vector>
+#include <chrono>
+#include <DxLib.h>
 
 class FpsController
 {

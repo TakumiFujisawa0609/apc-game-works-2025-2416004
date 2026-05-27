@@ -1,21 +1,19 @@
+#include "../../Pch.h"
 #include "Ground.h"
 #include "../../Manager/System/CollisionController.h"
 #include "../../Collider/ColliderModel.h"
 #include "../../Utility/Utility.h"
 
-// コンストラクタ
 Ground::Ground(void)
-    : isRegistered_(false)  // 追加
+    : isRegistered_(false)  
 {
 }
 
-// デストラクタ
 Ground::~Ground(void)
 {
 }
 
-// 初期化
-void Ground::Init(const VECTOR& pos, int modelId)
+void Ground::Initialize(const VECTOR& pos, int modelId)
 {
     // 座標を設定
     trans_.pos = pos;
@@ -47,7 +45,6 @@ void Ground::Init(const VECTOR& pos, int modelId)
     isRegistered_ = true;
 }
 
-// 初期化（CollisionController登録なし）
 void Ground::InitWithoutRegister(const VECTOR& pos, int modelId)
 {
     // 座標を設定
@@ -79,7 +76,6 @@ void Ground::InitWithoutRegister(const VECTOR& pos, int modelId)
     isRegistered_ = false;
 }
 
-// 衝突判定の初期化
 void Ground::InitCollider(void)
 {
     if (trans_.modelId == -1) return;
@@ -97,13 +93,10 @@ void Ground::InitCollider(void)
 
 }
 
-// 更新処理（地面は動かないので空実装）
 void Ground::Update(void)
 {
-    // 地面は動かないので何もしない
 }
 
-// 描画処理
 void Ground::Draw(void) const
 {
     if (trans_.modelId == -1) return;
@@ -120,7 +113,6 @@ void Ground::Draw(void) const
 #endif
 }
 
-// 解放
 void Ground::Release(void)
 {
     // CollisionControllerから登録解除
@@ -140,7 +132,6 @@ void Ground::Release(void)
     }
 }
 
-// タイルサイズを取得
 float Ground::GetTileSize(void) const
 {
     return BASE_TILE_SIZE * TILE_SCALE;

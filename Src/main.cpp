@@ -28,7 +28,7 @@ int WinMain(
 	instance.Run();
 
 	// ‰ð•ú
-	instance.Destroy();
+	instance.  DestroyInstance();
 
 	return 0;
 }

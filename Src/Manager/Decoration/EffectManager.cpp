@@ -1,190 +1,171 @@
+#include "../../Pch.h"
 #include "EffectManager.h"
-#include<EffekseerForDXLib.h>
-#include<cassert>
 
-// シングルトンインスタンスの静的初期化
+// シングルトンインスタンスの初期化
 EffectManager* EffectManager::instance_ = nullptr;
 
-// インスタンス生成メソッド
-// 未生成の場合のみ新しいインスタンスを作成する
 void EffectManager::CreateInstance(void)
 {
-    if (instance_ == nullptr) {
-        instance_ = new EffectManager();
-    }
+	if (instance_ == nullptr)
+	{
+		instance_ = new EffectManager();
+	}
 }
 
-// インスタンス取得メソッド
-// シングルトンの唯一のインスタンスへの参照を返す
 EffectManager& EffectManager::GetInstance(void)
 {
-    return *instance_;
+	return *instance_;
 }
 
-// コンストラクタ
-// 初期化処理を実行
-EffectManager::EffectManager(void) {
-    int i[NONE_MAX] = {};
-    // 配列テスト用（現在コメントアウト）
-    //effectTest_.emplace(EFFECT::NONE,i);
-}
-
-// エフェクトの追加
-void EffectManager::Add(const EFFECT& efc, int data)
+void EffectManager:: DestroyInstance(void)
 {
-    // 連想配列内にすでに要素が入っているかを検索
-    // 入っていたら処理終了 (重複登録を防止)
-    if (effectRes_.find(efc) != effectRes_.end()) return;
-
-    // 新規データのため情報を追加
-    // 注意: 変数名が不一致 (_efc → *efc, _data → *data)
-    effectRes_.emplace(efc, data);
+	if (instance_ != nullptr)
+	{
+		// 管理しているリソースの解放
+		instance_->Release();
+		delete instance_;
+		instance_ = nullptr;
+	}
 }
 
-// エフェクトの再生
-void EffectManager::Play(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size, const SoundManager::SOUND _sound)
+EffectManager::EffectManager(void)
 {
-
-    // 元データがないときは警告 (未登録のエフェクトを再生しようとした場合)
-    // 注意: 変数名が不一致 (_efc → *efc)
-    if (effectRes_.find(efc) == effectRes_.end()) assert("設定していないエフェクトを再生しようとしています。");
-
-    if (effectPlay_.find(efc) != effectPlay_.end()) {
-        StopEffekseer3DEffect(effectPlay_[efc]);
-    }
-
-    // 再生配列内に要素が入っていないかを検索
-    if (effectPlay_.find(efc) == effectPlay_.end()) {
-        // 入っていないとき要素を追加する
-        effectPlay_.emplace(efc, PlayEffekseer3DEffect(effectRes_[efc]));
-    }
-    else {
-        // 入っていたら元あるやつに上書きする
-        effectPlay_[efc] = PlayEffekseer3DEffect(effectRes_[efc]);
-    }
-
-    // 各種設定同期（位置、回転、大きさを設定）
-    SyncEffect(efc, pos, qua, size);
-
-    // 効果音の再生
-    // NONE以外の効果音が指定されていれば再生
-    if (_sound != SoundManager::SOUND::NONE) {
-        SoundManager::GetInstance().Play(_sound);
-    }
 }
 
-// 個別にエフェクトを管理する用
-int EffectManager::PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qya, const float& size, const SoundManager::SOUND sound)
+void EffectManager::Add(const EFFECT& efc, int resourceHandle)
 {
-    if (effectRes_.find(efc) == effectRes_.end()) return -1;
-
-    // エフェクトの再生
-    int handle = PlayEffekseer3DEffect(effectRes_[efc]);
-
-    // 初回の位置合わせ
-    SyncEffect(efc, pos, qya, size);
-
-    // 効果音の再生
-    if (sound != SoundManager::SOUND::NONE) {
-        SoundManager::GetInstance().Play(sound);
-    }
-
-    return handle;
+	// 既に同じエフェクトタイプが登録されている場合はスキップ
+	if (resourceMap_.find(efc) != resourceMap_.end())
+	{
+		return;
+	}
+	resourceMap_.emplace(efc, resourceHandle);
 }
 
-// ハンドル指定でエフェクト停止
+void EffectManager::Play(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size, SoundManager::SOUND sound)
+{
+	auto it = resourceMap_.find(efc);
+	if (it == resourceMap_.end())
+	{
+		assert(!"登録されていないエフェクトを再生しようとしました。");
+		return;
+	}
+
+	// 簡易再生モード：同じ種類が既に再生中なら、多重再生を避けるために古い方を停止
+	Stop(efc);
+
+	// Effekseerエフェクトの再生（インスタンスハンドルを取得）
+	int handle = PlayEffekseer3DEffect(it->second);
+	playHandleMap_[efc] = handle;
+
+	// 再生直後に位置・回転・スケールを同期
+	SyncEffect(handle, pos, qua, size);
+
+	// SEの指定がある場合は同時に再生
+	if (sound != SoundManager::SOUND::NONE)
+	{
+		SoundManager::GetInstance().Play(sound);
+	}
+}
+
+int EffectManager::PlayAndGetHandle(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size, SoundManager::SOUND sound)
+{
+	auto it = resourceMap_.find(efc);
+	if (it == resourceMap_.end())
+	{
+		return -1;
+	}
+
+	// 詳細再生モード：種類ごとの上書きを行わず、新しいハンドルを発行して返す
+	int handle = PlayEffekseer3DEffect(it->second);
+	SyncEffect(handle, pos, qua, size);
+
+	if (sound != SoundManager::SOUND::NONE)
+	{
+		SoundManager::GetInstance().Play(sound);
+	}
+
+	return handle;
+}
+
+void EffectManager::Stop(const EFFECT& efc)
+{
+	auto it = playHandleMap_.find(efc);
+	if (it != playHandleMap_.end())
+	{
+		// 簡易再生用の管理マップからハンドルを検索して停止
+		StopEffekseer3DEffect(it->second);
+		playHandleMap_.erase(it);
+	}
+}
+
 void EffectManager::StopHandle(int handle)
 {
-    // ハンドルが有効な場合かつ、再生中のみ停止
-    if (handle != -1 && IsEffekseer3DEffectPlaying(handle) == 0)
-    {
-        StopEffekseer3DEffect(handle);
-    }
+	// 指定された再生ハンドルを直接停止（再生中かどうかを確認してから実行）
+	if (handle != -1 && IsEffekseer3DEffectPlaying(handle) == 0)
+	{
+		StopEffekseer3DEffect(handle);
+	}
 }
 
-// エフェクトの再生停止
-// param _efc: エフェクト種類名
-void EffectManager::Stop(const EFFECT& _efc)
+void EffectManager::SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, float size)
 {
-    // 配列内に入っていないものを停止しようとしたら警告
-    if (effectPlay_.find(_efc) == effectPlay_.end()) assert("設定していないエフェクトを停止しようとしています。");
-
-    // 再生停止
-    StopEffekseer3DEffect(effectPlay_[_efc]);
+	auto it = playHandleMap_.find(efc);
+	if (it != playHandleMap_.end())
+	{
+		// 簡易再生モード用の同期処理
+		SyncEffect(it->second, pos, qua, size);
+	}
 }
 
-// エフェクトの各パラメータ同期
-// 位置、回転、大きさをリアルタイムで更新する
-// param _efc: エフェクト名
-// param _pos: 位置情報
-// param _qua: 回転情報
-// param _size: 大きさ
-void EffectManager::SyncEffect(const EFFECT& efc, const VECTOR& pos, const Quaternion& qua, const float& size)
+void EffectManager::SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, float size)
 {
-    // 大きさの設定
-    // 注意: 変数名が不一致 (_size → *size)
-    SetScalePlayingEffekseer3DEffect(effectPlay_[efc], size, size, size);
+	// ハンドルが無効、または既に再生終了している場合は何もしない
+	if (handle == -1 || IsEffekseer3DEffectPlaying(handle) != 0)
+	{
+		return;
+	}
 
-    // 角度の設定（クォータニオンからオイラー角に変換）
-    // 注意: 変数参照の不一致 (*qua.ToEuler() → qua->ToEuler(), _qua → *qua)
-    SetRotationPlayingEffekseer3DEffect(effectPlay_[efc], qua.ToEuler().x, qua.ToEuler().y, qua.ToEuler().z);
+	// 位置の更新
+	SetPosPlayingEffekseer3DEffect(handle, pos.x, pos.y, pos.z);
 
-    // 位置の設定
-    // 注意: 変数参照の不一致 (*pos.x → pos->x, _pos → *pos)
-    SetPosPlayingEffekseer3DEffect(effectPlay_[efc], pos.x, pos.y, pos.z);
+	// 回転の更新（クォータニオンをオイラー角に変換して適用）
+	VECTOR euler = qua.ToEuler();
+	SetRotationPlayingEffekseer3DEffect(handle, euler.x, euler.y, euler.z);
+
+	// スケールの更新（全軸均等）
+	SetScalePlayingEffekseer3DEffect(handle, size, size, size);
 }
 
-// 個体ごと管理用
-void EffectManager::SyncEffect(int handle, const VECTOR& pos, const Quaternion& qua, const float& size)
+bool EffectManager::IsPlayEffect(const EFFECT& efc)
 {
-    // ハンドルが無効、または再生終了していたら何もしない
-    if (handle == -1 || IsEffekseer3DEffectPlaying(handle) != 0) return;
-
-    SetScalePlayingEffekseer3DEffect(handle, size, size, size);
-
-    // クォータニオンをオイラー角に変換してセット
-    VECTOR euler = qua.ToEuler();
-    SetRotationPlayingEffekseer3DEffect(handle, euler.x, euler.y, euler.z);
-
-    SetPosPlayingEffekseer3DEffect(handle, pos.x, pos.y, pos.z);
+	auto it = playHandleMap_.find(efc);
+	if (it == playHandleMap_.end())
+	{
+		return false;
+	}
+	return IsPlayEffect(it->second);
 }
 
-// エフェクトの再生確認
-// param _efc: エフェクト名
-// return: 再生中ならtrue、停止中ならfalse
-bool EffectManager::IsPlayEffect(const EFFECT& _efc)
-{
-    // エフェクトが未設定(-1)か再生中でない(-1)の場合
-    if (effectPlay_[_efc] == -1 || IsEffekseer3DEffectPlaying(effectPlay_[_efc]) == -1)
-    {
-        return true;
-    }
-    return false;
-}
-
-// エフェクトの再生確認(個体ごと管理用)
 bool EffectManager::IsPlayEffect(int handle)
 {
-    if (handle == -1) { return false; }
-
-    // Effekseerの関数で再生中か確認 (0が再生中)
-    return IsEffekseer3DEffectPlaying(handle) == 0;
+	if (handle == -1)
+	{
+		return false;
+	}
+	// EffekseerのAPI: 0が再生中、それ以外(負の値など)は停止状態を示す
+	return IsEffekseer3DEffectPlaying(handle) == 0;
 }
 
-// 解放処理
-// エフェクトリソースの解放
 void EffectManager::Release(void)
 {
-    // 配列内の要素を全て消去
-    // 元々のデータはリソースマネージャが持っているので問題なし
-    effectRes_.clear();
-}
+	// 現在管理している全てのインスタンスハンドルを停止させる
+	for (auto& pair : playHandleMap_)
+	{
+		StopEffekseer3DEffect(pair.second);
+	}
 
-// 消去処理
-// インスタンスの破棄
-void EffectManager::Destroy(void)
-{
-    // 全てのエフェクトデータを解放してからインスタンスを削除
-    Release();
-    delete instance_;
+	// マップ情報のクリア（リソースハンドル自体は別途読み込み側で管理される想定）
+	playHandleMap_.clear();
+	resourceMap_.clear();
 }

@@ -1,65 +1,55 @@
+#include "../Pch.h"
 #include "ColliderLine.h"
 #include "../Object/Common/Transform.h"
 
-// コンストラクタ
-ColliderLine::ColliderLine(TAG tag, const Transform* follow, const VECTOR& localPosStart, const VECTOR& localPosEnd)
-    : ColliderBase(SHAPE::LINE, tag, follow)
-    , localPosStart_(localPosStart)
-    , localPosEnd_(localPosEnd)
+ColliderLine::ColliderLine(TAG collisionTag, const Transform* followTarget, const VECTOR& localStartPos, const VECTOR& localEndPos)
+    : ColliderBase(SHAPE::LINE, collisionTag, followTarget)
+    , localStartPos_(localStartPos)
+    , localEndPos_(localEndPos)
 {
 }
 
-// デストラクタ
-ColliderLine::~ColliderLine(void)
+void ColliderLine::SetLocalStartPos(const VECTOR& position)
 {
+    localStartPos_ = position;
 }
 
-// ローカル座標での設定(開始地点)
-void ColliderLine::SetLocalPosStart(const VECTOR& pos)
+void ColliderLine::SetLocalEndPos(const VECTOR& position)
 {
-    localPosStart_ = pos;
+    localEndPos_ = position;
 }
 
-// ローカル座標での設定(終了地点)
-void ColliderLine::SetLocalPosEnd(const VECTOR& pos)
+const VECTOR& ColliderLine::GetLocalStartPos(void) const
 {
-    localPosEnd_ = pos;
+    return localStartPos_;
 }
 
-// ローカル座標の取得(開始地点)
-const VECTOR& ColliderLine::GetLocalPosStart(void) const
+const VECTOR& ColliderLine::GetLocalEndPos(void) const
 {
-    return localPosStart_;
+    return localEndPos_;
 }
 
-// ローカル座標の取得(終了地点)
-const VECTOR& ColliderLine::GetLocalPosEnd(void) const
+VECTOR ColliderLine::GetWorldStartPos(void) const
 {
-    return localPosEnd_;
+    // ローカル座標 → ワールド座標へ変換（開始点）
+    return TransformLocalToWorld(localStartPos_);
 }
 
-// ワールド座標の取得(開始地点)
-VECTOR ColliderLine::GetPosStart(void) const
+VECTOR ColliderLine::GetWorldEndPos(void) const
 {
-    return GetRotPos(localPosStart_);
+    // ローカル座標 → ワールド座標へ変換（終了点）
+    return TransformLocalToWorld(localEndPos_);
 }
 
-// ワールド座標の取得(終了地点)
-VECTOR ColliderLine::GetPosEnd(void) const
+void ColliderLine::DrawDebug(int debugColor) const
 {
-    return GetRotPos(localPosEnd_);
-}
-
-// デバック用描画
-void ColliderLine::DrawDebug(int color)
-{
-    VECTOR s = GetPosStart();
-    VECTOR e = GetPosEnd();
+    const VECTOR start = GetWorldStartPos();
+    const VECTOR end = GetWorldEndPos();
 
     // 線分を描画
-    DrawLine3D(s, e, color);
+    DrawLine3D(start, end, debugColor);
 
     // 始点・終点を球体で補助表示
-    DrawSphere3D(s, RADIUS, DIV_NUM, color, color, true);
-    DrawSphere3D(e, RADIUS, DIV_NUM, color, color, true);
+    DrawSphere3D(start, DEBUG_POINT_RADIUS, DEBUG_SEGMENT_COUNT, debugColor, debugColor, false);
+    DrawSphere3D(end, DEBUG_POINT_RADIUS, DEBUG_SEGMENT_COUNT, debugColor, debugColor, false);
 }

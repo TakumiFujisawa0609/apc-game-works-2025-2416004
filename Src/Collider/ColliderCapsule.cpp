@@ -1,74 +1,59 @@
+#include "../Pch.h"
 #include "ColliderCapsule.h"
 #include "../Object/Common/Transform.h"
 
-// コンストラクタ
-ColliderCapsule::ColliderCapsule(TAG tag, const Transform* follow, const VECTOR& localPosStart, const VECTOR& localPosEnd, float radius)
-    : ColliderBase(SHAPE::CAPSULE, tag, follow)
-    , localPosStart_(localPosStart)
-    , localPosEnd_(localPosEnd)
+ColliderCapsule::ColliderCapsule(TAG collisionTag, const Transform* followTarget, const VECTOR& localStartPos, const VECTOR& localEndPos, float radius)
+    : ColliderBase(SHAPE::CAPSULE, collisionTag, followTarget)
+    , localStartPos_(localStartPos)
     , radius_(radius)
 {
 }
 
-// デストラクタ
-ColliderCapsule::~ColliderCapsule(void)
+void ColliderCapsule::SetLocalStartPos(const VECTOR& position)
 {
+    localStartPos_ = position;
 }
 
-// ローカル座標での設定(開始地点)
-void ColliderCapsule::SetLocalPosStart(const VECTOR& pos)
+void ColliderCapsule::SetLocalEndPos(const VECTOR& position)
 {
-    localPosStart_ = pos;
+    localEndPos_ = position;
 }
 
-// ローカル座標での設定(終了地点)
-void ColliderCapsule::SetLocalPosEnd(const VECTOR& pos)
-{
-    localPosEnd_ = pos;
-}
-
-// 衝突半径の設定
 void ColliderCapsule::SetRadius(float radius)
 {
     radius_ = radius;
 }
 
-// ローカル座標の取得(開始地点)
-const VECTOR& ColliderCapsule::GetLocalPosStart(void) const
+const VECTOR& ColliderCapsule::GetLocalStartPos(void) const
 {
-    return localPosStart_;
+    return localStartPos_;
 }
 
-// ローカル座標の取得(終了地点)
-const VECTOR& ColliderCapsule::GetLocalPosEnd(void) const
+const VECTOR& ColliderCapsule::GetLocalEndPos(void) const
 {
-    return localPosEnd_;
+    return localEndPos_;
 }
 
-// ワールド座標の取得(開始地点)
-VECTOR ColliderCapsule::GetPosStart(void) const
+VECTOR ColliderCapsule::GetWorldStartPos(void) const
 {
-    return GetRotPos(localPosStart_);
+    return TransformLocalToWorld(localStartPos_);
 }
 
-// ワールド座標の取得(終了地点)
-VECTOR ColliderCapsule::GetPosEnd(void) const
+VECTOR ColliderCapsule::GetWorldEndPos(void) const
 {
-    return GetRotPos(localPosEnd_);
+    return TransformLocalToWorld(localEndPos_);
 }
 
-// 半径の取得
 float ColliderCapsule::GetRadius(void) const
 {
     return radius_;
 }
 
-// デバッグ用描画
-void ColliderCapsule::DrawDebug(int color)
+void ColliderCapsule::DrawDebug(int debugColor) const
 {
-    VECTOR s = GetPosStart();
-    VECTOR e = GetPosEnd();
+    const VECTOR startPos = GetWorldStartPos();
+    const VECTOR endPos = GetWorldEndPos();
 
     // カプセルを描画
-    DrawCapsule3D(s, e, radius_, DIV_NUM, color, color, false);
+    DrawCapsule3D(startPos, endPos, radius_, DEBUG_SEGMENT_COUNT, debugColor, debugColor, false);
 }

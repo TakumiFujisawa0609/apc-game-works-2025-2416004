@@ -1,23 +1,25 @@
+#include "../../Pch.h"
 #include "Transform.h"
-
-#include<DxLib.h>
-
 #include"../../Utility/Utility.h"
 
 Transform::Transform(void)
 {
+	// モデルハンドルを無効値(-1)で初期化
 	modelId = -1;
 
+	// 各要素を初期値(1.0 または 0.0)に設定
 	scl = Utility::VECTOR_ONE;
 	rot = Utility::VECTOR_ZERO;
 	pos = Utility::VECTOR_ZERO;
 	localPos = Utility::VECTOR_ZERO;
 
+	// 行列を単位行列で初期化
 	matScl = MGetIdent();
 	matRot = MGetIdent();
 	matPos = MGetIdent();
-	quaRot = Quaternion();
 
+	// 回転を無回転で初期化
+	quaRot = Quaternion();
 	quaRotLocal = Quaternion();
 }
 
@@ -44,32 +46,28 @@ Transform::~Transform(void)
 
 void Transform::Update(void)
 {
-	//大きさ
+	// スケール行列の作成
 	matScl = MGetScale(scl);
 
-	//回転
+	// 回転情報の更新（クォータニオンからオイラー角と行列を算出）
 	rot = quaRot.ToEuler();
 	matRot = quaRot.ToMatrix();
 
-	//位置
+	// 位置行列の作成
 	matPos = MGetTranslate(pos);
 
-	//行列の合成
+	// 合成用行列の初期化（単位行列）
 	MATRIX mat = MGetIdent();
 
-	//ローカル回転合成
-	Quaternion  q = quaRot.Mult(quaRotLocal);
+	// ワールド回転とローカル回転を合成
+	Quaternion q = quaRot.Mult(quaRotLocal);
 
-	//スケール適用
+	// 行列の合成：スケール -> 回転 -> 位置 の順で適用
 	mat = MMult(mat, matScl);
-
-	//回転適用
 	mat = MMult(mat, q.ToMatrix());
-
-	//位置適用
 	mat = MMult(mat, matPos);
 
-	//行列をモデルに判定
+	// モデルハンドルが有効な場合のみ、計算した行列をモデルに反映
 	if (modelId != -1)
 	{
 		MV1SetMatrix(modelId, mat);
@@ -108,12 +106,12 @@ VECTOR Transform::GetLeft(void) const
 
 VECTOR Transform::GetUp(void) const
 {
-	return GetDir(Utility::DIR_U);
+	return GetDir(Utility::DIR_UP);
 }
 
 VECTOR Transform::GetDown(void) const
 {
-	return GetDir(Utility::DIR_D);
+	return GetDir(Utility::DIR_DOWN);
 }
 
 VECTOR Transform::GetDir(const VECTOR& vec) const

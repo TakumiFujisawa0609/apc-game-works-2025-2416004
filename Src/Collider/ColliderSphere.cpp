@@ -1,52 +1,45 @@
+#include "../Pch.h"
 #include "ColliderSphere.h"
 #include "../Object/Common/Transform.h"
 
-// コンストラクタ
-ColliderSphere::ColliderSphere(TAG tag, const Transform* follow, const VECTOR& localPos, float radius)
-    : ColliderBase(SHAPE::SPHERE, tag, follow)
-    , localPos_(localPos)
+ColliderSphere::ColliderSphere(TAG collisionTag, const Transform* followTarget, const VECTOR& localPosition, float radius)
+    : ColliderBase(SHAPE::SPHERE, collisionTag, followTarget)
+    , localPosition_(localPosition)
     , radius_(radius)
 {
 }
 
-// デストラクタ
-ColliderSphere::~ColliderSphere(void)
+void ColliderSphere::SetLocalPosition(const VECTOR& position)
 {
+    localPosition_ = position;
 }
 
-// ローカル座標の設定
-void ColliderSphere::SetLocalPos(const VECTOR& pos)
-{
-    localPos_ = pos;
-}
-
-// 衝突半径の設定
 void ColliderSphere::SetRadius(float radius)
 {
-    radius_ = radius;
+    // 半径が負にならないように制限
+    radius_ = std::max(radius, 0.0f);
 }
 
-// ローカル座標の取得
-const VECTOR& ColliderSphere::GetLocalPos(void) const
+const VECTOR& ColliderSphere::GetLocalPosition(void) const
 {
-    return localPos_;
+    return localPosition_;
 }
 
-// ワールド座標の取得
-VECTOR ColliderSphere::GetPos(void) const
+VECTOR ColliderSphere::GetWorldPosition(void) const
 {
-    return GetRotPos(localPos_);
+    // ローカル座標をワールド座標へ変換
+    return TransformLocalToWorld(localPosition_);
 }
 
-// 半径の取得
 float ColliderSphere::GetRadius(void) const
 {
     return radius_;
 }
 
-// デバッグ用描画
-void ColliderSphere::DrawDebug(int color)
+void ColliderSphere::DrawDebug(int debugColor) const
 {
-    VECTOR pos = GetPos();
-    DrawSphere3D(pos, radius_, DIV_NUM, color, color, false);
+    const VECTOR worldPosition = GetWorldPosition();
+
+    // デバッグ用に球体を描画
+    DrawSphere3D(worldPosition, radius_, DEBUG_SEGMENT_COUNT, debugColor, debugColor, false);
 }

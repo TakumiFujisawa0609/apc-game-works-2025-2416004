@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -8,132 +9,147 @@
 class EnemyManager;
 class Tower;
 
+/// @brief ステージ上のスポナーやタワーの動的生成・配置を管理するクラス
+/// @details プレイヤーの周囲にのみオブジェクトを配置し、負荷を最適化する
 class StageManager
 {
 public:
-    // コンストラクタ
+    /// @brief コンストラクタ
     StageManager(void);
 
-    // デストラクタ
+    /// @brief デストラクタ
     ~StageManager(void);
 
-    // 読み込み
+    /// @brief モデルリソースなどの読み込み
     void Load(void);
 
-    // 初期化
-    void Init(EnemyManager* enemyManager);
+    /// @brief 初期化処理
+    /// @param enemyManager エネミーの生成を依頼するEnemyManagerへのポインタ
+    void Initialize(EnemyManager* enemyManager);
 
-    // 更新処理
+    /// @brief 更新処理（スポナー・タワーの動的登録など）
+    /// @param playerPos プレイヤーの現在座標
+    /// @param deltaTime デルタタイム
     void Update(const VECTOR& playerPos, float deltaTime);
 
-    // 描画処理
+    /// @brief 標準の描画処理
     void Draw(void) const;
 
-    // 描画処理（カリング対応）
+    /// @brief カリングを考慮した描画処理
+    /// @param cameraPos カメラの座標
+    /// @param cameraDir カメラの方向ベクトル
     void Draw(const VECTOR& cameraPos, const VECTOR& cameraDir) const;
 
-    // 解放処理
+    /// @brief 解放処理
     void Release(void);
 
-    // スポナー設定
+    /// @brief 生成されるエネミースポナーの基本設定を行う
+    /// @param spawnRange エネミーが出現する範囲
+    /// @param enemyType 出現させる敵の種類名
+    /// @param activationRange プレイヤーがこの距離に入るとスポナーが稼働
+    /// @param spawnInterval スポーンの間隔（秒）
+    /// @param maxEnemies このスポナーから出現する最大数
     void SetSpawnerSettings(float spawnRange, const std::string& enemyType,
         float activationRange, float spawnInterval, int maxEnemies);
 
-    // タワーを生成（グリッド座標指定）
+    /// @brief 特定のグリッド座標にタワーを生成する
+    /// @param gridX グリッドX
+    /// @param gridZ グリッドZ
     void CreateTower(int gridX, int gridZ);
 
-    // 動的レベル設定を有効化
+    /// @brief プレイヤーからの距離に応じた敵レベルの動的変動を設定する
+    /// @param enable 有効化フラグ
+    /// @param distancePerLevel 何メートル（単位）ごとにレベルを1上げるか
     void EnableDynamicLevel(bool enable, float distancePerLevel = 1000.0f);
 
-    // 原点座標を設定（レベル計算の基準点）
+    /// @brief レベル計算の基準点（難易度0の地点）を設定する
+    /// @param origin 基準となる座標
     void SetOriginPos(const VECTOR& origin);
 
-    // スポナー数を取得
+    /// @brief 現在登録されている総スポナー数を取得
+    /// @return スポナー数
     int GetSpawnerCount(void) const;
 
-    // アクティブなスポナー数を取得
+    /// @brief プレイヤーの周囲で稼働しているアクティブなスポナー数を取得
+    /// @return アクティブなスポナー数
     int GetActiveSpawnerCount(void) const;
 
 private:
-    // スポナー情報
+    /// @brief スポナーの管理用情報
     struct SpawnerInfo
     {
         VECTOR gridPos;        // グリッド座標（ワールド座標）
-        int spawnerIndex;      // EnemyManager内のスポナーインデックス
-        bool isActive;         // アクティブ状態
+        int spawnerIndex;      // EnemyManager内の管理用インデックス
+        bool isActive;         // 稼働中かどうか
     };
 
+    /// @brief タワーの管理用情報
     struct TowerInfo
     {
-        VECTOR gridPos;
-        int towerIndex; // towers_リストのインデックス
+        VECTOR gridPos;        // グリッド座標（ワールド座標）
+        int towerIndex;        // towers_リスト内の要素番号
     };
 
-    // スポナーの間隔（グリッド単位）
-    static constexpr float SPAWNER_INTERVAL = 3000.0f;
+    // 配置ルール関連の定数
+    static constexpr float SPAWNER_INTERVAL = 3000.0f;        // スポナーを配置するグリッド間隔
+    static constexpr float REGISTER_RANGE = 3000.0f;         // プレイヤーの周囲どれくらいの範囲にスポナーを作るか
+    static constexpr int TOWER_PLACE_GRID_INTERVAL = 1000;    // タワーを配置するグリッド間隔
 
-    // スポナーの登録範囲（プレイヤーからの距離）
-    static constexpr float REGISTER_RANGE = 3000.0f;
-
-    // グリッド座標からキーを生成
+    /// @brief グリッド座標(X, Z)から一意のハッシュキーを生成する
     int GetGridKey(int gridX, int gridZ) const;
 
-    // ワールド座標からグリッド座標を取得
+    /// @brief ワールド座標をグリッド座標（整数値）に変換する
     void WorldToGrid(const VECTOR& worldPos, int& outGridX, int& outGridZ) const;
 
-    // グリッド座標からワールド座標を取得
+    /// @brief グリッド座標をワールド座標に変換する
     VECTOR GridToWorld(int gridX, int gridZ) const;
 
-    // 周辺のグリッド座標を取得
+    /// @brief 指定座標の周辺にある有効なグリッド座標リストを取得する
     std::vector<std::pair<int, int>> GetNearbyGrids(const VECTOR& centerPos, float range) const;
 
-    // 周辺のスポナーを登録・解除
+    /// @brief プレイヤーの移動に合わせて周辺のスポナーを動的に追加・削除する
     void RegisterNearbySpawners(const VECTOR& playerPos);
 
-    // スポナーを生成（グリッド座標指定）
+    /// @brief スポナーを実体化し、EnemyManagerへ登録する
     void CreateSpawner(int gridX, int gridZ);
 
-    // スポナーを削除（グリッド座標指定）
+    /// @brief スポナーを破棄し、EnemyManagerから除外する
     void RemoveSpawner(int gridX, int gridZ);
 
-    // 距離に応じたレベル計算
+    /// @brief 基準点からの距離に基づいてエネミーのレベルを算出する
     int CalculateEnemyLevelByDistance(const VECTOR& spawnPos) const;
 
 private:
+    // 外部参照・状態関連
+    EnemyManager* enemyManager_;                              // エネミー管理クラスへの参照
+    bool isLoaded_;                                           // リソースロード済みフラグ
 
-    // タワーの配置間隔設定
-    static constexpr int TOWER_PLACE_GRID_INTERVAL = 1000;
+    // スポナー設定関連
+    float spawnRange_;                                        // 敵の出現半径
+    std::string enemyType_;                                   // 出現する敵の型名
+    float activationRange_;                                   // スポナーが起動するプレイヤーとの距離
+    float spawnInterval_;                                     // 敵が出る間隔
+    int maxEnemies_;                                          // 同時生存最大数
 
-    EnemyManager* enemyManager_;                              // EnemyManagerへの参照
+    // レベル・難易度関連
+    bool useDynamicLevel_;                                    // 距離でレベルを変えるか
+    float levelIncreaseDistance_;                             // レベルアップに必要な距離
+    VECTOR originPos_;                                        // レベル計算の開始地点
+    int maxEnemyLevel_;                                       // 出現するレベルの上限
 
-    bool isLoaded_;                                           // 読み込み済みフラグ
+    // スポナー管理関連
+    std::unordered_map<int, SpawnerInfo> spawners_;          // 配置済みの全スポナー（Key: GridKey）
+    std::unordered_set<int> activeSpawners_;                  // 現在稼働中のスポナーキー
 
-    // スポナー設定
-    float spawnRange_;                                        // エネミーのスポーン範囲
-    std::string enemyType_;                                   // エネミータイプ
-    float activationRange_;                                   // プレイヤー検知範囲
-    float spawnInterval_;                                     // スポーン間隔
-    int maxEnemies_;                                          // 最大エネミー数
+    // タワー管理関連
+    std::unordered_map<int, TowerInfo> placedTowers_;         // 配置済みの全タワー（Key: GridKey）
+    std::vector<std::unique_ptr<Tower>> towers_;             // タワーの実体リスト
+    int towerModelId_;                                        // タワーの共通モデルID
 
-    // レベル関連
-    bool useDynamicLevel_;                                    // 距離に応じてレベルを変動させるか
-    float levelIncreaseDistance_;                             // この距離ごとにレベル+1
-    VECTOR originPos_;                                        // レベル計算の基準点（原点）
-    int maxEnemyLevel_;                                       // エネミーの最大レベル
+    // 最適化・更新制御関連
+    VECTOR lastPlayerPos_;                                    // 距離判定用：前回の更新時のプレイヤー座標
+    float updateTimer_;                                       // 更新頻度を抑えるためのタイマー
 
-    // スポナー管理
-    std::unordered_map<int, SpawnerInfo> spawners_;          // 生成済みスポナー（キー: グリッドキー）
-    std::unordered_set<int> activeSpawners_;                  // アクティブなスポナーのキー
-
-    // タワー管理
-    std::unordered_map<int, TowerInfo> placedTowers_;         // 配置済みタワー（キー: グリッドキー）
-    std::vector<std::unique_ptr<Tower>> towers_;             // タワーインスタンスのリスト
-    int towerModelId_;
-
-    // 最適化用
-    VECTOR lastPlayerPos_;                                    // 前回のプレイヤー座標
-    float updateTimer_;                                       // 更新タイマー
-
-    // タワー配置ロジック
+    /// @brief プレイヤーの移動に応じてタワーの自動配置・更新を行う
     void UpdateTowerPlacement(const VECTOR& playerPos);
 };

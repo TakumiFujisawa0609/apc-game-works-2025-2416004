@@ -52,10 +52,10 @@ public:
 	static constexpr VECTOR DIR_L = { -1.0f, 0.0f, 0.0f };
 
 	/// <summary>ã•ûŒü (Y+)</summary>
-	static constexpr VECTOR DIR_U = { 0.0f, 1.0f, 0.0f };
+	static constexpr VECTOR DIR_UP = { 0.0f, 1.0f, 0.0f };
 
 	/// <summary>‰º•ûŒü (Y-)</summary>
-	static constexpr VECTOR DIR_D = { 0.0f, -1.0f, 0.0f };
+	static constexpr VECTOR DIR_DOWN = { 0.0f, -1.0f, 0.0f };
 
 	/// <summary>•‚“®¬”“_‚ÌŒë·”äŠr—p‚ÌÅ¬’l</summary>
 	static constexpr float kEpsilonNormalSqrt = 1e-15F;

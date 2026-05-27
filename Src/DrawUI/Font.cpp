@@ -1,21 +1,27 @@
-#include"Font.h"
+#include "../Pch.h"
+#include "Font.h"
 
-
-//シングルトンインスタンスの初期化
+// シングルトンインスタンスの静的メンバ初期化
 Font* Font::instance_ = nullptr;
 
-//コンストラクタ
-Font::Font() : defaultFont_(""){}
+std::size_t Font::PairHash::operator()(const std::pair<int, int>& p) const noexcept
+{
+	return std::hash<int>()(p.first) ^ (std::hash<int>()(p.second) << 1);
+}
 
-//デストラクタ
+Font::Font(void) : defaultFont_("")
+{
+}
+
 Font::~Font(void)
 {
-	//全てのフォントハンドルを解放
+	// 登録されている全てのフォントハンドルをループで解放
 	for (auto& outerPair : fontHandles_)
 	{
 		for (auto& innerPair : outerPair.second)
 		{
 			int fontHandle = innerPair.second;
+			// 有効かつデフォルト以外のハンドルを削除
 			if (fontHandle != -1 && fontHandle != DX_DEFAULT_FONT_HANDLE)
 			{
 				DeleteFontToHandle(fontHandle);
@@ -23,7 +29,7 @@ Font::~Font(void)
 		}
 	}
 
-	//動的フォントハンドルを解放
+	// キャッシュされている動的フォントハンドルも同様に解放
 	for (const auto& dynamicFont : dynamicFontHandles_)
 	{
 		if (dynamicFont.second != -1 && dynamicFont.second != DX_DEFAULT_FONT_HANDLE)
@@ -39,10 +45,9 @@ void Font::CreateInstance(void)
 	{
 		instance_ = new Font();
 	}
-	instance_->Init();
+	instance_->Initialize();
 }
 
-//シングルトンインスタンス取得
 Font& Font::GetInstance(void)
 {
 	if (instance_ == nullptr)
@@ -52,28 +57,24 @@ Font& Font::GetInstance(void)
 	return *instance_;
 }
 
-//フォントの初期化
-void Font::Init(void)
+void Font::Initialize(void)
 {
+	// 必要に応じて初期化処理を記述
 }
 
-//フォントの追加
 bool Font::AddFont(const std::string& fontId, const std::string& internalFontName, const std::string& fontPath, int fontSize, int fontWeight, int fontType)
 {
-	// 1. フォントファイルをシステムに一時登録する
-	// これを行わないと、ファイルパスがあっても「内部フォント名」で作成できない場合があります
-	if (fontPath != "") {
-		if (AddFontResourceEx(fontPath.c_str(), FR_PRIVATE, NULL) > 0) {
-			// 登録成功（OSがinternalFontNameを認識できる状態になった）
-		}
-		else {
-			// ファイルからの読み込み失敗
+	// OSのフォントシステムにファイルを一時登録（FR_PRIVATE: このプロセスのみ有効）
+	if (fontPath != "")
+	{
+		if (AddFontResourceEx(fontPath.c_str(), FR_PRIVATE, NULL) <= 0)
+		{
+			// ファイルの読み込みまたは登録に失敗
 			return false;
 		}
 	}
 
-	// 2. フォントハンドルの作成
-	// 日本語名が含まれても良いように、DXライブラリの文字コード設定に準拠
+	// 指定されたパラメータでDXライブラリのフォントハンドルを作成
 	int handle = CreateFontToHandle(internalFontName.c_str(), fontSize, fontWeight, fontType);
 
 	if (handle == -1)
@@ -81,28 +82,27 @@ bool Font::AddFont(const std::string& fontId, const std::string& internalFontNam
 		return false;
 	}
 
-	// マップに保存
+	// IDと(サイズ, タイプ)のペアをキーにしてハンドルを保存
 	fontHandles_[fontId][{fontSize, fontType}] = handle;
 
-	// デフォルトフォントが空なら設定
+	// 最初に登録されたフォントを自動的にデフォルトに設定
 	if (defaultFont_ == "")
 	{
 		defaultFont_ = fontId;
 	}
 
-	// 内部で使用する名前を保存（動的生成用）
+	// 後続のサイズ変更描画（動的生成）のために内部フォント名を記録
 	fontIdToInternalName_[fontId] = internalFontName;
 
 	return true;
 }
 
-//フォントの削除
 void Font::RemoveFont(const std::string& fontId)
 {
 	auto it = fontHandles_.find(fontId);
 	if (it != fontHandles_.end())
 	{
-		// 内側のハンドルを全て削除
+		// このIDに紐付いている全てのサイズバリエーションを解放
 		for (auto& innerPair : it->second)
 		{
 			int fontHandle = innerPair.second;
@@ -115,10 +115,10 @@ void Font::RemoveFont(const std::string& fontId)
 	}
 }
 
-//デフォルトフォントの設定
 void Font::SetDefaultFont(const std::string& fontId)
 {
 	auto it = fontHandles_.find(fontId);
+	// 存在するIDかつ有効なハンドルリストを持っているか確認
 	if (it != fontHandles_.end() && !it->second.empty())
 	{
 		defaultFont_ = fontId;
@@ -129,18 +129,18 @@ void Font::SetDefaultFont(const std::string& fontId)
 	}
 }
 
-//テキスト描画
 void Font::DrawText(const std::string& fontId, int x, int y, const char* text, int color, int fontSize, int fontType)
 {
 	int fontHandle = -1;
 	int useFontType = (fontType >= 0) ? fontType : FONT_TYPE_NORMAL;
 
-	// フォント名取得
-	auto itName = fontNameMap_.find(fontId);
-	std::string internalFontName = (itName != fontNameMap_.end()) ? itName->second : "";
+	// IDから内部フォント名を検索
+	auto itName = fontIdToInternalName_.find(fontId);
+	std::string internalFontName = (itName != fontIdToInternalName_.end()) ? itName->second : "";
 
 	if (fontSize > 0)
 	{
+		// 指定されたサイズ・タイプのハンドルが既存か確認
 		auto itFont = fontHandles_.find(fontId);
 		if (itFont != fontHandles_.end())
 		{
@@ -152,14 +152,15 @@ void Font::DrawText(const std::string& fontId, int x, int y, const char* text, i
 			}
 		}
 
+		// 未作成のサイズなら動的に生成を試みる
 		if (fontHandle == -1)
 		{
-			// ここで登録済みフォント名を使う
- 			fontHandle = GetDynamicFontHandle(internalFontName, fontSize, 3, useFontType);
+			fontHandle = GetDynamicFontHandle(internalFontName, fontSize, 3, useFontType);
 		}
 	}
 	else
 	{
+		// サイズ未指定の場合は登録済みの中から最初に見つかったものを使用
 		auto itFont = fontHandles_.find(fontId);
 		if (itFont != fontHandles_.end())
 		{
@@ -171,29 +172,30 @@ void Font::DrawText(const std::string& fontId, int x, int y, const char* text, i
 		}
 	}
 
+	// 最終的に取得できなかった場合は標準ハンドルを使用
 	if (fontHandle == -1)
 	{
 		fontHandle = DX_DEFAULT_FONT_HANDLE;
 	}
 
-         	DrawFormatStringFToHandle(x, y, color, fontHandle, text);
+	// DXライブラリの描画関数を呼び出し
+	DrawFormatStringToHandle(x, y, color, fontHandle, text);
 }
 
-// デフォルトフォントで描画
 void Font::DrawDefaultText(int x, int y, const char* text, int color, int fontSize, int fontType)
 {
 	DrawText(defaultFont_, x, y, text, color, fontSize, fontType);
 }
 
-//文字の横幅を取得
 int Font::GetDefaultTextWidth(const std::string& text) const
 {
+	// 描画時の文字列のピクセル幅を計算
 	return GetDrawStringWidth(text.c_str(), static_cast<int>(text.size()));
 }
 
-//一時的なフォントを取得または生成
 int Font::GetDynamicFontHandle(const std::string& internalFontName, int fontSize, int fontWeight, int fontType)
 {
+	// サイズとタイプの組み合わせでキャッシュを検索
 	auto key = std::make_pair(fontSize, fontType);
 	auto it = dynamicFontHandles_.find(key);
 
@@ -202,6 +204,7 @@ int Font::GetDynamicFontHandle(const std::string& internalFontName, int fontSize
 		return it->second;
 	}
 
+	// キャッシュにない場合は新規作成して登録
 	int fontHandle = CreateFontToHandle(internalFontName.c_str(), fontSize, fontWeight, fontType);
 	if (fontHandle != -1)
 	{
@@ -210,12 +213,14 @@ int Font::GetDynamicFontHandle(const std::string& internalFontName, int fontSize
 	return fontHandle;
 }
 
-//解放処理
-void Font::Destroy(void)
+void Font:: DestroyInstance(void)
 {
 	if (instance_ != nullptr)
 	{
-		delete instance_;       // デストラクタが呼ばれてフォントを解放
+		// インスタンスの削除。デストラクタ内で各リソースのDelete処理が走る
+		delete instance_;
 		instance_ = nullptr;
 	}
 }
+
+

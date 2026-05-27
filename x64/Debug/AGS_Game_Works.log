@@ -1,1 +1,96 @@
-﻿  AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe
+﻿  pch.cpp
+  FpsController.cpp
+  SceneCredit.cpp
+  SceneOption.cpp
+  SceneTutorial.cpp
+  Glider.cpp
+  FireAttack.cpp
+  SkyDome.cpp
+  EnemySpawner.cpp
+  CollisionController.cpp
+  ColliderModel.cpp
+  ColliderCapsule.cpp
+  ColliderSphere.cpp
+  ColliderLine.cpp
+  ColliderBase.cpp
+  EnemyData.cpp
+  EnemyManager.cpp
+  EnemySlime.cpp
+  EnemyBase.cpp
+  GroundManager.cpp
+  Ground.cpp
+  Loading.cpp
+  SceneUi.cpp
+  Application.cpp
+  Easing.cpp
+  IntVector3.cpp
+  Quaternion.cpp
+  Vector2.cpp
+  Font.cpp
+  PauseMenu.cpp
+  main.cpp
+  EffectManager.cpp
+  SoundManager.cpp
+  Camera.cpp
+  InputManager.cpp
+  Resource.cpp
+  ResourceManager.cpp
+  SceneManager.cpp
+  TimeManager.cpp
+  AnimationController.cpp
+  Transform.cpp
+  Grid.cpp
+  Player.cpp
+  UnitBase.cpp
+  SceneBase.cpp
+  SceneGame.cpp
+  SceneScore.cpp
+  SceneTitle.cpp
+  Utility.cpp
+  Sword.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\FireAttack.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Object/Player/FireAttack.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(120,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (ソース ファイル '/Src/Object/Common/AnimationController.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Scene\SceneTitle.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Manager/Generic/SceneManager.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.cpp(409,28): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (ソース ファイル '/Src/Object/Common/AnimationController.cpp' をコンパイルしています)
+  
+  StageManager.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(120,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (ソース ファイル '/Src/Object/UnitBase.cpp' をコンパイルしています)
+  
+  WaterAttack.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Scene\SceneTitle.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Scene/SceneTitle.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\WaterAttack.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Object/Player/WaterAttack.cpp' をコンパイルしています)
+  
+  Tower.cpp
+D:\AGSdeta\AGS_Game_Works\Src\Scene\SceneTitle.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Scene/SceneScore.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.h(120,8): warning C4002: 関数に似たマクロ呼び出し 'GetCurrentTime' の引数が多すぎます
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\FireAttack.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\WaterAttack.h(1,1): warning C4819: ファイルは、現在のコード ページ (932) で表示できない文字を含んでいます。データの損失を防ぐために、ファイルを Unicode 形式で保存してください。
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(285,56): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(289,28): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Player.cpp(1039,24): warning C4244: '=': 'int' から 'float' への変換です。データが失われる可能性があります。
+  (ソース ファイル '/Src/Object/Player/Player.cpp' をコンパイルしています)
+  
+  AGS_Game_Works.vcxproj -> D:\AGSdeta\AGS_Game_Works\x64\Debug\AGS_Game_Works.exe

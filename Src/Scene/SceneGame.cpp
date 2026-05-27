@@ -1,4 +1,5 @@
 #include "SceneGame.h"
+#include "../Application.h"
 #include "../Manager/Generic/Camera.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Manager/Generic/InputManager.h"
@@ -16,7 +17,6 @@
 #include "../Manager/System/Loading.h"
 #include "../DrawUI/Font.h"
 
-// コンストラクタ
 SceneGame::SceneGame(void)
 {
 	isStartFont_ = true;
@@ -41,8 +41,7 @@ SceneGame::SceneGame(void)
 
 }
 
-// 読み込み
-void SceneGame::Load()
+void SceneGame::Load(void)
 {
 	Loading::GetInstance()->SetProgress(10.0f);
 
@@ -80,8 +79,6 @@ void SceneGame::Load()
 
 	Loading::GetInstance()->SetProgress(60.0f);
 
-	// サウンドの読み込み
-	
 	
 
 
@@ -94,23 +91,23 @@ void SceneGame::Load()
 	Loading::GetInstance()->SetProgress(100.0f);
 }
 
-// 読み込み終了
-void SceneGame::EndLoad()
+void SceneGame::EndLoad(void)
 {
 	SceneBase::EndLoad();
 }
 
-// 初期化
-void SceneGame::Init()
+void SceneGame::Initialize(void)
 {
 
 	if (Loading::GetInstance()->IsLoading()) return;
 
 	// ゲームBGM登録
-	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_GAME, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_GAME).handleId_);
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_GAME,
+		ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_GAME).handleId_);
 
 	// 戦闘BGMの登録
-	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_FAITE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_FAITE).handleId_);
+	SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_FAITE, 
+		ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_FAITE).handleId_);
 
 	// カメラ設定
 	auto camera = SceneManager::GetInstance().GetCamera();
@@ -118,21 +115,23 @@ void SceneGame::Init()
 
 	isStartFont_ = true;
 
-	//ステージの初期化
-	groundManager_->Init();
+
+	// サウンドの読み込み
+	groundManager_->Initialize();
+
 
 	//エネミーマネージャー初期化
-	enemyManager_->Init();
+	enemyManager_->Initialize();
 
 	//プレイヤーの初期化
-	player_->Init();
-	camera->SetFollow(&player_->GetTransform());
+	player_->Initialize();
+	camera->SetFollowTarget(&player_->GetTransform());
 
 	// ステージマネージャーの初期化
-	stageManager_->Init(enemyManager_.get());
+	stageManager_->Initialize(enemyManager_.get());
 
 	// スカイドームの初期化
-	skyDome_->Init();
+	skyDome_->Initialize();
 	skyDome_->SetFollowTarget(&player_->GetPos());
 
 	// エネミースポナーの配置設定
@@ -145,8 +144,7 @@ void SceneGame::Init()
 	SceneManager::GetInstance().PushScene(std::make_shared<SceneTutorial>());
 }
 
-// エネミースポナーの配置設定
-void SceneGame::SetupEnemySpawners()
+void SceneGame::SetupEnemySpawners(void)
 {
 	// スポナーの基本設定
 	stageManager_->SetSpawnerSettings(
@@ -178,7 +176,6 @@ void SceneGame::SetupEnemySpawners()
 #endif
 }
 
-// 更新処理
 void SceneGame::Update(void)
 {
 
@@ -190,15 +187,18 @@ void SceneGame::Update(void)
 	auto camera = SceneManager::GetInstance().GetCamera();
 	auto loader = Loading::GetInstance();
 
-
-	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
-
 	// プレイヤーの更新
 	player_->Update();
 
 	// プレイヤーの移動距離をSceneManagerに保存
 	float distance = player_->GetDistanceFromOriginXZ();
 	SceneManager::GetInstance().SetPlayerDistance(distance);
+
+	// プレイヤーの位置を設定
+	groundManager_->SetPlayerPos(player_->GetPos());
+
+	// 全ての敵の位置を設定
+	groundManager_->SetEnemyPos(enemyManager_->GetAllEnemyPositions());
 
 	// ステージの更新
 	groundManager_->Update();
@@ -229,9 +229,8 @@ void SceneGame::Update(void)
 	// 時間を取得
 	float times = time.GetGameTime();
 
-	if (times >= LIMIT_TIME)
+	if (times >= LIMIT_TIME || player_->GetHP() <= 0 )
 	{
-		sound.Play(SoundManager::SOUND::SE_PUSH);
 
 		auto newScene = std::make_shared<SceneScore>();
 
@@ -239,38 +238,32 @@ void SceneGame::Update(void)
 
 		return;
 	}
-
-	// プレイヤーの位置を設定
-	groundManager_->SetPlayerPos(player_->GetPos());
-
-	// 全ての敵の位置を設定
-	groundManager_->SetEnemyPos(enemyManager_->GetAllEnemyPositions());
 }
 
 void SceneGame::Draw(void)
 {
 	auto camera = SceneManager::GetInstance().GetCamera();
 
-	// --- 3D描画 ---
-	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVec());
+	// 3D描画 
+	groundManager_->Draw(player_->GetPos(), camera->GetPos(), camera->GetFrontVector());
 	skyDome_->Draw();
-	stageManager_->Draw(player_->GetPos(), camera->GetFrontVec());
-	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVec());
+	stageManager_->Draw(player_->GetPos(), camera->GetFrontVector());
+	enemyManager_->Draw(camera->GetPos(), camera->GetFrontVector());
 	player_->Draw();
 
-	// --- UI描画 (2D) ---
+	// UI描画 (2D) 
 	auto& font = Font::GetInstance();
 	auto& time = TimeManager::GetInstance();
 
-	// 1. 残り時間の計算
+	// 残り時間の計算
 	float remainingTime = LIMIT_TIME - time.GetGameTime();
 	if (remainingTime < 0.0f) remainingTime = 0.0f;
 
-	// 2. 表示用文字列の作成
+	// 表示用文字列の作成
 	char timeStr[64];
-	sprintf_s(timeStr, "残り時間: %.1f", remainingTime); // "TIME:" を付けると分かりやすくなります
+	sprintf_s(timeStr, "残り時間: %.1f", remainingTime); 
 
-	// 3. 座標の計算 (右上)
+	// 座標の計算 (右上)
 	int textWidth = font.GetDefaultTextWidth(timeStr);
 
 	// 右端から 40ピクセル 離れた位置に配置
@@ -278,17 +271,20 @@ void SceneGame::Draw(void)
 	// 上端から 30ピクセル 離れた位置
 	int drawY = 30;
 
-	// 4. 描画
-	unsigned int timeColor = (remainingTime <= 5.0f) ? GetColor(255, 50, 50) : GetColor(255, 255, 255);
+	const int fontSize = 40;
 
-	font.DrawDefaultText(drawX, drawY, timeStr, timeColor, 40, Font::FONT_TYPE_ANTIALIASING_EDGE);
+	// 4. 描画
+	unsigned int timeColor = (remainingTime <= 5.0f) ? 
+		GetColor(255, 50, 50) : GetColor(255, 255, 255);
+
+	font.DrawDefaultText(drawX, drawY, timeStr, timeColor, fontSize, 
+		Font::FONT_TYPE_ANTIALIASING_EDGE);
 
 #ifdef _DEBUG
 	// デバッグ情報など
 #endif
 }
 
-// 解放処理
 void SceneGame::Release(void)
 {
 	// ステージマネージャーの解放
@@ -310,6 +306,20 @@ void SceneGame::Release(void)
 	//エネミーデータの解放
 	enemyData_.reset();
 }
+
+void SceneGame::OnResume(void)
+{
+	auto camera = SceneManager::GetInstance().GetCamera();
+	camera->ChangeMode(Camera::MODE::TPS_MOUSE);
+	camera->SetFollowTarget(&player_->GetTransform());
+
+	SetMouseDispFlag(FALSE);
+	SetMousePoint(
+		Application::SCREEN_SIZE_X / 2,
+		Application::SCREEN_SIZE_Y / 2
+	);
+}
+
 
 // 描画(デバック)
 void SceneGame::DrawDebug(void)

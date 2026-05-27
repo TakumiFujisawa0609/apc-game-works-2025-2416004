@@ -1,9 +1,8 @@
+#include "../../Pch.h"
 #include "EnemySlime.h"
 #include "../../Utility/Utility.h"
 #include "../../Collider/ColliderSphere.h"
-#include "../../Manager/Decoration/SoundManager.h"
 
-// コンストラクタ
 EnemySlime::EnemySlime(void)
 {
     targetPos_ = Utility::VECTOR_ZERO;
@@ -15,7 +14,6 @@ EnemySlime::EnemySlime(void)
     isInView_ = false;
 }
 
-// 読み込み
 void EnemySlime::Load(int modelId)
 {
     trans_.modelId = modelId;
@@ -24,46 +22,40 @@ void EnemySlime::Load(int modelId)
     EnemyBase::Load(modelId);
 }
 
-// 初期化
-void EnemySlime::Init(const VECTOR& startPos)
+void EnemySlime::Initialize(const VECTOR& startPos)
 {
-    EnemyBase::Init(startPos);
+    EnemyBase::Initialize(startPos);
     trans_.scl = VGet(0.5f, 0.5f, 0.5f);
     UpdateColliderOffset();
 }
 
-// コライダのオフセットを更新
 void EnemySlime::UpdateColliderOffset(void)
 {
     // 既存の球体コライダーを探す
     auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::SPHERE));
     if (it != ownColliders_.end())
     {
-        // 一旦削除して作り直す（または座標更新関数があればそれを使う）
         delete it->second;
         ownColliders_.erase(it);
     }
 
-    // 新しいオフセット位置（0, COLLISION_HEIGHT_OFFSET, 0）でコライダーを作成
-    // VGet の 2番目の引数（Y座標）にオフセットを入れます
+    // Y軸に COLLISION_HEIGHT_OFFSET 分浮かせた位置に判定を作成
     ColliderSphere* sphere = new ColliderSphere(
-        ColliderBase::TAG::ENEMY,              // 自分のタグ
-        &trans_,                               // Transformへのポインタ
-        VGet(0.0f, COLLISION_HEIGHT_OFFSET, 0.0f), // ここで上に上げる
-        radius_                                // 半径
+        ColliderBase::TAG::ENEMY,              
+        &trans_,                               
+        VGet(0.0f, COLLISION_HEIGHT_OFFSET, 0.0f), 
+        radius_                                
     );
 
     // コライダーリストに再登録
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::SPHERE), sphere);
 }
 
-// 追従対象
 void EnemySlime::SetTargetPos(const VECTOR& pos)
 {
     targetPos_ = pos;
 }
 
-// 更新処理
 void EnemySlime::Update(void)
 {
     // プレイヤーへの方向ベクトル
@@ -85,7 +77,7 @@ void EnemySlime::Update(void)
         isChasing_ = false;
     }
 
-    // 移動処理（状態異常による速度補正を適用）
+    // 移動処理
     if (isChasing_)
     {
         // 基本の移動速度に状態異常の倍率を適用
@@ -113,22 +105,22 @@ void EnemySlime::Draw(void) const
     EnemyBase::Draw();
 
 #ifdef _DEBUG
-    // 球体コライダのオフセット位置を可視化
-    auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::SPHERE));
-    if (it != ownColliders_.end())
-    {
-        const ColliderSphere* sphere = dynamic_cast<const ColliderSphere*>(it->second);
-        if (sphere)
-        {
-            VECTOR colliderPos = sphere->GetPos();
-            DrawSphere3D(colliderPos, 10.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
-            DrawLine3D(trans_.pos, colliderPos, GetColor(0, 255, 255));
+    //// 球体コライダのオフセット位置を可視化
+    //auto it = ownColliders_.find(static_cast<int>(COLLIDER_TYPE::SPHERE));
+    //if (it != ownColliders_.end())
+    //{
+    //    const ColliderSphere* sphere = dynamic_cast<const ColliderSphere*>(it->second);
+    //    if (sphere)
+    //    {
+    //        VECTOR colliderPos = sphere->GetLocalPosition();
+    //        DrawSphere3D(colliderPos, 10.0f, 8, GetColor(0, 255, 0), GetColor(0, 255, 0), TRUE);
+    //        DrawLine3D(trans_.pos, colliderPos, GetColor(0, 255, 255));
 
-            VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(colliderPos, VGet(0, 50, 0)));
-            DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
-                GetColor(0, 255, 255), "Offset Y: 30");
-        }
-    }
+    //        VECTOR screenPos = ConvWorldPosToScreenPos(VAdd(colliderPos, VGet(0, 50, 0)));
+    //        DrawFormatString(static_cast<int>(screenPos.x), static_cast<int>(screenPos.y),
+    //            GetColor(0, 255, 255), "Offset Y: 30");
+    //    }
+    //}
 #endif
 }
 

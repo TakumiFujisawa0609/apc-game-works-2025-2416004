@@ -31,7 +31,7 @@ void Application::CreateInstance(void)
 	if (instance_ == nullptr)
 	{
 		instance_ = new Application();
-		instance_->Init();
+		instance_->Initialize();
 	}
 }
 
@@ -40,7 +40,7 @@ Application& Application::GetInstance(void)
 	return *instance_;
 }
 
-void Application::Init(void)
+void Application::Initialize(void)
 {
 	//アプリケーションの初期設定
 	SetWindowText("Fly");
@@ -103,7 +103,7 @@ void Application::Init(void)
 	EffectManager::CreateInstance();
 
 	pauseMenu_ = new PauseMenu();
-	pauseMenu_->Init();
+	pauseMenu_->Initialize();
 	
 	activeUI_ = ActiveUI::NONE;
 
@@ -137,7 +137,9 @@ void Application::Run(void)
 		// --- ESCキーでポーズ表示 ---
 		if (isActiveUI_ == false)
 		{
-			if (!pauseMenu_->IsVisible() && inputManager.IsTrgDown(KEY_INPUT_ESCAPE) == 1)
+			if (!pauseMenu_->IsVisible() && inputManager.IsTrgDown(KEY_INPUT_ESCAPE) == 1 || 
+				inputManager.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1,
+					InputManager::JOYPAD_BTN::START_BUTTON))
 			{
 				pauseMenu_->Show();  // メニュー表示
 			}
@@ -213,14 +215,14 @@ void Application::Run(void)
 	}
 }
 
-void Application::Destroy(void)
+void Application:: DestroyInstance(void)
 {
-	InputManager::GetInstance().Destroy();
-	ResourceManager::GetInstance().Destroy();
-	SceneManager::GetInstance().DestroyInstance();
-	Font::GetInstance().Destroy();
+	InputManager::GetInstance(). DestroyInstance();
+	ResourceManager::GetInstance(). DestroyInstance();
+	SceneManager::GetInstance(). DestroyInstanceInstance();
+	Font::GetInstance(). DestroyInstance();
 
-	EffectManager::GetInstance().Destroy();
+	EffectManager::GetInstance(). DestroyInstance();
 
 	//エフェクシアの終了
 	Effkseer_End();

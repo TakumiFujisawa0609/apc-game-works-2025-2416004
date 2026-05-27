@@ -1,70 +1,84 @@
-// Tower.h
 #pragma once
+
+#include <DxLib.h>
 
 #include "../UnitBase.h"
 #include "../../Manager/System/CollisionController.h"
 
-// タワー固有のデータ
-struct TowerData
-{
-    float attackRange;
-    int damage;
-    float attackInterval;
-};
 
+
+/// @brief 防衛拠点となるタワーを制御するクラス
 class Tower : public UnitBase
 {
 public:
-    // コンストラクタ: 座標を受け取る
+
+    /// @brief タワー固有のパラメータを管理する構造体
+    struct TowerData
+    {
+        float attackRange;      // 攻撃範囲（半径）
+        int damage;             // 与えるダメージ量
+        float attackInterval;   // 次の攻撃までの待機時間（秒）
+    };
+
+    /// @brief コンストラクタ
+    /// @param position 設置する座標
     Tower(const VECTOR& position);
 
-    // デストラクタ
-    virtual ~Tower() override;
+    /// @brief デストラクタ
+    virtual ~Tower(void) override;
 
-    // リソースの読み込み (モデルIDを設定)
+    /// @brief リソースの読み込み
+    /// @param modelId 使用するモデルのハンドル
     virtual void Load(int modelId);
 
-    // 初期化
-    virtual void Init(void) override;
+    /// @brief 初期化処理
+    virtual void Initialize(void) override;
 
-    // 更新処理
+    /// @brief 更新処理
     virtual void Update(void) override;
 
-    // 描画処理 (モデル描画を実装)
+    /// @brief 描画処理
     virtual void Draw(void) const override;
 
-    // 解放処理
+    /// @brief 解放処理
     virtual void Release(void) override;
 
-    // タワーのパラメータを設定
+    /// @brief タワーのパラメータを一括設定
+    /// @param data 設定するタワーデータ
     void ApplyData(const TowerData& data);
 
-    // 座標の設定
+    /// @brief 座標の設定
+    /// @param position 設定する座標
     void SetPosition(const VECTOR& position);
 
-    // 地面との接触フラグを取得
+    /// @brief 地面との接触フラグを取得
+    /// @return 接地していればtrue
     bool IsGround(void) const { return isGround_; }
 
-   void CalcGravityPow(void) override;
+    /// @brief 重力計算のオーバーライド
+    void CalcGravityPow(void) override;
 
 protected:
-
-    // 衝突開始
+    /// @brief 衝突開始イベント
+    /// @param info 衝突相手の情報
     void OnCollisionEnter(const CollisionInfo& info) override;
 
-    // 衝突継続
+    /// @brief 衝突継続イベント
+    /// @param info 衝突相手の情報
     void OnCollisionStay(const CollisionInfo& info) override;
+
 private:
+    // コライダー関連定数
+    static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 1000.0f, 0.0f };  // ラインコライダー開始（上空）
+    static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };      // ラインコライダー終了（足元）
 
-    // コライダー関連
-    static constexpr VECTOR COL_LINE_START_LOCAL_POS = { 0.0f, 1000.0f, 0.0f };  // ラインライダー開始位置
-    static constexpr VECTOR COL_LINE_END_LOCAL_POS = { 0.0f, -10.0f, 0.0f };  // ラインコライダー終了位置
+    // パラメータ・タイマー関連
+    TowerData data_;            // 攻撃力、範囲などの基礎データ
+    float attackTimer_;         // 攻撃間隔を計測するタイマー
 
-    TowerData data_;
-    float attackTimer_;
+    // 地面と接触しているかどうかのフラグ
+    bool isGround_;             
 
-    // 地面との接触フラグ
-    bool isGround_;
-
+    /// @brief 衝突判定の初期化
     void InitCollider(void) override;
 };

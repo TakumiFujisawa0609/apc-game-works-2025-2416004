@@ -1,9 +1,9 @@
+#include "../../Pch.h"
 #include "EnemyManager.h"
 #include "../../Utility/Utility.h"
 #include "../../Manager/Generic/ResourceManager.h"
 #include "../Enemy/EnemySlime.h"
 
-// コンストラクタ
 EnemyManager::EnemyManager(void)
 {
     targetPos_ = Utility::VECTOR_ZERO;
@@ -11,21 +11,20 @@ EnemyManager::EnemyManager(void)
     pendingExpRewards_.clear();
 }
 
-// デストラクタ
 EnemyManager::~EnemyManager(void)
 {
 }
 
-// モデル読み込み
 void EnemyManager::Load(void)
 {
     auto& res = ResourceManager::GetInstance();
+
+    // スライムのモデルをリソースマネージャー経由で読み込み
     res.Load(ResourceManager::SRC::MODEL_SLIME).handleId_;
     
 }
 
-// 初期化
-void EnemyManager::Init(void)
+void EnemyManager::Initialize(void)
 {
     enemies_.clear();
     spawners_.clear();
@@ -33,10 +32,9 @@ void EnemyManager::Init(void)
     pendingExpRewards_.clear();
 }
 
-// 更新処理
 void EnemyManager::Update(float deltaTime, const VECTOR& playerPos)
 {
-    // スポナーの更新
+    // 各スポナーの出現タイマー等を更新
     for (auto& spawner : spawners_)
     {
         spawner->Update(deltaTime);
@@ -45,6 +43,7 @@ void EnemyManager::Update(float deltaTime, const VECTOR& playerPos)
     // エネミーデータの取得
     static EnemyData enemyData;
     static bool dataLoaded = false;
+
     if (!dataLoaded)
     {
         enemyData.LoadCSV("Data/CSV/EnemyData.csv");
@@ -115,7 +114,6 @@ void EnemyManager::Update(float deltaTime, const VECTOR& playerPos)
     }
 }
 
-// 描画処理
 void EnemyManager::Draw(void)
 {
     for (auto& enemy : enemies_)
@@ -139,11 +137,10 @@ void EnemyManager::Draw(void)
 #endif
 }
 
-// 描画処理（カリング対応）
 void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
 {
     // カリング設定
-    const float cullDistance = 8000.0f;          // 描画距離制限
+    const float cullDistance = 8000.0f;                          // 描画距離制限
     const float viewAngleCos = cosf(Utility::Deg2RadF(100.0f));  // 視野角100度
 
     int drawnEnemies = 0;
@@ -165,7 +162,7 @@ void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
         }
 
         // 視野カリング（カメラ後方なら描画しない）
-        if (distSq > 100.0f)  // 近すぎる場合は視野カリングしない
+        if (distSq > 100.0f)
         {
             VECTOR toEnemyNorm = VNorm(toEnemy);
             float dot = VDot(cameraDir, toEnemyNorm);
@@ -233,7 +230,6 @@ void EnemyManager::Draw(const VECTOR& cameraPos, const VECTOR& cameraDir)
 #endif
 }
 
-// 解放処理
 void EnemyManager::Release(void)
 {
     enemies_.clear();
@@ -242,14 +238,13 @@ void EnemyManager::Release(void)
     pendingExpRewards_.clear();
 }
 
-// スポナーを追加
 void EnemyManager::AddSpawner(const VECTOR& position, float spawnRange, const std::string& enemyType, int level)
 {
     // 1. 新しいスポナーオブジェクトを生成
     auto newSpawner = std::make_unique<EnemySpawner>(position, spawnRange, enemyType);
 
     int modelId = ResourceManager::GetInstance().LoadModelDuplicate(ResourceManager::SRC::MODEL_ENEMYSPAWNER);
-    newSpawner->SetModelId(modelId); // 新しいスポナーに対してのみ実行
+    newSpawner->SetModelId(modelId); 
 
     // 3. レベルを設定
     newSpawner->SetEnemyLevel(level);
@@ -258,14 +253,13 @@ void EnemyManager::AddSpawner(const VECTOR& position, float spawnRange, const st
     spawners_.push_back(std::move(newSpawner));
 }
 
-// スポナーを削除
 void EnemyManager::RemoveSpawner(int index)
 {
     if (index >= 0 && index < static_cast<int>(spawners_.size()))
     {
         spawners_.erase(spawners_.begin() + index);
 
-        // 紐付けマップの更新（削除されたスポナーに関連するエネミーの紐付けを解除）
+        // 紐付けマップの更新
         std::map<int, int> newMap;
         for (auto& pair : enemyToSpawnerMap_)
         {
@@ -277,20 +271,18 @@ void EnemyManager::RemoveSpawner(int index)
             {
                 newMap[pair.first] = pair.second - 1;
             }
-            // pair.second == index の場合は追加しない（削除）
         }
         enemyToSpawnerMap_ = newMap;
     }
 }
 
-// 全スポナーをクリア
+
 void EnemyManager::ClearSpawners(void)
 {
     spawners_.clear();
     enemyToSpawnerMap_.clear();
 }
 
-// スポナーを取得（設定変更用）
 EnemySpawner* EnemyManager::GetSpawner(int index)
 {
     if (index >= 0 && index < static_cast<int>(spawners_.size()))
@@ -300,13 +292,11 @@ EnemySpawner* EnemyManager::GetSpawner(int index)
     return nullptr;
 }
 
-// 追従対象の設定
 void EnemyManager::SetTargetPos(const VECTOR& pos)
 {
     targetPos_ = pos;
 }
 
-// エネミーの中心座標を取得
 VECTOR EnemyManager::GetEnemyPos(void) const
 {
     if (enemies_.empty())
@@ -323,7 +313,6 @@ VECTOR EnemyManager::GetEnemyPos(void) const
     return center;
 }
 
-// 全てのエネミーの座標を取得
 std::vector<VECTOR> EnemyManager::GetAllEnemyPositions(void) const
 {
     std::vector<VECTOR> positions;
@@ -335,19 +324,16 @@ std::vector<VECTOR> EnemyManager::GetAllEnemyPositions(void) const
     return positions;
 }
 
-// エネミー数を取得
 int EnemyManager::GetEnemyCount(void) const
 {
     return static_cast<int>(enemies_.size());
 }
 
-// スポナー数を取得
 int EnemyManager::GetSpawnerCount(void) const
 {
     return static_cast<int>(spawners_.size());
 }
 
-// エネミーを生成（内部処理）
 std::shared_ptr<EnemyBase> EnemyManager::CreateEnemy(const EnemyInfo& info)
 {
     auto& res = ResourceManager::GetInstance();
@@ -371,7 +357,6 @@ std::shared_ptr<EnemyBase> EnemyManager::CreateEnemy(const EnemyInfo& info)
     return nullptr;
 }
 
-// スポナーからのスポーン処理
 void EnemyManager::ProcessSpawners(const EnemyData& data, const VECTOR& playerPos)
 {
     for (int i = 0; i < static_cast<int>(spawners_.size()); i++)
@@ -393,7 +378,7 @@ void EnemyManager::ProcessSpawners(const EnemyData& data, const VECTOR& playerPo
         if (!enemy) continue;
 
         // エネミーを初期化
-        enemy->Init(spawnPos);
+        enemy->Initialize(spawnPos);
 
         // スポナーのレベルを適用
         enemy->SetLevel(spawner->GetEnemyLevel());
@@ -413,8 +398,6 @@ void EnemyManager::ProcessSpawners(const EnemyData& data, const VECTOR& playerPo
     }
 }
 
-
-// 特定のスポナーに属するエネミー数をカウント
 int EnemyManager::CountEnemiesFromSpawner(int spawnerIndex) const
 {
     int count = 0;
@@ -428,19 +411,16 @@ int EnemyManager::CountEnemiesFromSpawner(int spawnerIndex) const
     return count;
 }
 
-// 死亡数を取得
 int EnemyManager::GetDeathCount(void) const
 {
     return deathCount_;
 }
 
-// 死亡数をリセット
 void EnemyManager::ResetDeathCount(void)
 {
     deathCount_ = 0;
 }
 
-// 敵のコライダを全て取得
 std::vector<const ColliderBase*> EnemyManager::GetAllEnemyColliders(void) const
 {
     std::vector<const ColliderBase*> colliders;
@@ -473,23 +453,6 @@ std::vector<const ColliderBase*> EnemyManager::GetAllEnemyColliders(void) const
     return colliders;
 }
 
-// プレイヤーのコライダを設定
-//void EnemyManager::SetPlayerColliders(const std::vector<const ColliderBase*>& colliders)
-//{
-//    // 全敵にプレイヤーコライダを登録
-//    for (auto& enemy : enemies_)
-//    {
-//        if (!enemy) continue;
-//
-//        enemy->ClearHitCollider();
-//        for (const auto& col : colliders)
-//        {
-//            enemy->AddHitCollider(col);
-//        }
-//    }
-//}
-
-// 保留中の経験値報酬を取得してクリア
 std::vector<int> EnemyManager::GetAndClearExpRewards(void)
 {
     std::vector<int> rewards = pendingExpRewards_;

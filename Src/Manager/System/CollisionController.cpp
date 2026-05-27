@@ -7,6 +7,7 @@
 #include "../../Utility/Utility.h"
 #include "../Generic/SceneManager.h"
 
+// 静的インスタンスの初期化
 CollisionController* CollisionController::instance_ = nullptr;
 
 void CollisionController::CreateInstance(void)
@@ -14,7 +15,7 @@ void CollisionController::CreateInstance(void)
     if (instance_ == nullptr)
     {
         instance_ = new CollisionController();
-        instance_->Init();
+        instance_->Initialize();
     }
 }
 
@@ -23,7 +24,7 @@ CollisionController& CollisionController::GetInstance(void)
     return *instance_;
 }
 
-void CollisionController::Destroy(void)
+void CollisionController:: DestroyInstance(void)
 {
     delete instance_;
     instance_ = nullptr;
@@ -40,7 +41,7 @@ CollisionController::~CollisionController(void)
 {
 }
 
-void CollisionController::Init(void)
+void CollisionController::Initialize(void)
 {
     actors_.clear();
     updateTimer_ = 0.0f;
@@ -48,6 +49,7 @@ void CollisionController::Init(void)
 
 void CollisionController::Update(void)
 {
+    // デルタタイムを加算し、一定間隔で判定を更新する
     updateTimer_ += SceneManager::GetInstance().GetDeltaTime();
 
     if (updateTimer_ >= UPDATE_INTERVAL)
@@ -57,10 +59,9 @@ void CollisionController::Update(void)
     }
 }
 
-// コライダペアの更新処理を分離
 void CollisionController::UpdateCollisionPairs(void)
 {
-    // 全Actorのコライダ相手をクリア
+    // 全Actorの衝突リストをリセット
     for (auto& actor : actors_)
     {
         actor->ClearHitCollider();
@@ -69,23 +70,23 @@ void CollisionController::UpdateCollisionPairs(void)
     size_t n = actors_.size();
     const float CULL_DISTANCE_SQ = cullingDistance_ * cullingDistance_;
 
-
+    // 総当たり判定（iとjのペア）
     for (size_t i = 0; i < n; ++i)
     {
-        auto& actor1 = actors_[i];
-        VECTOR pos1 = actor1->GetPos();
-        const auto& colliders1 = actor1->GetOwnColliders();
+        auto& actorA = actors_[i];
+        VECTOR posA = actorA->GetPos();
+        const auto& collidersA = actorA->GetOwnColliders();
 
         for (size_t j = i + 1; j < n; ++j)
         {
-            auto& actor2 = actors_[j];
-            VECTOR pos2 = actor2->GetPos();
+            auto& actorB = actors_[j];
+            VECTOR posB = actorB->GetPos();
 
-            // 距離カリング
+            // 距離カリング：一定距離以上離れている場合は判定をスキップ
             if (enableDistanceCulling_)
             {
-                float dx = pos2.x - pos1.x;
-                float dz = pos2.z - pos1.z;
+                float dx = posB.x - posA.x;
+                float dz = posB.z - posA.z;
                 float distSq = dx * dx + dz * dz;
 
 
@@ -95,20 +96,23 @@ void CollisionController::UpdateCollisionPairs(void)
                 }
             }
 
-            const auto& colliders2 = actor2->GetOwnColliders();
+            const auto& collidersB = actorB->GetOwnColliders();
 
-            for (const auto& pair1 : colliders1)
+            // 各Actorが持つコライダ同士の全組み合わせをチェック
+            for (const auto& pairA : collidersA)
             {
-                auto col1 = pair1.second;
+                auto colA = pairA.second;
 
-                for (const auto& pair2 : colliders2)
+                for (const auto& pairB : collidersB)
                 {
-                    auto col2 = pair2.second;
+                    auto colB = pairB.second;
 
-                    if (CanCollide(col1->GetTag(), col2->GetTag()))
+                    // タグによる衝突可否判定
+                    if (CanCollide(colA->GetCollisionTag(), colB->GetCollisionTag()))
                     {
-                        actor1->AddHitCollider(col2);
-                        actor2->AddHitCollider(col1);
+                        // 衝突リストに追加
+                        actorA->AddHitCollider(colB);
+                        actorB->AddHitCollider(colA);
 
                     }
                 }
@@ -122,6 +126,7 @@ void CollisionController::RegisterUnit(UnitBase* actor)
 {
     if (actor == nullptr) return;
 
+    // 二重登録防止
     for (const auto& a : actors_)
     {
         if (a == actor) return;
@@ -145,13 +150,15 @@ void CollisionController::Clear(void)
     actors_.clear();
 }
 
-bool CollisionController::CheckCollision(const ColliderBase* col1, const ColliderBase* col2, CollisionInfo& outInfo)
+bool CollisionController::CheckCollision(const ColliderBase* col1, 
+    const ColliderBase* col2, CollisionInfo& outInfo)
 {
     if (!col1 || !col2) return false;
 
-    auto shape1 = col1->GetShape();
-    auto shape2 = col2->GetShape();
+    auto shape1 = col1->GetShapeType();
+    auto shape2 = col2->GetShapeType();
 
+    // カプセル vs モデル
     if (shape1 == ColliderBase::SHAPE::CAPSULE && shape2 == ColliderBase::SHAPE::MODEL)
     {
         return CheckCapsuleVsModel(col1, col2, outInfo);
@@ -170,6 +177,7 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
         return result;
     }
 
+    // 線分 vs モデル
     if (shape1 == ColliderBase::SHAPE::LINE && shape2 == ColliderBase::SHAPE::MODEL)
     {
         return CheckLineVsModel(col1, col2, outInfo);
@@ -179,11 +187,13 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
         return CheckLineVsModel(col2, col1, outInfo);
     }
 
+    // 球体 vs 球体
     if (shape1 == ColliderBase::SHAPE::SPHERE && shape2 == ColliderBase::SHAPE::SPHERE)
     {
         return CheckSphereVsSphere(col1, col2, outInfo);
     }
 
+    // 球体 vs カプセル
     if (shape1 == ColliderBase::SHAPE::SPHERE && shape2 == ColliderBase::SHAPE::CAPSULE)
     {
         return CheckSphereVsCapsule(col1, col2, outInfo);
@@ -196,18 +206,20 @@ bool CollisionController::CheckCollision(const ColliderBase* col1, const Collide
     return false;
 }
 
-bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
+bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, 
+    const ColliderBase* modelCol, CollisionInfo& outInfo)
 {
     const ColliderLine* line = dynamic_cast<const ColliderLine*>(lineCol);
     const ColliderModel* model = dynamic_cast<const ColliderModel*>(modelCol);
 
     if (!line || !model) return false;
 
-    VECTOR start = line->GetPosStart();
-    VECTOR end = line->GetPosEnd();
+    VECTOR start = line->GetWorldStartPos();
+    VECTOR end = line->GetWorldEndPos();
 
+    // DxLibのモデル対線分判定
     auto hit = MV1CollCheck_Line(
-        model->GetFollow()->modelId, -1, start, end
+        model->GetFollowTarget()->modelId, -1, start, end
     );
 
     if (hit.HitFlag > 0)
@@ -224,29 +236,31 @@ bool CollisionController::CheckLineVsModel(const ColliderBase* lineCol, const Co
     return false;
 }
 
-bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphere1, const ColliderBase* sphere2, CollisionInfo& outInfo)
+bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphereA, 
+    const ColliderBase* sphereB, CollisionInfo& outInfo)
 {
-    const ColliderSphere* s1 = dynamic_cast<const ColliderSphere*>(sphere1);
-    const ColliderSphere* s2 = dynamic_cast<const ColliderSphere*>(sphere2);
+    const ColliderSphere* s1 = dynamic_cast<const ColliderSphere*>(sphereA);
+    const ColliderSphere* s2 = dynamic_cast<const ColliderSphere*>(sphereB);
 
     if (!s1 || !s2) return false;
 
-    VECTOR pos1 = s1->GetPos();
-    VECTOR pos2 = s2->GetPos();
+    VECTOR posA = s1->GetLocalPosition();
+    VECTOR posB = s2->GetLocalPosition();
     float r1 = s1->GetRadius();
     float r2 = s2->GetRadius();
 
-    VECTOR diff = VSub(pos2, pos1);
+    VECTOR diff = VSub(posB, posA);
     float distSq = VDot(diff, diff);
     float radiusSum = r1 + r2;
 
+    // 距離の2乗で比較して高速化
     if (distSq < radiusSum * radiusSum)
     {
         float dist = sqrtf(distSq);
 
-        outInfo.myCollider = sphere1;
-        outInfo.hitCollider = sphere2;
-        outInfo.hitPosition = VAdd(pos1, VScale(diff, r1 / dist));
+        outInfo.myCollider = sphereA;
+        outInfo.hitCollider = sphereB;
+        outInfo.hitPosition = VAdd(posA, VScale(diff, r1 / dist));
         outInfo.hitNormal = dist > 0.0001f ? VScale(diff, 1.0f / dist) : VGet(0, 1, 0);
         outInfo.penetration = radiusSum - dist;
         outInfo.isValid = true;
@@ -256,19 +270,21 @@ bool CollisionController::CheckSphereVsSphere(const ColliderBase* sphere1, const
     return false;
 }
 
-bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const ColliderBase* capsule, CollisionInfo& outInfo)
+bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, 
+    const ColliderBase* capsule, CollisionInfo& outInfo)
 {
     const ColliderSphere* s = dynamic_cast<const ColliderSphere*>(sphere);
     const ColliderCapsule* c = dynamic_cast<const ColliderCapsule*>(capsule);
 
     if (!s || !c) return false;
 
-    VECTOR sPos = s->GetPos();
+    VECTOR sPos = s->GetWorldPosition();
     float sRadius = s->GetRadius();
-    VECTOR cStart = c->GetPosStart();
-    VECTOR cEnd = c->GetPosEnd();
+    VECTOR cStart = c->GetWorldStartPos();
+    VECTOR cEnd = c->GetWorldEndPos();
     float cRadius = c->GetRadius();
 
+    // カプセルの線分上の最近点を求める
     VECTOR capVec = VSub(cEnd, cStart);
     VECTOR toSphere = VSub(sPos, cStart);
     float capLen = Utility::MagnitudeF(capVec);
@@ -282,6 +298,7 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     VECTOR capDir = VScale(capVec, 1.0f / capLen);
     float t = VDot(toSphere, capDir);
 
+    // 線分の範囲内にクランプ
     if (t < 0.0f) t = 0.0f;
     if (t > capLen) t = capLen;
 
@@ -304,45 +321,51 @@ bool CollisionController::CheckSphereVsCapsule(const ColliderBase* sphere, const
     return false;
 }
 
-bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, const ColliderBase* modelCol, CollisionInfo& outInfo)
+bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, 
+    const ColliderBase* modelCol, CollisionInfo& outInfo)
 {
-    // ここで 'capsule' と 'model' を定義しています
-    const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>(capsuleCol);
-    const ColliderModel* model = dynamic_cast<const ColliderModel*>(modelCol);
+    const auto* capsule = dynamic_cast<const ColliderCapsule*>(capsuleCol);
+    const auto* model = dynamic_cast<const ColliderModel*>(modelCol);
 
-    // キャストに失敗（型が違う）した場合は何もしない
-    if (capsule == nullptr || model == nullptr) return false;
+    if (!capsule || !model) { return false; }
 
-    int modelId = model->GetFollow()->modelId;
-    if (modelId < 0) return false;
+    int modelId = model->GetFollowTarget()->modelId;
+    if (modelId < 0) { return false; }
 
-    // 最新の姿勢を反映
-    MV1RefreshCollInfo(modelId, -1);
+    // 姿勢の更新
+    MV1RefreshCollInfo(modelId, COLL_TARGET_ALL);
 
-    // ★第2引数を -1 にすることで、全フレーム（メッシュ）を判定対象にする
-    MV1_COLL_RESULT_POLY_DIM hit = MV1CollCheck_Capsule(modelId, -1,
-        capsule->GetPosStart(),
-        capsule->GetPosEnd(),
-        capsule->GetRadius());
+    // モデルとカプセルの衝突判定実行
+    MV1_COLL_RESULT_POLY_DIM collResult = MV1CollCheck_Capsule(
+        modelId, COLL_TARGET_ALL,
+        capsule->GetWorldStartPos(),
+        capsule->GetWorldEndPos(),
+        capsule->GetRadius()
+    );
 
     bool isHit = false;
-    if (hit.HitNum > 0)
+    if (collResult.HitNum > 0)
     {
-        for (int i = 0; i < hit.HitNum; i++)
+        for (int i = 0; i < collResult.HitNum; i++)
         {
-            // ここでも 'model' 変数を使っています
-            if (model->IsExcludeFrame(hit.Dim[i].FrameIndex)) continue;
+            const auto& poly = collResult.Dim[i];
+
+            // 除外設定（足元など）をチェック
+            if (model->IsExcludedFrame(poly.FrameIndex)) continue;
 
             outInfo.myCollider = capsuleCol;
             outInfo.hitCollider = modelCol;
-            outInfo.hitPosition = hit.Dim[i].HitPosition;
-            outInfo.hitNormal = hit.Dim[i].Normal;
+            outInfo.hitPosition = poly.HitPosition;
+            outInfo.hitNormal = poly.Normal;
 
-            // 押し出し計算（capsule 変数を使用）
-            float dot = VDot(VSub(capsule->GetPosStart(), hit.Dim[i].HitPosition), hit.Dim[i].Normal);
-            outInfo.penetration = capsule->GetRadius() - dot;
+            // 貫通深度の計算
+            float distToPoly = VDot(VSub(capsule->GetLocalStartPos(), poly.HitPosition), poly.Normal);
+            outInfo.penetration = capsule->GetRadius() - distToPoly;
 
-            if (outInfo.penetration < 0.1f) outInfo.penetration = 0.5f;
+            // 微小なめり込みによるガタつき防止の補正
+            if (outInfo.penetration < 0.1f) {
+                outInfo.penetration = MIN_PUSH_OUT;
+            }
 
             outInfo.isValid = true;
             isHit = true;
@@ -350,7 +373,7 @@ bool CollisionController::CheckCapsuleVsModel(const ColliderBase* capsuleCol, co
         }
     }
 
-    MV1CollResultPolyDimTerminate(hit);
+    MV1CollResultPolyDimTerminate(collResult);
     return isHit;
 }
 
@@ -434,10 +457,10 @@ bool CollisionController::CanCollide(ColliderBase::TAG tagA, ColliderBase::TAG t
     return false;
 }
 
-bool CollisionController::IsInCullingRange(const VECTOR& pos1, const VECTOR& pos2) const
+bool CollisionController::IsInCullingRange(const VECTOR& posA, const VECTOR& posB) const
 {
-    float dx = pos2.x - pos1.x;
-    float dz = pos2.z - pos1.z;
+    float dx = posB.x - posA.x;
+    float dz = posB.z - posA.z;
     float distSq = dx * dx + dz * dz;
 
     return distSq <= (cullingDistance_ * cullingDistance_);

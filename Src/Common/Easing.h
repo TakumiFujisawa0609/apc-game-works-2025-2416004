@@ -1,283 +1,262 @@
-#pragma once
+ï»¿#pragma once
 
-/// <summary>
-/// “ñŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBŠJn‚É’x‚­AŒã”¼‚Å‘¬‚­‚È‚é‰Á‘¬
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuadIn(float time, float totalTime, float start, float end);
+//.@brief ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°è¨ˆç®—ç¾¤
+namespace Easing
+{
+    ///@brief äºŒæ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuadIn(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// “ñŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AI‚í‚è‚ÉŒü‚©‚Á‚ÄŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuadQut(float time, float totalTime, float start, float end);
+    ///@brief äºŒæ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤ 
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuadOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// “ñŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚É‰Á‘¬‚µAÅŒã‚ÉŒ¸‘¬‚·‚éi‰Á‘¬‚ÆŒ¸‘¬‚Ì—¼•û‚ğŠÜ‚Şj
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuadInOut(float time, float totalTime, float start, float end);
+    ///@brief äºŒæ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuadInOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// OŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBŠJn‚É”ñí‚É‚ä‚Á‚­‚èAŒã”¼‚Å‘¬‚­‚È‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CubicIn(float time, float totalTime, float start, float end);
+    ///@brief ä¸‰æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆéå¸¸ã«ã‚†ã£ãã‚ŠåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CubicIn(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// OŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AŒã‚ÅŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CubicOut(float time, float totalTime, float start, float end);
+    ///@brief ä¸‰æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CubicOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// OŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚Ì—¼•û‚ª‚ ‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CubicInOut(float time, float totalTime, float start, float end);
+    ///@brief ä¸‰æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CubicInOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// lŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBŠJn‚É”ñí‚É‚ä‚Á‚­‚èAŒã”¼‚Å‹}Œƒ‚É‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuartIn(float time, float totalTime, float start, float end);
+    ///@brief å››æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆå¼·ã„åŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuartIn(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// lŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AI‚í‚è‚ÉŒü‚©‚Á‚Ä‹}Œƒ‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuartOut(float time, float totalTime, float start, float end);
+    ///@brief å››æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆå¼·ã„æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuartOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// lŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚ª—¼•û‚ ‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuartInOut(float time, float totalTime, float start, float end);
+    ///@brief å››æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuartInOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// ŒÜŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒO‚ÅÅ‰‚Í”ñí‚É‚ä‚Á‚­‚èn‚Ü‚èŒã”¼‚Å‹}Œƒ‚É‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuintIn(float time, float totalTime, float start, float end);
+    ///@brief äº”æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆéå¸¸ã«å¼·ã„åŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuintIn(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// ŒÜŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒO‚ÅÅ‰‚Í‘¬‚­Œã”¼‚ÉŒü‚©‚Á‚ÄŠŠ‚ç‚©‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuintOut(float time, float totalTime, float start, float end);
+    ///@brief äº”æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆéå¸¸ã«å¼·ã„æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuintOut(float currentTime, float totalTime, float startValue, float endValue);
 
-/// <summary>
-/// ŒÜŸŠÖ”“I‚ÈƒC[ƒWƒ“ƒO‚ÅÅ‰‚ÍŠŠ‚ç‚©‚É‰Á‘¬‚µ’†”Õ‚ÅÅ‘¬‚É‚È‚èŒã”¼‚ÉŒü‚©‚Á‚ÄŠŠ‚ç‚©‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float QuintInOut(float time, float totalTime, float start, float end);
+    ///@brief äº”æ¬¡é–¢æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float QuintInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ã‚µã‚¤ãƒ³ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float SineIn(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ã‚µã‚¤ãƒ³ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float SineOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ã‚µã‚¤ãƒ³ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float SineInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief æŒ‡æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ€¥åŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ExpIn(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief æŒ‡æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ€¥æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ExpOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief æŒ‡æ•°ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ€¥åŠ é€Ÿâ†’æ€¥æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ExpInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å††ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CircIn(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å††ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CircOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å††ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“ 
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float CircInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å¼¾æ€§ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆãƒãƒåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ElasticIn(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å¼¾æ€§ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆãƒãƒæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ElasticOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief å¼¾æ€§ã‚¤ãƒ¼ã‚¸ãƒ³ã‚°ï¼ˆãƒãƒåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float ElasticInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief é€†æ–¹å‘ã«å‹•ã„ã¦ã‹ã‚‰åŠ é€Ÿ
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@param overshoot   åŠ©èµ°é‡
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BackIn(float currentTime, float totalTime, float startValue, float endValue, float overshoot);
+
+    ///@brief æ¸›é€Ÿæ™‚ã«å°‘ã—é€†æ–¹å‘ã¸å‹•ã
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@param overshoot   åŠ©èµ°é‡
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BackOut(float currentTime, float totalTime, float startValue, float end, float overshoot);
+
+    ///@brief åŠ é€Ÿæ¸›é€Ÿï¼‹é€†æ–¹å‘æŒ™å‹•
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@param overshoot   åŠ©èµ°é‡
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BackInOut(float currentTime, float totalTime, float startValue, float end, float overshoot);
+
+    ///@brief ãƒã‚¦ãƒ³ãƒ‰ï¼ˆåŠ é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BounceIn(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ãƒã‚¦ãƒ³ãƒ‰ï¼ˆæ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BounceOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ãƒã‚¦ãƒ³ãƒ‰ï¼ˆåŠ é€Ÿâ†’æ¸›é€Ÿï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float BounceInOut(float currentTime, float totalTime, float startValue, float endValue);
+
+    ///@brief ç·šå½¢è£œé–“ï¼ˆä¸€å®šé€Ÿåº¦ï¼‰
+    ///@param currentTime ç¾åœ¨ã®æ™‚é–“
+    ///@param totalTime   å…¨ä½“ã®æ™‚é–“
+    ///@param startValue  é–‹å§‹å€¤
+    ///@param endValue    çµ‚äº†å€¤
+    ///@return            è£œé–“å¾Œã®å€¤
+    float Linear(float currentTime, float totalTime, float startValue, float endValue);
+}
 
 
-/// <summary>
-/// ƒTƒCƒ“ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚É”ñí‚É’x‚­n‚Ü‚èAŒã”¼‚Å‹}‘¬‚É‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float SineIn(float time, float totalTime, float start, float end);
 
-/// <summary>
-/// ƒTƒCƒ“ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AI‚í‚è‚ÉŒü‚©‚Á‚Ä‹}Œƒ‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float SineOut(float time, float totalTime, float start, float end);
 
-/// <summary>
-/// ƒTƒCƒ“ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚ª—¼•ûŠÜ‚Ü‚ê‚Ä‚¨‚èAƒTƒCƒ“”g‚Ì‚æ‚¤‚ÉŠŠ‚ç‚©‚É•Ï‰»‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float SineInOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// w”ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í”ñí‚É’x‚­AŒã”¼‚Å‹}Œƒ‚É‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ExpIn(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// w”ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AŒã”¼‚Å‹}Œƒ‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ExpOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// w”ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚ª—¼•ûŠÜ‚Ü‚êA‹}Œƒ‚É•Ï‰»‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ExpInOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ‰~ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í’x‚­AŒã”¼‚Å‹}Œƒ‚É‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CircIn(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ‰~ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AI‚í‚è‚ÉŒü‚©‚Á‚ÄŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CircOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ‰~ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚Ì—¼•û‚ª‚ ‚èA‰~Œ`‚Ì‚æ‚¤‚ÉƒXƒ€[ƒY‚È“®‚«‚ğ‚Â
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float CircInOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ’e«ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‚ä‚Á‚­‚èn‚Ü‚èA“r’†‚Å”½”­‚µ‚Ä‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ElasticIn(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ’e«ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AŒã”¼‚É”½”­‚µ‚È‚ª‚çŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l< / param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ElasticOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ’e«ŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚ÌŠÔ‚É’e«Œø‰Ê‚ğŠÜ‚ñ‚¾“®‚«
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float ElasticInOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ƒoƒbƒNŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚É­‚µ‹t•ûŒü‚É“®‚«A‚»‚ÌŒã‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BackIn(float time, float totalTime, float start, float end, float s);
-
-/// <summary>
-/// ƒoƒbƒNŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­AŒã”¼‚É­‚µ‹t•ûŒü‚É“®‚¢‚ÄŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BackOut(float time, float totalTime, float start, float end, float s);
-
-/// <summary>
-/// ƒoƒbƒNŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚Ì—¼•û‚ª‚ ‚èAƒoƒbƒNŠÖ”‚Ì“Á’¥‚ğŠÜ‚ñ‚Å‚¢‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BackInOut(float time, float totalTime, float start, float end, float s);
-
-/// <summary>
-/// ƒoƒEƒ“ƒhŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚É’µ‚Ë‚é‚æ‚¤‚È“®‚«‚Å‰Á‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BounceIn(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ƒoƒEƒ“ƒhŠÖ”“I‚ÈƒC[ƒWƒ“ƒOBÅ‰‚Í‘¬‚­A’µ‚Ë‚é‚æ‚¤‚ÉŒ¸‘¬‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BounceOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// ƒoƒEƒ“ƒhŠÖ”“I‚ÈƒC[ƒWƒ“ƒOB‰Á‘¬‚ÆŒ¸‘¬‚ª—¼•û‚ ‚èA’µ‚Ë‚é“®‚«‚ª‚ ‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float BounceInOut(float time, float totalTime, float start, float end);
-
-/// <summary>
-/// üŒ`•âŠÔB‰Á‘¬‚àŒ¸‘¬‚à‚È‚­Aˆê’è‚Ì‘¬“x‚Å’¼ü“I‚É•Ï‰»‚·‚é
-/// </summary>
-/// <param name="time">Œ»İ‚ÌŠÔiŠJn‚©‚ç‚ÌŒo‰ßŠÔj</param>
-/// <param name="totalTime">‘S‘Ì‚ÌŠÔiƒAƒjƒ[ƒVƒ‡ƒ“‚Ì‘ŠÔj</param>
-/// <param name="start">ŠJn‚Ì’l</param>
-/// <param name="end">I—¹‚Ì’l</param>
-float Linear(float time, float totalTime, float start, float end);
 
 
