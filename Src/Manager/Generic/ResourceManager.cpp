@@ -1,6 +1,5 @@
+#include "../../Pch.h"
 #include"ResourceManager.h"
-
-#include<DxLib.h>
 
 #include"../../Application.h"
 #include"Resource.h"
@@ -8,9 +7,9 @@
 // シングルトンのインスタンス初期化
 ResourceManager* ResourceManager::instance_ = nullptr;
 
+// スレッドセーフ用ミューテックスの定義
 std::mutex ResourceManager::g_resMutex;
 
-// インスタンス生成（初回のみ）＋初期化呼び出し
 void ResourceManager::CreateInstance(void)
 {
 	if (instance_ == nullptr)
@@ -20,16 +19,16 @@ void ResourceManager::CreateInstance(void)
 	instance_->Initialize();
 }
 
-// インスタンス参照を返す
 ResourceManager& ResourceManager::GetInstance(void)
 {
 	return *instance_;
 }
 
-// 共通初期化処理（今は空）
 void ResourceManager::Initialize(void)
 {
 	Resource res;
+
+	// スカイドームモデルの登録
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "SkyDome/skyDome.mv1");
 	resourcesMap_.emplace(SRC::MODEL_SKY_DOME, res);
 
@@ -53,34 +52,50 @@ void ResourceManager::Initialize(void)
 	// 設定のリソース初期化
 	InitOption();
 }
-// タイトルシーン用リソースの初期化
+
 void ResourceManager::InitTitle(void)
 {
 	Resource res;
+	
+	// BGM
 
+	// タイトル用BGM
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1456298.mp3");
 	resourcesMap_.emplace(SRC::BGM_TITLE, res);
 
+	// 動画
+	
+	// 背景動画（ムービー）
 	res = Resource(Resource::TYPE::IMG, Application::PATH_MOVIE + "TitleHaikei.mp4");
 	resourcesMap_.emplace(SRC::TITLE_MOVIE, res);
 
+	// 画像
+
+	// タイトルロゴ
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tittle.png");
 	resourcesMap_.emplace(SRC::TYTLE_LOGO, res);
 
 }
 
-// ゲームシーン用リソースの初期化
 void ResourceManager::InitGame(void)
 {
 	Resource res;
+
+	// モデル
+
+	// 地面モデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/stage.mv1");
 	resourcesMap_.emplace(SRC::MODEL_GROUND, res);
 
+	// エネミースポナー（敵の拠点）モデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/EnemyHouse.mv1");
 	resourcesMap_.emplace(SRC::MODEL_ENEMYSPAWNER, res);
 
+	// タワーモデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Stage/tower.mv1");
 	resourcesMap_.emplace(SRC::MODEL_TOWER, res);
+
+	// BGM
 
 	// ゲームBGM登録
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_814620.mp3");
@@ -97,10 +112,11 @@ void ResourceManager::InitGame(void)
 	ResourceEnemy();
 }
 
-// ゲームオーバーシーン用リソースの初期化
 void ResourceManager::InitGameOver(void)
 {
 	Resource res;
+
+	// 画像
 
 	// ゲームオーバーロゴ画像を登録
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "");
@@ -108,28 +124,34 @@ void ResourceManager::InitGameOver(void)
 
 }
 
-// ゲームクリアシーン用リソースの初期化
 void ResourceManager::InitGameClear(void)
 {
 	Resource res;
+
+	// 画像
 
 	// ゲームクリアロゴ画像を登録
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "score.png");
 	resourcesMap_.emplace(SRC::GAMECLERA_LOGO, res);
 
+	// BGM
+
 	// BGM登録
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_BGM + "AS_1528820.mp3");
 	resourcesMap_.emplace(SRC::BGM_SCORE, res);
+
+	// 動画
 
 	// 背景映像
 	res = Resource(Resource::TYPE::IMG, Application::PATH_MOVIE + "BgMovie.mp4");
 	resourcesMap_.emplace(SRC::BG_MOVIE, res);
 }
 
-// チュートリアルシーン用リソースの初期化
 void ResourceManager::InitTutorial(void)
 {
 	Resource res;
+
+	// 画像
 
 	// チュートリアル画像1
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Tutorial1.png");
@@ -144,24 +166,27 @@ void ResourceManager::InitTutorial(void)
 	resourcesMap_.emplace(SRC::IMG_TUTORIAL_3, res);
 }
 
-// 設定で使うリソース初期化
+
 void ResourceManager::InitOption(void)
 {
 	Resource res;
 	
+	// 画像
+
 	// 設定背景画像
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Option.png");
 	resourcesMap_.emplace(SRC::IMG_OPTION, res);
 
+	// 操作画像
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "Option1.png");
 	resourcesMap_.emplace(SRC::IMG_OPTION_1, res);
 }
 
-
-// プレイヤー用リソース初期化
 void ResourceManager::ResourcePlayer(void)
 {
 	Resource res;
+
+	// モデル
 
 	// プレイヤーのモデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/bouningen.mv1");
@@ -174,6 +199,8 @@ void ResourceManager::ResourcePlayer(void)
 	// グライダーのモデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Player/glide.mv1");
 	resourcesMap_.emplace(SRC::MODEL_GLIDER, res);
+
+	// アニメーション
 
 	// プレイヤーの待機アニメーション
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Unarmed Idle.mv1");
@@ -195,6 +222,8 @@ void ResourceManager::ResourcePlayer(void)
 	res = Resource(Resource::TYPE::ANIM, Application::PATH_ANIM + "Player/Victory.mv1");
 	resourcesMap_.emplace(SRC::ANIM_PLAYER_GLIDE, res);
 
+	// エフェクト
+
 	// 火攻撃のエフェクト
 	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "FireAttack/patch_stElmo_area.efkproj");
 	resourcesMap_.emplace(SRC::EFFECT_FIRE, res);
@@ -206,6 +235,8 @@ void ResourceManager::ResourcePlayer(void)
 	// レベルアップのエフェクト
 	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "LevelUp/levelUp.efkefc");
 	resourcesMap_.emplace(SRC::EFFECT_LEVER_UP, res);
+
+	// 画像
 
 	// 火のスキルアイコン
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "fire.png");
@@ -223,6 +254,7 @@ void ResourceManager::ResourcePlayer(void)
 	res = Resource(Resource::TYPE::IMG, Application::PATH_IMAGE + "waterCool.png");
 	resourcesMap_.emplace(SRC::IMG_WATER_SUKILL_CD, res);
 
+	// 効果音
 
 	// 火攻撃音
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_821624.mp3");
@@ -245,13 +277,17 @@ void ResourceManager::ResourcePlayer(void)
 	resourcesMap_.emplace(SRC::SE_GLIDER, res);
 }
 
-// 敵用リソース初期化
 void ResourceManager::ResourceEnemy(void)
 {
 	Resource res;
 
+	// モデル
+
+	// エネミーモデル
 	res = Resource(Resource::TYPE::MODEL, Application::PATH_MODEL + "Enemy/sulim.mv1");
 	resourcesMap_.emplace(SRC::MODEL_SLIME, res);
+
+	// エフェクト
 
 	// 凍結エフェクト
 	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "Freeze/aice.efkefc");
@@ -273,6 +309,7 @@ void ResourceManager::ResourceEnemy(void)
 	res = Resource(Resource::TYPE::EFFEKSEER, Application::PATH_EFFECT + "anmonium/anmoniumu.efkefc");
 	resourcesMap_.emplace(SRC::EFFECT_AMMONIUM, res);
 
+	// 効果音
 
 	// 爆発音
 	res = Resource(Resource::TYPE::SOUND, Application::PATH_SE + "AS_1496191.mp3");
@@ -284,27 +321,28 @@ void ResourceManager::ResourceEnemy(void)
 
 }
 
-// 全リソースの解放処理
 void ResourceManager::Release(void)
 {
 	for (auto& p : loadedMap_)
 	{
-		p.second->Release(); // リソース解放
-		delete p.second;     // メモリ解放
+		// リソース解放
+		p.second->Release(); 
+		delete p.second;     
 	}
 
-	loadedMap_.clear();     // ロード済みリソースマップをクリア
-	resourcesMap_.clear();  // 登録済みリソースマップをクリア
+	// ロード済みリソースマップをクリア
+	loadedMap_.clear();     
+
+	// 登録済みリソースマップをクリア
+	resourcesMap_.clear();  
 }
 
-// インスタンス破棄処理
-void ResourceManager::Destroy(void)
+void ResourceManager:: DestroyInstance(void)
 {
 	Release();        // リソース解放
 	delete instance_; // インスタンス削除
 }
 
-// リソースの読み込み（読み込み済みなら再利用）
 Resource ResourceManager::Load(SRC src)
 {
 	std::lock_guard<std::mutex> lock(g_resMutex);
@@ -312,20 +350,25 @@ Resource ResourceManager::Load(SRC src)
 	Resource* res = _Load(src);
 	if (res == nullptr)
 	{
-		return Resource(); // 空のリソースを返す
+		// 空のリソースを返す
+		return Resource(); 
 	}
-	return *res; // コピーして返す
+
+	// コピーして返す
+	return *res; 
 }
 
-// モデルの複製を行い、複製IDを返す
 int ResourceManager::LoadModelDuplicate(SRC src)
 {
 	std::lock_guard<std::mutex> lock(g_resMutex);
 
 	Resource* res = _Load(src);
 	if (!res || res->handleId_ == -1)
+	{
 		return -1;
+	}
 
+	// オリジナルのモデルハンドルから複製
 	int duId = MV1DuplicateModel(res->handleId_);
 	res->duplicateModelIds_.push_back(duId);
 
@@ -338,27 +381,30 @@ int ResourceManager::GetHandle(SRC src)
 
 	if (it == resourcesMap_.end()) { return -1; }
 
-	// モデルならロードしてなければロード
+	// 内部でロード状況を確認してハンドルを返す
 	return it->second.GetHandle();
 }
 
-// コンストラクタ
 ResourceManager::ResourceManager(void)
 {
 }
 
-// 内部リソース読み込み処理
 Resource* ResourceManager::_Load(SRC src)
 {
 	// すでに読み込み済みか確認
 	auto itLoaded = loadedMap_.find(src);
+
 	if (itLoaded != loadedMap_.end())
+	{
 		return itLoaded->second;
+	}
 
 	// 登録済みリソースか確認
 	auto itRes = resourcesMap_.find(src);
 	if (itRes == resourcesMap_.end())
+	{
 		return nullptr;
+	}
 
 	// リソース読み込み（handleId_ がセットされる）
 	itRes->second.Load();

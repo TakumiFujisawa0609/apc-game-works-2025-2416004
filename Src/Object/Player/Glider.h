@@ -1,58 +1,60 @@
 #pragma once
+
 #include "../UnitBase.h"
 
+/// @brief プレイヤーが滑空する際に使用するグライダーの表示・制御クラス
 class Glider : public UnitBase
 {
 public:
-    // コンストラクタ
+    /// @brief コンストラクタ
     Glider(void);
 
-    // デストラクタ
+    /// @brief デストラクタ
     ~Glider(void);
 
-    // リソースの読み込み
+    /// @brief グライダーモデルのリソース読み込み
     void Load(void);
 
-    // 初期化
+    /// @brief 初期化処理
     void Initialize(void);
 
-    // 更新処理
+    /// @brief 更新処理（位置同期や回転計算）
     void Update(void);
 
-    // 描画処理
+    /// @brief 描画処理
     void Draw(void) const;
 
-    // 解放処理
+    /// @brief 解放処理
     void Release(void);
 
-    // フレームの座標の設定
+    /// @brief 基準となるフレーム（プレイヤーの背中など）の座標を設定
+    /// @param pos 設定するワールド座標
     void SetFramePos(const VECTOR& pos);
 
-    // プレイヤーの回転を設定
+    /// @brief プレイヤーの現在の回転情報を同期
+    /// @param playerRot プレイヤーのクォータニオン
     void SetPlayerRotation(const Quaternion& playerRot);
 
-    // グライド状態の設定
+    /// @brief グライド（滑空）状態の有効・無効を切り替え
+    /// @param gliding 有効ならtrue
     void SetGliding(bool gliding);
 
-    // グライド中かどうか
+    /// @brief 現在グライド中かどうかを取得
+    /// @return グライド中ならtrue
     bool IsGliding(void) const;
 
 private:
-    // 定数
-    static constexpr float POSITION_OFFSET_Y = -40.0f;        // Y座標オフセット
-    static constexpr float POSITION_OFFSET_Z = 0.0f;       // Z座標オフセット（背中側）
-    static constexpr VECTOR GLIDER_SCALE = { 0.4f, 0.4f, 0.4f };  // グライダーのスケール
-    static constexpr float GLIDER_TILT_ANGLE = -15.0f;        // グライダーの傾き角度
+    // 配置・外見に関する定数
+    static constexpr float POSITION_OFFSET_Y = -40.0f;           // プレイヤー基準位置からのY軸オフセット
+    static constexpr float POSITION_OFFSET_Z = 0.0f;             // プレイヤー基準位置からのZ軸オフセット
+    static constexpr VECTOR GLIDER_SCALE = { 0.4f, 0.4f, 0.4f }; // モデルの表示スケール
+    static constexpr float GLIDER_TILT_ANGLE = -15.0f;           // 飛行時の自然な傾き角度
 
-    // グライダーの基準フレーム座標
-    VECTOR framePos_;
+    // 状態管理変数
+    VECTOR framePos_;             // 追従対象となるフレームの座標
+    bool isGliding_;              // 現在滑空状態にあるかどうかのフラグ
+    Quaternion playerRot_;        // プレイヤーの向き（モデルの回転に反映）
 
-    // グライド中フラグ
-    bool isGliding_;
-
-    // プレイヤーの回転情報
-    Quaternion playerRot_;
-
-    // コライダの初期化（不要だが継承元の要求に応じて）
+    /// @brief コライダの初期化（グライダー自体に判定は持たせないため空実装）
     void InitCollider(void) override;
 };

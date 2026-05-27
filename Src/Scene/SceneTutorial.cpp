@@ -49,13 +49,11 @@ void SceneTutorial::Update(void)
     auto& input = InputManager::GetInstance();
     auto& sound = SoundManager::GetInstance();
 
-    // 左クリック または スペースキーが押された瞬間
-    if (input.IsTrgMouseLeft() || input.IsTrgDown(KEY_INPUT_SPACE))
+    if (input.IsTrgMouseLeft() || input.IsTrgDown(KEY_INPUT_SPACE)|| 
+        input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::DOWN))
     {
-        // 決定音を鳴らす（ResourceManager::SRC::SE_SELECT を使用）
         sound.Play(SoundManager::SOUND::SE_SELECT);
 
-        // 次のページへ
         pageIndex_++;
 
         // 全ページ見終わったらゲーム本編へ

@@ -17,7 +17,7 @@ EffectManager& EffectManager::GetInstance(void)
 	return *instance_;
 }
 
-void EffectManager::Destroy(void)
+void EffectManager:: DestroyInstance(void)
 {
 	if (instance_ != nullptr)
 	{

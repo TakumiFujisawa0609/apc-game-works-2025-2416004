@@ -1,3 +1,4 @@
+#include "../../Pch.h"
 #include "SceneManager.h"
 #include "../../Scene/SceneBase.h"
 #include "../../Scene/SceneTitle.h"
@@ -7,10 +8,8 @@
 #include "Camera.h"
 #include "../System/Loading.h"
 
-// インスタンスを初期化する
 SceneManager* SceneManager::instance_ = nullptr;
 
-// インスタンスを生成する
 void SceneManager::CreateInstance(void)
 {
     if (instance_ == nullptr)
@@ -20,14 +19,12 @@ void SceneManager::CreateInstance(void)
     instance_->Initialize();
 }
 
-// インスタンスを取得する
 SceneManager& SceneManager::GetInstance(void)
 {
     return *instance_;
 }
 
-// インスタンスを破棄する
-void SceneManager::DestroyInstance(void)
+void SceneManager:: DestroyInstanceInstance(void)
 {
     if (instance_)
     {
@@ -36,7 +33,6 @@ void SceneManager::DestroyInstance(void)
     }
 }
 
-// コンストラクタ
 SceneManager::SceneManager(void)
     : playerDistance_(0.0f)        
     , enemyDeathCount_(0)
@@ -49,13 +45,11 @@ SceneManager::SceneManager(void)
     camera_ = std::make_shared<Camera>();
 }
 
-// デストラクタ
 SceneManager::~SceneManager(void)
 {
     Release();
 }
 
-// 初期化する
 void SceneManager::Initialize(void)
 {
     SoundManager::CreateInstance();
@@ -77,9 +71,23 @@ void SceneManager::Initialize(void)
     ChangeScene(std::make_shared<SceneTitle>());
 }
 
-// 3D描画設定を初期化する
 void SceneManager::Init3D(void)
 {
+    // 環境光の強さ
+    const float AmbientVal = 0.8f;  
+
+    // 鏡面光・環境光のベース値
+    const float LightMidVal = 0.5f;     
+
+    // フォグの色
+    const int   FogCol = 5;             
+
+    // フォグ開始距離
+    const float FogStart = 10000.0f;    
+
+    // フォグ終了距離
+    const float FogEnd = 20000.0f;      
+
     // 背景色を設定する
     SetBackgroundColor(0, 0, 0);
 
@@ -96,20 +104,19 @@ void SceneManager::Init3D(void)
     SetUseLighting(true);
     SetLightEnable(true);
 
-    SetGlobalAmbientLight(GetColorF(0.8f, 0.8f, 0.8f, 1.0f));
+    SetGlobalAmbientLight(GetColorF(AmbientVal, AmbientVal, AmbientVal, 1.0f));
 
-    ChangeLightTypeDir(VGet(0.0f, -1.0f, 1.0f));  // ライトの方向
-    SetLightDifColor(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));  // 拡散光
-    SetLightSpcColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 鏡面光
-    SetLightAmbColor(GetColorF(0.5f, 0.5f, 0.5f, 1.0f));  // 環境光
+    ChangeLightTypeDir(VGet(0.0f, -1.0f, 1.0f));                               // ライトの方向
+    SetLightDifColor(GetColorF(1.0f, 1.0f, 1.0f, 1.0f));                       // 拡散光
+    SetLightSpcColor(GetColorF(LightMidVal, LightMidVal, LightMidVal, 1.0f));  // 鏡面光
+    SetLightAmbColor(GetColorF(LightMidVal, LightMidVal, LightMidVal, 1.0f));  // 環境光
 
     // フォグを設定する
     SetFogEnable(true);
-    SetFogColor(5, 5, 5);
-    SetFogStartEnd(10000.0f, 20000.0f);
+    SetFogColor(FogCol, FogCol, FogCol);
+    SetFogStartEnd(FogStart, FogEnd);
 }
 
-// シーンを変更する（全削除→新規追加）
 void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
 {
     // 古いシーンを解放
@@ -133,7 +140,6 @@ void SceneManager::ChangeScene(std::shared_ptr<SceneBase> scene)
         });
 }
 
-// シーンを積む（上に追加する）
 void SceneManager::PushScene(std::shared_ptr<SceneBase> scene)
 {
     scenes_.push_back(scene);
@@ -144,17 +150,20 @@ void SceneManager::PushScene(std::shared_ptr<SceneBase> scene)
     scene->Initialize();
 }
 
-// シーンを外す（上を削除する）
-void SceneManager::PopScene()
+void SceneManager::PopScene(void)
 {
     if (scenes_.size() > 1)
     {
         scenes_.back()->Release();
         scenes_.pop_back();
+
+        if (!scenes_.empty())
+        {
+            scenes_.back()->OnResume();
+        }
     }
 }
 
-// シーンをジャンプする（全削除→新規ロード）
 void SceneManager::JumpScene(std::shared_ptr<SceneBase> scene)
 {
     scenes_.clear();
@@ -185,20 +194,20 @@ void SceneManager::Update(void)
 
     if (isGameEnd_) return;
 
-  
+    const float LoadCompleteThreshold = 100.0f;
+
     // ロード中の処理を完全に分離する
     if (isSceneChanging_)
     {
         auto loader = Loading::GetInstance();
         loader->Update();
 
-        // ★重要：完全に100%になり、かつ非同期スレッドが終了するまで絶対に出さない
-        if (loader->GetProgress() >= 100.0f && !loader->IsLoading())
+        if (loader->GetProgress() >= LoadCompleteThreshold && !loader->IsLoading())
         {
             auto current = scenes_.back();
-            current->EndLoad(); // ロード終了処理
-            current->Initialize();    // 初期化
-            isSceneChanging_ = false; // ここで初めてロード終了フラグを立てる
+            current->EndLoad();
+            current->Initialize();    
+            isSceneChanging_ = false; 
         }
         return;
     }
@@ -215,7 +224,6 @@ void SceneManager::Update(void)
     if (camera_) camera_->Update();
 }
 
-// SceneManager.cpp
 void SceneManager::Draw(void)
 {
     if (scenes_.empty()) return;
@@ -223,8 +231,6 @@ void SceneManager::Draw(void)
     // 非同期ロード中の描画
     if (isSceneChanging_ || Loading::GetInstance()->IsLoading())
     {
-        // 重要：ロード中は「今あるもの」を無理に描画せず、ロード画面だけ出す
-        // もし背景に何か映したい場合は、そのテクスチャが確実に読み込み済みか確認が必要
         Loading::GetInstance()->Draw();
         return;
     }
@@ -240,7 +246,6 @@ void SceneManager::Draw(void)
     if (camera_) camera_->Draw();
 }
 
-// 解放する
 void SceneManager::Release(void)
 {
     // ロード完了を待機する
@@ -263,87 +268,76 @@ void SceneManager::Release(void)
     camera_.reset();
 
     // 各マネージャーを破棄する
-    SoundManager::GetInstance().Destroy();
-    TimeManager::GetInstance().Destroy();
-    Loading::GetInstance()->DestroyInstance();
-    CollisionController::Destroy();
+    SoundManager::GetInstance(). DestroyInstance();
+    TimeManager::GetInstance(). DestroyInstance();
+    Loading::GetInstance()-> DestroyInstanceInstance();
+    CollisionController:: DestroyInstance();
 }
 
-// ゲームを終了させる
 void SceneManager::GameEnd(void)
 {
     isGameEnd_ = true;
 }
 
-// ゲーム終了フラグを取得する
 bool SceneManager::GetGameEnd(void) const
 {
     return isGameEnd_;
 }
 
-// デルタタイムを取得する
 float SceneManager::GetDeltaTime(void) const
 {
     return deltaTime_;
 }
 
-// カメラを取得する
 std::shared_ptr<Camera> SceneManager::GetCamera(void) const
 {
     return camera_;
 }
 
-// デルタタイムをリセットする
 void SceneManager::ResetDeltaTime(void)
 {
-    deltaTime_ = 1.0f / 60.0f;
+    const float DefaultFps = 60.0f;
+    const float DefaultDeltaTime = 1.0f / DefaultFps;
+
+    deltaTime_ = DefaultDeltaTime;
     preTime_ = std::chrono::system_clock::now();
 }
 
-
-// プレイヤーの移動距離を設定
 void SceneManager::SetPlayerDistance(float distance)
 {
     playerDistance_ = distance;
 }
 
-// プレイヤーの移動距離を取得
 float SceneManager::GetPlayerDistance(void) const
 {
     return playerDistance_;
 }
 
-// プレイヤーの移動距離をリセット
 void SceneManager::ResetPlayerDistance(void)
 {
     playerDistance_ = 0.0f;
 }
 
-// エネミーの死亡数を設定
 void SceneManager::SetEnemyDeathCount(int count)
 {
     enemyDeathCount_ = count;
 }
 
-// エネミーの死亡数を取得
 int SceneManager::GetEnemyDeathCount(void) const
 {
     return enemyDeathCount_;
 }
 
-// エネミーの死亡数をリセット
 void SceneManager::ResetEnemyDeathCount(void)
 {
     enemyDeathCount_ = 0;
 }
 
-// エネミーの死亡数を加算
 void SceneManager::AddEnemyDeathCount(int add)
 {
     enemyDeathCount_ += add;
 }
 
-// ゲーム統計をリセット（距離と死亡数を一括リセット）
 void SceneManager::ResetGameStats(void)
 {
     playerDistance_ = 0.0f;

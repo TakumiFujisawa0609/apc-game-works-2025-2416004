@@ -21,7 +21,7 @@ Loading* Loading::GetInstance(void)
 }
 
 // インスタンスを破棄する
-void Loading::DestroyInstance(void)
+void Loading:: DestroyInstanceInstance(void)
 {
     if (instance_)
     {

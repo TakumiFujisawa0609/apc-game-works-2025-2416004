@@ -1,3 +1,4 @@
+#include "../../Pch.h"
 #include "Player.h"
 #include "../../Utility/Utility.h"
 #include "../../Manager/Generic/InputManager.h"
@@ -18,28 +19,16 @@
 #include "../../Application.h"
 #include "../../Collider/ColliderModel.h"
 
-// コンストラクタ
 Player::Player(void)
-// モデルIDの初期化
     : modelId_(-1)
-
-    // 剣オブジェクト生成
     , sword_(std::make_unique<Sword>())
-
-    // 火攻撃オブジェクト生成
     , fireAttack_(std::make_unique<FireAttack>())
-
-    // 水攻撃オブジェクト生成
     , waterAttack_(std::make_unique<WaterAttack>())
-
-    // グライダーオブジェクト生成
     , glider_(std::make_unique<Glider>())
-
-    // 原点位置の初期化
     , originPos_(Utility::VECTOR_ZERO)
     , localStartPos_(COL_CAPSULE_START_POS)
     , localEndPos_(COL_CAPSULE_END_POS)
-    , hpDisplay_(param_.hp)
+    , hpDisplay_(0) // Initialize内で設定
     , hpDelaySpeed_(DELAY_SPEED)
     , attackCoolTime_(0)
     , fireAttackCoolTime_(0)
@@ -61,9 +50,8 @@ Player::Player(void)
     , isAttack_(false)
     , UnitBase()
 {
-    speed_ = 5.5f;
+    speed_ = INITIALIZE_SPEED;
 }
-
 Player::~Player(void)
 {
 }
@@ -73,6 +61,7 @@ void Player::LoadParamCSV(const std::string& path)
     std::ifstream file(path);
     if (!file.is_open()) { return; }
 
+    // ヘッダー行をスキップ
     std::string line;
     std::getline(file, line);
 
@@ -118,6 +107,7 @@ void Player::Initialize(void)
 {
     auto& res = ResourceManager::GetInstance();
 
+    // 初期化処理
     trans_.pos = Utility::VECTOR_ZERO;
     prePos_ = trans_.pos;
     trans_.rot = VGet(0, 0, 0);
@@ -129,23 +119,41 @@ void Player::Initialize(void)
 
     originPos_ = trans_.pos;
 
+    const float animeSpIdel = 35.0f;
+    const float animeSpWalk = 30.0f;
+    const float animeSpAttack = 40.0f;
+    const float animeSpJump = 50.0f;
+    const float animeSpGlide = 30.0f;
 
     anim_ = std::make_unique<AnimationController>(modelId_);
-    anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_IDEL), 35.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_WALK), 30.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_ATTACK), 40.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::JUMP), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_JAMP), 50.0f);
-    anim_->AddExternal(static_cast<int>(ANIM::GLIDE), res.LoadModelDuplicate(ResourceManager::SRC::ANIM_PLAYER_GLIDE), 30.0f);
+    anim_->AddExternal(static_cast<int>(ANIM::IDEL), res.LoadModelDuplicate(
+        ResourceManager::SRC::ANIM_PLAYER_IDEL), animeSpIdel);
+    anim_->AddExternal(static_cast<int>(ANIM::WALK), res.LoadModelDuplicate(
+        ResourceManager::SRC::ANIM_PLAYER_WALK), animeSpWalk);
+    anim_->AddExternal(static_cast<int>(ANIM::ATTACK), res.LoadModelDuplicate(
+        ResourceManager::SRC::ANIM_PLAYER_ATTACK), animeSpAttack);
+    anim_->AddExternal(static_cast<int>(ANIM::JUMP), res.LoadModelDuplicate(
+        ResourceManager::SRC::ANIM_PLAYER_JAMP), animeSpJump);
+    anim_->AddExternal(static_cast<int>(ANIM::GLIDE), res.LoadModelDuplicate(
+        ResourceManager::SRC::ANIM_PLAYER_GLIDE), animeSpGlide);
 
-    EffectManager::GetInstance().Add(EffectManager::EFFECT::FIRE, res.Load(ResourceManager::SRC::EFFECT_FIRE).handleId_);
-    EffectManager::GetInstance().Add(EffectManager::EFFECT::WATER, res.Load(ResourceManager::SRC::EFFECT_WATER).handleId_);
-    EffectManager::GetInstance().Add(EffectManager::EFFECT::LEVER_UP, res.Load(ResourceManager::SRC::EFFECT_LEVER_UP).handleId_);
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::FIRE, 
+        res.Load(ResourceManager::SRC::EFFECT_FIRE).handleId_);
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::WATER, 
+        res.Load(ResourceManager::SRC::EFFECT_WATER).handleId_);
+    EffectManager::GetInstance().Add(EffectManager::EFFECT::LEVER_UP, 
+        res.Load(ResourceManager::SRC::EFFECT_LEVER_UP).handleId_);
 
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_FIRE, res.Load(ResourceManager::SRC::SE_FIRE).handleId_);
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_WATER, res.Load(ResourceManager::SRC::SE_WATER).handleId_);
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_LEVER_UP, res.Load(ResourceManager::SRC::SE_LEVER_UP).handleId_);
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SLASH, res.Load(ResourceManager::SRC::SE_SLASH).handleId_);
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_GLIDER, res.Load(ResourceManager::SRC::SE_GLIDER).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_FIRE,
+        res.Load(ResourceManager::SRC::SE_FIRE).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_WATER, 
+        res.Load(ResourceManager::SRC::SE_WATER).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_LEVER_UP,
+        res.Load(ResourceManager::SRC::SE_LEVER_UP).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SLASH, 
+        res.Load(ResourceManager::SRC::SE_SLASH).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_GLIDER,
+        res.Load(ResourceManager::SRC::SE_GLIDER).handleId_);
 
 
     PlayAnim(ANIM::IDEL, true, 0.0f);
@@ -161,16 +169,27 @@ void Player::Initialize(void)
 
 void Player::InitCollider(void)
 {
-    ColliderLine* colLine = new ColliderLine(ColliderBase::TAG::PLAYER, &trans_, COL_LINE_START_LOCAL_POS, COL_LINE_END_LOCAL_POS);
+    // 接地判定用のライン
+    ColliderLine* colLine = new ColliderLine(ColliderBase::TAG::PLAYER, &trans_, 
+        COL_LINE_START_LOCAL_POS, COL_LINE_END_LOCAL_POS);
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::LINE), colLine);
 
-    ColliderCapsule* colCapsule = new ColliderCapsule(ColliderBase::TAG::PLAYER, &trans_, localStartPos_, localEndPos_, radius_);
+    // 体当たり・被弾判定用のカプセル
+    ColliderCapsule* colCapsule = new ColliderCapsule(ColliderBase::TAG::PLAYER, &trans_, 
+        localStartPos_, localEndPos_, radius_);
     ownColliders_.emplace(static_cast<int>(COLLIDER_TYPE::CAPSULE), colCapsule);
 }
 
 void Player::Update(void)
 {
+    auto& input = InputManager::GetInstance();
     float deltaTime = SceneManager::GetInstance().GetDeltaTime();
+    bool isAttackTrigger = input.IsTrgMouseLeft() ||
+        input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::R_TRIGGER); 
+    bool isFireTrigger = input.IsTrgDown(KEY_INPUT_Q) ||
+        input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::TOP);
+    bool isWaterTrigger = input.IsTrgDown(KEY_INPUT_E) ||
+        input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::RIGHT);
 
     if (invincibleTime_ > 0.0f)
     {
@@ -185,21 +204,22 @@ void Player::Update(void)
     ProcessMove();
     ProcessJump();
 
-    auto& input = InputManager::GetInstance();
-
-    if (input.IsTrgMouseLeft() && attackCoolTime_ <= 0.0f && !isAttacking_)
+    // 攻撃処理
+    if (isAttackTrigger && attackCoolTime_ <= 0.0f && !isAttacking_)
     {
         Attack();
     }
 
-    if (input.IsTrgDown(KEY_INPUT_Q) && fireAttackCoolTime_ <= 0.0f && !isAttacking_)
+    // 火魔法スキル
+    if (isFireTrigger && fireAttackCoolTime_ <= 0.0f && !isAttacking_)
     {
         isAttack_ = true;
         FireAttackAction();
         PlayAnim(ANIM::ATTACK, false, 0.2f);
     }
 
-    if (input.IsTrgDown(KEY_INPUT_E) && waterAttackCoolTime_ <= 0.0f && !isAttacking_)
+    // 水魔法スキル
+    if (isWaterTrigger && waterAttackCoolTime_ <= 0.0f && !isAttacking_)
     {
         isAttack_ = true;
 
@@ -313,7 +333,7 @@ void Player::ProcessJump(void)
         {
             // 地面にいるならジャンプ
             jumpPow_ = VGet(0, param_.jumpPower, 0);
-            isGround_ = false;  // 即座に空中扱いにする
+            isGround_ = false;
             hasJumped_ = true;
             isGliding_ = false;
             glideExpTimer_ = 0.0f;
@@ -321,7 +341,6 @@ void Player::ProcessJump(void)
         else
         {
             // 空中ならグライドのON/OFF切り替え
-            // hasJumped_ のチェックは外し、「崖から落ちた時」でもグライドできるようにする
             isGliding_ = !isGliding_;
         }
     }
@@ -350,16 +369,14 @@ void Player::ProcessGlide(void)
     glideExpTimer_ += SceneManager::GetInstance().GetDeltaTime();
     if (glideExpTimer_ >= GLIDE_EXP_INTERVAL)
     {
-        AddExperinece(GLIDE_EXP_AMOUNT); // 経験値加算
-        glideExpTimer_ = 0.0f;           // タイマーリセット
+        AddExperinece(GLIDE_EXP_AMOUNT);
+        glideExpTimer_ = 0.0f; 
     }
 
-    // 1. 下降処理
-    // グライド中はゆっくり降下する（GLIDE_FALL_SPEEDはヘッダー定義の定数）
+    // グライド中はゆっくり降下する
     jumpPow_.y = -GLIDE_FALL_SPEED;
 
-    // 2. 自動前進処理 (現在の向きに合わせて進む)
-    // プレイヤーの現在の向き（クォータニオン）から前方ベクトルを取得
+    // 自動前進処理
     VECTOR forward = trans_.quaRotLocal.GetForward();
     forward.y = 0.0f; // 水平移動に限定
 
@@ -367,16 +384,13 @@ void Player::ProcessGlide(void)
     {
         forward = VNorm(forward);
 
-        // --- UnitBase::speed_ を活用 ---
-        // 何もしなくても進む速度（自動推進力）を移動速度の30%に設定
         float autoGlideSpeed = speed_ * 0.3f;
 
-        // forwardはモデルの向きなので、逆方向（-1）に力をかける
         VECTOR autoMove = VScale(forward, -autoGlideSpeed);
         trans_.pos = VAdd(trans_.pos, autoMove);
     }
 
-    // 3. 入力による移動制御
+    // 入力による移動制御
     float forwardInput = 0.0f;
     float rightInput = 0.0f;
 
@@ -429,12 +443,12 @@ void Player::ProcessGlide(void)
 
 void Player::UpdateAnimation(void)
 {
-    // 1. 攻撃中は他のアニメーションに上書きしない
+    // 攻撃中は他のアニメーションに上書きしない
     if (isAttacking_) return;
 
     if (isAttack_) return;
 
-    // 2. 最優先：グライド中かどうかの判定
+    // グライド中かどうかの判定
     if (isGliding_)
     {
         // まだグライドアニメーションになっていないなら再生開始
@@ -452,7 +466,7 @@ void Player::UpdateAnimation(void)
 
     }
 
-    // 3. 空中にいる場合（純粋な落下）
+    // 空中にいる場合（純粋な落下）
     else if (!isGround_)
     {
         if (jumpPow_.y > 0.0f)
@@ -474,7 +488,7 @@ void Player::UpdateAnimation(void)
             }
         }
     }
-    // 4. 地面にいる場合
+    // 地面にいる場合
     else
     {
         if (isMoving_)
@@ -554,8 +568,6 @@ void Player::Draw(void) const
     DrawSkillUI();
     DrawDistanceUI();
 
-#ifdef _DEBUG
-#endif
 }
 
 void Player::Release(void)
@@ -613,32 +625,40 @@ void Player::DrawHpBar(void) const
 {
     auto& font = Font::GetInstance();
 
+    // 座標・サイズ計算関連
     int barWidth = HP_BAR_WIDTH;
     int barHeight = HP_BAR_HEIGHT;
     int barX = (Application::SCREEN_SIZE_X - barWidth) / 2;
     int barY = Application::SCREEN_SIZE_Y - BAR_Y;
 
+    // HP割合計算関連
     float hpRate = (float)param_.hp / param_.maxHp;
     float dispRate = hpDisplay_ / param_.maxHp;
 
+    // 0.0～1.0の範囲に収める
     hpRate = std::clamp(hpRate, 0.0f, 1.0f);
     dispRate = std::clamp(dispRate, 0.0f, 1.0f);
 
+    // 描画幅の計算
     int curHPWidth = (int)(barWidth * hpRate);
     int dispHPWidth = (int)(barWidth * dispRate);
 
+    // 図形描画関連
     DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), false);
     DrawBox(barX, barY, barX + barWidth, barY + barHeight, GetColor(0, 0, 0), true);
     DrawBox(barX, barY, barX + dispHPWidth, barY + barHeight, GetColor(255, 60, 60), true);
     DrawBox(barX, barY, barX + curHPWidth, barY + barHeight, GetColor(0, 255, 0), true);
 
+    // テキスト描画関連
     char hpStr[32];
     sprintf_s(hpStr, "%d / %d", param_.hp, param_.maxHp);
 
+    // テキストをバーの中央に配置するための計算
     int textWidth = font.GetDefaultTextWidth(hpStr);
     int textX = barX + (barWidth / 2) - (textWidth / 2);
     int textY = barY + (barHeight / 2) - 8;
 
+    // HP数値の描画
     font.DrawDefaultText(textX, textY, hpStr, GetColor(255, 255, 255), 18);
 }
 
@@ -664,48 +684,59 @@ bool Player::IsAttacking(void) const
 
 void Player::ProcessMove(void)
 {
-    if (!movementEnabled_) return;
-    if (isAttacking_) return;
-    if (fireAttack_->IsActive()) return;
-    if (waterAttack_->IsActive()) return;
+    if (!movementEnabled_) { return; }
+    if (isAttacking_) { return; }
+    if (fireAttack_->IsActive()) { return; }
+    if (waterAttack_->IsActive()) { return; }
 
     auto& input = InputManager::GetInstance();
     auto camera = SceneManager::GetInstance().GetCamera();
 
+    // 移動前の座標を保存
     prePos_ = trans_.pos;
 
     float forwardInput = 0.0f;
     float rightInput = 0.0f;
 
+    // キーボード入力
     if (input.IsPress(KEY_INPUT_W)) { forwardInput += 1.0f; }
     if (input.IsPress(KEY_INPUT_S)) { forwardInput -= 1.0f; }
     if (input.IsPress(KEY_INPUT_A)) { rightInput -= 1.0f; }
     if (input.IsPress(KEY_INPUT_D)) { rightInput += 1.0f; }
 
-    InputManager::JOYPAD_IN_STATE padState = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
+    // パッド入力
+    InputManager::JOYPAD_IN_STATE padState;
+    padState = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
     VECTOR padInputDir = input.GetDirectionXZAKey(padState.AKeyLX, padState.AKeyLY);
 
     forwardInput += padInputDir.z;
     rightInput += padInputDir.x;
 
+    // 移動中かどうかの判定（微小な入力は無視）
     isMoving_ = (fabs(forwardInput) > 0.0001f || fabs(rightInput) > 0.0001f);
-
+    
+    // 左右入力のみの場合
     if (rightInput != 0.0f && forwardInput == 0.0f)
     {
+        // カメラの追従を一時停止し、手動制御
         camera->SetFollowFreeze(true);
 
+        // 回転速度の計算（1.5fは回転速度係数）
         float keyRotSpeed = rightInput * 1.5f;
         camera->SetKeyRotationSpeed(keyRotSpeed);
 
+        // カメラからプレイヤーへのベクトルを計算
         VECTOR camPos = camera->GetPos();
         VECTOR toPlayer = VSub(trans_.pos, camPos);
         float currentHeight = toPlayer.y;
         toPlayer.y = 0.0f;
 
+        // 円運動の計算（極座標変換）
         float radius = VSize(toPlayer);
         float currentAngle = atan2f(toPlayer.x, toPlayer.z);
         float newAngle = currentAngle + Utility::Deg2RadF(keyRotSpeed);
 
+        // 新しい座標を算出
         VECTOR newOffset;
         newOffset.x = radius * sinf(newAngle);
         newOffset.y = currentHeight;
@@ -714,6 +745,7 @@ void Player::ProcessMove(void)
         trans_.pos = VAdd(camPos, newOffset);
         isMoving_ = true;
 
+        // 回転処理：移動方向（接線方向）を向く
         VECTOR tangent;
         if (rightInput > 0)
         {
@@ -729,6 +761,7 @@ void Player::ProcessMove(void)
         tangent.y = 0.0f;
         tangent = VNorm(tangent);
 
+        // クォータニオンによる回転補間
         Quaternion targetLocalRot = Quaternion::LookRotation(tangent);
         trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
     }
@@ -738,6 +771,7 @@ void Player::ProcessMove(void)
 
         if (forwardInput != 0.0f || rightInput != 0.0f)
         {
+            // カメラの向きベクトルを水平面に投影
             VECTOR camForward = camera->GetFrontVector();
             camForward.y = 0.0f;
             camForward = VNorm(camForward);
@@ -746,6 +780,7 @@ void Player::ProcessMove(void)
             camRight.y = 0.0f;
             camRight = VNorm(camRight);
 
+            // 合成移動方向の計算
             VECTOR moveDir = Utility::VECTOR_ZERO;
             moveDir = VAdd(moveDir, VScale(camForward, forwardInput));
             moveDir = VAdd(moveDir, VScale(camRight, -rightInput));
@@ -755,11 +790,13 @@ void Player::ProcessMove(void)
             {
                 moveDir = VNorm(moveDir);
 
+                // 座標更新
                 VECTOR movement = VScale(moveDir, 10.5f);
                 trans_.pos = VAdd(trans_.pos, movement);
 
                 isMoving_ = true;
 
+                // モデルの向きを移動方向に合わせる
                 Quaternion targetLocalRot = Quaternion::LookRotation(VScale(moveDir, -1.0f));
                 trans_.quaRotLocal = Quaternion::RotateTowards(trans_.quaRotLocal, targetLocalRot, 30.0f);
             }
@@ -769,9 +806,12 @@ void Player::ProcessMove(void)
 
 void Player::DrawCollisionCapsuleDebug(void) const
 {
+    // カプセルコライダが存在するか確認
     if (ownColliders_.count(static_cast<int>(COLLIDER_TYPE::CAPSULE)) > 0)
     {
-        const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>(ownColliders_.at(static_cast<int>(COLLIDER_TYPE::CAPSULE)));
+        // 基底クラスから派生クラスへキャストして情報を取得
+        const ColliderCapsule* capsule = dynamic_cast<const ColliderCapsule*>
+            (ownColliders_.at(static_cast<int>(COLLIDER_TYPE::CAPSULE)));
 
         if (capsule)
         {
@@ -787,30 +827,33 @@ void Player::DrawCollisionCapsuleDebug(void) const
 void Player::DrawSkillUI(void) const
 {
     int screenH = Application::SCREEN_SIZE_Y;
-    int startX = 0;  // 描画開始位置
+    int startX = 0;  
     int startY = 0;
     int iconSize = 64;
-    int spacing = 80; // アイコン同士の間隔
+    int spacing = 80;
 
     auto& font = Font::GetInstance();
-
-    // --- スキル1: 火攻撃 ---
     int fireX = startX;
-    if (fireAttackCoolTime_ > 0.0f) {
+
+    if (fireAttackCoolTime_ > 0.0f)
+    {
         // クールタイム中
         DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconFireCD_, true);
     }
-    else {
+    else 
+    {
         // 使用可能
         DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconFire_, true);
     }
 
-    // --- スキル2: 水攻撃 ---
-    if (waterAttackCoolTime_ > 0.0f) {
+    
+    if (waterAttackCoolTime_ > 0.0f) 
+    {
         // クールタイム中
         DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconWaterCD_, true);
     }
-    else {
+    else
+    {
         // 使用可能
         DrawRotaGraph3(fireX, startY, 0, 0, 1.0f, 1.0f, 0.0f, iconWater_, true);
     }
@@ -820,7 +863,8 @@ void Player::OnCollisionEnter(const CollisionInfo& info)
 {
     if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::ENEMY)
     {
-        if (info.myCollider->GetShapeType() == ColliderBase::SHAPE::CAPSULE || info.myCollider->GetShapeType() == ColliderBase::SHAPE::SPHERE)
+        if (info.myCollider->GetShapeType() == ColliderBase::SHAPE::CAPSULE ||
+            info.myCollider->GetShapeType() == ColliderBase::SHAPE::SPHERE)
         {
             if (lastHitEnemyTime_ > 0.0f) { return; }
 
@@ -835,7 +879,8 @@ void Player::OnCollisionEnter(const CollisionInfo& info)
 
 void Player::OnCollisionStay(const CollisionInfo& info)
 {
-    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::GROUND || info.hitCollider->GetCollisionTag() == ColliderBase::TAG::STAGE)
+    if (info.hitCollider->GetCollisionTag() == ColliderBase::TAG::GROUND || 
+        info.hitCollider->GetCollisionTag() == ColliderBase::TAG::STAGE)
     {
         if (info.myCollider->GetShapeType() == ColliderBase::SHAPE::LINE)
         {
@@ -860,8 +905,8 @@ void Player::CollisionWithModel(void)
     if (!myCapsule) return;
 
     // カプセルの情報を取得
-    VECTOR capsuleStart = myCapsule->GetLocalStartPos();
-    VECTOR capsuleEnd = myCapsule->GetLocalEndPos();
+    VECTOR capsuleStart = myCapsule->GetWorldStartPos();
+    VECTOR capsuleEnd = myCapsule->GetWorldEndPos();
     float capsuleRadius = myCapsule->GetRadius();
     // 判定用の中心点（簡易的に足元から少し上の位置などで調整）
     VECTOR capsuleCenter = VScale(VAdd(capsuleStart, capsuleEnd), 0.5f);
@@ -877,7 +922,7 @@ void Player::CollisionWithModel(void)
         int modelId = hitModel->GetFollowTarget()->modelId;
         if (modelId < 0) continue;
 
-        // 1. 周辺ポリゴンを取得（検索半径はカプセル半径 + 余裕分）
+        // 周辺ポリゴンを取得（検索半径はカプセル半径 + 余裕分）
         float searchRadius = capsuleRadius + 20.0f;
         MV1_COLL_RESULT_POLY_DIM hitResult = MV1CollCheck_Sphere(modelId, -1, capsuleCenter, searchRadius);
 
@@ -888,9 +933,8 @@ void Player::CollisionWithModel(void)
                 MV1_COLL_RESULT_POLY poly = hitResult.Dim[i];
                 if (hitModel->IsExcludedFrame(poly.FrameIndex)) continue;
 
-                // 2. ★重要：ポリゴン平面との距離で押し出しを計算
-                // poly.Position[0]（ポリゴンの1頂点）から中心点へのベクトル
                 VECTOR v = VSub(capsuleCenter, poly.Position[0]);
+
                 // 法線方向への投影距離（平面から球体中心までの最短距離）
                 float dist = VDot(v, poly.Normal);
 
@@ -907,7 +951,7 @@ void Player::CollisionWithModel(void)
                         trans_.pos = VAdd(trans_.pos, VScale(pushNormal, pushDist));
 
                         // 座標更新に合わせてカプセルの中心もズラす（連続衝突への対応）
-                        capsuleCenter = VScale(VAdd(myCapsule->GetLocalStartPos(), myCapsule->GetLocalEndPos()), 0.5f);
+                        capsuleCenter = VScale(VAdd(myCapsule->GetWorldStartPos(), myCapsule->GetWorldEndPos()), 0.5f);
                     }
                 }
             }
@@ -927,8 +971,8 @@ void Player::Collision(void)
     if (Utility::EqualsVZero(jumpPow_))
     {
         isGround_ = true;
-        hasJumped_ = false; // ジャンプフラグのリセット
-        isGliding_ = false; // 着地したらグライド解除
+        hasJumped_ = false;
+        isGliding_ = false; 
     }
     else
     {
@@ -1058,22 +1102,18 @@ void Player::DrawLevelInfo(void) const
     auto& font = Font::GetInstance();
 
     // 左下からのオフセット位置
-    // 画面サイズ X:20, Y:下から80ピクセルの位置（お好みで調整してください）
     int levelX = 40;
     int levelY = Application::SCREEN_SIZE_Y - 80;
 
     char levelStr[64];
-    // Lv.15 のような形式
+
     sprintf_s(levelStr, "Lv.%d", param_.level);
 
-    // 最大レベルの場合は色をゴールド(255, 215, 0)に、それ以外は白にする
     unsigned int color = (param_.level >= param_.maxLevel) ?
         GetColor(255, 215, 0) : GetColor(255, 255, 255);
 
-    // サイズを48と大きくし、縁取り(EDGE)を有効にして視認性を高める
     font.DrawDefaultText(levelX, levelY, levelStr, color, 48, Font::FONT_TYPE_ANTIALIASING_EDGE);
 
-    // MAX LEVEL の場合のみ、さらに横に小さく「MAX」と添えるとおしゃれです（任意）
     if (param_.level >= param_.maxLevel)
     {
         font.DrawDefaultText(levelX + 160, levelY + 20, "MAX", color, 20, Font::FONT_TYPE_ANTIALIASING_EDGE);
@@ -1084,21 +1124,20 @@ void Player::DrawDistanceUI(void) const
 {
     auto& font = Font::GetInstance();
 
-    // 1. 距離を取得 (XZ平面での原点からの距離)
+    // 距離を取得 (XZ平面での原点からの距離)
     float distance = GetDistanceFromOriginXZ();
 
-    // 2. 表示用文字列の作成
+    // 表示用文字列の作成
     char distStr[64];
     sprintf_s(distStr, "現在の移動距離: %.1f m", distance);
 
-    // 3. 描画座標の計算
-    // 画面中央上部
+    // 描画座標の計算
     int textWidth = font.GetDefaultTextWidth(distStr);
     int drawX = (Application::SCREEN_SIZE_X / 2) - textWidth;
-    int drawY = 30; // 画面の一番上から少し下げた位置（お好みで調整）
+    int drawY = 30;
 
-    // 4. 描画 (視認性を高めるために縁取りフォントを使用)
-    unsigned int color = GetColor(255, 255, 255); // 白
+    // 描画 
+    unsigned int color = GetColor(255, 255, 255); 
     font.DrawDefaultText(drawX, drawY, distStr, color, 42, Font::FONT_TYPE_ANTIALIASING_EDGE);
 }
 

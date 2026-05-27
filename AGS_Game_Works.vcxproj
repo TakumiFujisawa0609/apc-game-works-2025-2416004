@@ -167,7 +167,6 @@
     <ClInclude Include="Src\Object\Player\FireAttack.h" />
     <ClInclude Include="Src\Object\Stage\SkyDome.h" />
     <ClInclude Include="Src\Object\Stage\EnemySpawner.h" />
-    <ClInclude Include="Src\Manager\System\DamageManager.h" />
     <ClInclude Include="Src\Manager\System\CollisionController.h" />
     <ClInclude Include="Src\Collider\ColliderModel.h" />
     <ClInclude Include="Src\Collider\ColliderCapsule.h" />
@@ -198,7 +197,6 @@
     <ClInclude Include="Src\Manager\Generic\Resource.h" />
     <ClInclude Include="Src\Manager\Generic\ResourceManager.h" />
     <ClInclude Include="Src\Manager\Generic\SceneManager.h" />
-    <ClInclude Include="Src\Manager\System\DateTimeManager.h" />
     <ClInclude Include="Src\Manager\System\TimeManager.h" />
     <ClInclude Include="Src\Object\Common\AnimationController.h" />
     <ClInclude Include="Src\Object\Common\Transform.h" />
@@ -224,7 +222,6 @@
     <ClCompile Include="Src\Object\Player\FireAttack.cpp" />
     <ClCompile Include="Src\Object\Stage\SkyDome.cpp" />
     <ClCompile Include="Src\Object\Stage\EnemySpawner.cpp" />
-    <ClCompile Include="Src\Manager\System\DamageManager.cpp" />
     <ClCompile Include="Src\Manager\System\CollisionController.cpp" />
     <ClCompile Include="Src\Collider\ColliderModel.cpp" />
     <ClCompile Include="Src\Collider\ColliderCapsule.cpp" />
@@ -260,7 +257,6 @@
     <ClCompile Include="Src\Manager\Generic\Resource.cpp" />
     <ClCompile Include="Src\Manager\Generic\ResourceManager.cpp" />
     <ClCompile Include="Src\Manager\Generic\SceneManager.cpp" />
-    <ClCompile Include="Src\Manager\System\DateTimeManager.cpp" />
     <ClCompile Include="Src\Manager\System\TimeManager.cpp" />
     <ClCompile Include="Src\Object\Common\AnimationController.cpp" />
     <ClCompile Include="Src\Object\Common\Transform.cpp" />

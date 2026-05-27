@@ -455,8 +455,6 @@ Quaternion Quaternion::Axis(const VECTOR& axis, float angleRad)
 	return AngleAxis(angleRad, axis);
 }
 
-// --- オペレータ ---
-
 Quaternion Quaternion::operator*(const Quaternion& other) const
 {
 	// クォータニオンの外積公式による回転合成

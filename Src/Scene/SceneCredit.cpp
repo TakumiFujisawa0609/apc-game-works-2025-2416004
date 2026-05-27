@@ -1,5 +1,5 @@
+#include "../Pch.h"
 #include "SceneCredit.h"
-#include "DxLib.h"
 #include "../Manager/Generic/InputManager.h"
 #include "../Manager/Generic/SceneManager.h"
 #include "../Application.h"
@@ -29,9 +29,10 @@ void SceneCredit::Initialize(void)
 
 void SceneCredit::Update(void)
 {
-    // 何かボタン（決定・キャンセル）が押されたらタイトル等へ戻る
     auto& input = InputManager::GetInstance();
-    if (input.IsTrgDown(KEY_INPUT_ESCAPE))
+    if (input.IsTrgDown(KEY_INPUT_ESCAPE) ||
+        input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1,
+            InputManager::JOYPAD_BTN::RIGHT))
     {
         SceneManager::GetInstance().PopScene();
     }
@@ -46,18 +47,17 @@ void SceneCredit::Draw(void)
     auto& font = Font::GetInstance();
     int centerY = Application::SCREEN_SIZE_Y / 2;
 
-    // --- 調整箇所 ---
-    // 画面中央から「20ピクセル分」左にずらした位置を基準にする
     int centerX = (Application::SCREEN_SIZE_X / 2) - 50;
 
-    const int unifiedSize = 32; // 文字の大きさを統一
+    const int offset = 100;
+
+    const int unifiedSize = 32; 
 
     for (const auto& line : credits_)
     {
         // テキストの幅を取得
         int textWidth = font.GetDefaultTextWidth(line.text.c_str());
 
-        // 自作センターから幅の半分を引くことで、その基準に対して中央揃えにする
         int drawX = centerX - (textWidth / 2);
         int drawY = centerY + line.offsetCenterY;
 
@@ -65,8 +65,8 @@ void SceneCredit::Draw(void)
     }
 
     // 画面下部の案内も同様に少し左に寄せる
-    int helpWidth = font.GetDefaultTextWidth("ESCで戻る");
-    font.DrawDefaultText(centerX - (helpWidth / 2), Application::SCREEN_SIZE_Y - 100, "ESCで戻る", GetColor(0, 0, 0), 24);
+    int helpWidth = font.GetDefaultTextWidth("ESC/Bボタンで戻る");
+    font.DrawDefaultText(centerX - (helpWidth / 2), Application::SCREEN_SIZE_Y - offset, "ESC/Bボタンで戻る", GetColor(0, 0, 0), 24);
 }
 
 void SceneCredit::Release(void)

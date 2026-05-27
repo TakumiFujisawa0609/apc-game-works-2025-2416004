@@ -137,7 +137,9 @@ void Application::Run(void)
 		// --- ESCキーでポーズ表示 ---
 		if (isActiveUI_ == false)
 		{
-			if (!pauseMenu_->IsVisible() && inputManager.IsTrgDown(KEY_INPUT_ESCAPE) == 1)
+			if (!pauseMenu_->IsVisible() && inputManager.IsTrgDown(KEY_INPUT_ESCAPE) == 1 || 
+				inputManager.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1,
+					InputManager::JOYPAD_BTN::START_BUTTON))
 			{
 				pauseMenu_->Show();  // メニュー表示
 			}
@@ -213,14 +215,14 @@ void Application::Run(void)
 	}
 }
 
-void Application::Destroy(void)
+void Application:: DestroyInstance(void)
 {
-	InputManager::GetInstance().Destroy();
-	ResourceManager::GetInstance().Destroy();
-	SceneManager::GetInstance().DestroyInstance();
-	Font::GetInstance().Destroy();
+	InputManager::GetInstance(). DestroyInstance();
+	ResourceManager::GetInstance(). DestroyInstance();
+	SceneManager::GetInstance(). DestroyInstanceInstance();
+	Font::GetInstance(). DestroyInstance();
 
-	EffectManager::GetInstance().Destroy();
+	EffectManager::GetInstance(). DestroyInstance();
 
 	//エフェクシアの終了
 	Effkseer_End();
@@ -290,5 +292,5 @@ Application::Application(void)
 	isReleaseFail_ = false;
 
 	// デバックスクリーンかどうか
-	debugSc_ = true;
+	debugSc_ = false;
 }

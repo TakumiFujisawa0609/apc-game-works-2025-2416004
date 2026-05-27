@@ -29,7 +29,7 @@ void SceneUi::Draw(int baseYOverride)
 void SceneUi::UpdateBlinking(void)
 {
 	frameCount_++;
-	// kBlinkIntervalごとにisVisible_の真偽値を反転させ、点滅状態を作る
+
 	isVisible_ = (frameCount_ / kBlinkInterval) % 2 == 0;
 }
 

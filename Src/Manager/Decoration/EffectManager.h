@@ -31,7 +31,7 @@ public:
 
 	/// @brief インスタンス破棄
 	/// @param void 
-	static void Destroy(void);
+	static void   DestroyInstance(void);
 
 	/// @brief エフェクトリソースの追加
 	/// @param efc エフェクトの種類

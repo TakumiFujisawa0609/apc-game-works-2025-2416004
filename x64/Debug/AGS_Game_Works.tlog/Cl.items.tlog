@@ -6,7 +6,6 @@ D:\AGSdeta\AGS_Game_Works\Src\Object\Player\Glider.cpp;D:\AGSdeta\AGS_Game_Works
 D:\AGSdeta\AGS_Game_Works\Src\Object\Player\FireAttack.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\FireAttack.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Stage\SkyDome.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\SkyDome.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Stage\EnemySpawner.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\EnemySpawner.obj
-D:\AGSdeta\AGS_Game_Works\Src\Manager\System\DamageManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\DamageManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\CollisionController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\CollisionController.obj
 D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderModel.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\ColliderModel.obj
 D:\AGSdeta\AGS_Game_Works\Src\Collider\ColliderCapsule.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\ColliderCapsule.obj
@@ -37,7 +36,6 @@ D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\InputManager.cpp;D:\AGSdeta\AGS_Ga
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\Resource.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Resource.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\ResourceManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\ResourceManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\Generic\SceneManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\SceneManager.obj
-D:\AGSdeta\AGS_Game_Works\Src\Manager\System\DateTimeManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\DateTimeManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Manager\System\TimeManager.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\TimeManager.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Common\AnimationController.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\AnimationController.obj
 D:\AGSdeta\AGS_Game_Works\Src\Object\Common\Transform.cpp;D:\AGSdeta\AGS_Game_Works\x64\Debug\Transform.obj

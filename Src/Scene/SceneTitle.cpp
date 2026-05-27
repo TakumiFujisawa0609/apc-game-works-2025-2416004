@@ -28,14 +28,14 @@ SceneTitle::SceneTitle(void)
 
 void SceneTitle::Load(void)
 {
-    // isLoading_ を true に
     SceneBase::Load();
 
     // リソースの読み込み
     ResourceManager::GetInstance().InitTitle();
 
     // 動画ファイルの読み込み
-    movieHandle_ = ResourceManager::GetInstance().Load(ResourceManager::SRC::TITLE_MOVIE).handleId_;
+    movieHandle_ = ResourceManager::GetInstance().
+        Load(ResourceManager::SRC::TITLE_MOVIE).handleId_;
 
 
     if (movieHandle_ == -1)
@@ -87,16 +87,20 @@ void SceneTitle::EndLoad(void)
 void SceneTitle::Initialize(void)
 {
     // タイトルBGM
-    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_TITLE).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::BGM, SoundManager::SOUND::BGM_TITLE, 
+        ResourceManager::GetInstance().Load(ResourceManager::SRC::BGM_TITLE).handleId_);
 
     // キャンセル音
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_CANCEL, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_CANCEL).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_CANCEL,
+        ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_CANCEL).handleId_);
 
     // 選択音
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SELECT, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_SELECT).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_SELECT, 
+        ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_SELECT).handleId_);
 
     // 決定音
-    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_PUSH, ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_PUSH).handleId_);
+    SoundManager::GetInstance().Add(SoundManager::TYPE::SE, SoundManager::SOUND::SE_PUSH, 
+        ResourceManager::GetInstance().Load(ResourceManager::SRC::SE_PUSH).handleId_);
 
 
     SetMouseDispFlag(TRUE);
@@ -111,15 +115,15 @@ void SceneTitle::Initialize(void)
         PlayMovieToGraph(movieHandle_);
     }
 
-    // --- カメラ設定 ---
+    // カメラ設定 
     auto camera = SceneManager::GetInstance().GetCamera();
     camera->ChangeMode(Camera::MODE::FIXED_POINT);
 
-    // --- グリッド生成 ---
+    // グリッド生成
     grid_ = new Grid();
     grid_->Initialize();
 
-    // --- UI初期化 ---
+    // UI初期化
     howToPlayPage_ = 0;
     showBlackBackground_ = false;
     isDecided_ = false;
@@ -127,28 +131,23 @@ void SceneTitle::Initialize(void)
     isPlay_ = true;
     pauseUiCount_ = PAUSE_UI_COUNT;
 
-    // UIはLoadで生成済みなので、ここで初期位置設定
-    if (uiMain_) uiMain_->SetCurrentIndex(0);
+    if (uiMain_) { uiMain_->SetCurrentIndex(0); }
 
     Application::GetInstance().SetActiveUI(true);
 }
 
 void SceneTitle::Update(void)
 {
-    // --- カメラ設定 ---
     auto camera = SceneManager::GetInstance().GetCamera();
     camera->ChangeMode(Camera::MODE::FIXED_POINT);
 
     if (Loading::GetInstance()->IsLoading()) return;
-
-    // --- 修正ポイント：ロード完了チェック ---
-    // uiMain_ が生成されていない（ロードが終わっていない）場合は何もしない
     if (!uiMain_) return;
 
     // 動画のループ処理
     if (movieHandle_ != -1)
     {
-        if (GetMovieStateToGraph(movieHandle_) == 0) // 再生停止中
+        if (GetMovieStateToGraph(movieHandle_) == 0) 
         {
             SeekMovieToGraph(movieHandle_, 0);
             PlayMovieToGraph(movieHandle_);
@@ -157,11 +156,10 @@ void SceneTitle::Update(void)
 
     auto& sound = SoundManager::GetInstance();
     auto& input = InputManager::GetInstance();
-
-    // --- ESCキーで黒背景を閉じる ---
     if (showBlackBackground_)
     {
-        if (input.IsTrgDown(KEY_INPUT_ESCAPE))
+        if (input.IsTrgDown(KEY_INPUT_ESCAPE) ||
+            input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::RIGHT))
         {
             sound.Play(SoundManager::SOUND::SE_CANCEL);
             showBlackBackground_ = false;
@@ -170,10 +168,10 @@ void SceneTitle::Update(void)
         return;
     }
 
-    // --- 遊び方説明ページ表示中 ---
     if (howToPlayPage_ > 0)
     {
-        if (input.IsTrgDown(KEY_INPUT_ESCAPE))
+        if (input.IsTrgDown(KEY_INPUT_ESCAPE) || 
+            input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::RIGHT))
         {
             sound.Play(SoundManager::SOUND::SE_CANCEL);
             howToPlayPage_ = 0;
@@ -182,13 +180,39 @@ void SceneTitle::Update(void)
         return;
     }
 
-    // ----- メインメニュー操作 -----
+    // メインメニュー操作
     // ポインタを直接触らずにガードする
     auto ui = uiMain_.get();
     int currentIndex = ui->GetCurrentIndex();
     int maxIndex = ui->GetMaxIndex() - 1;
 
-    // --- マウスによる選択更新 ---
+    InputManager::JOYPAD_IN_STATE padState = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
+    VECTOR padDir = input.GetDirectionXZAKey(padState.AKeyLX, padState.AKeyLY);
+
+    static bool stickFree = true;
+
+    if (stickFree) 
+    {
+        if (padDir.z > 0.5f) // 上入力
+        {
+            currentIndex = (currentIndex - 1 + maxIndex + 1) % (maxIndex + 1);
+            sound.Play(SoundManager::SOUND::SE_SELECT);
+            stickFree = false;
+        }
+        else if (padDir.z < -0.5f) // 下入力
+        {
+            currentIndex = (currentIndex + 1) % (maxIndex + 1);
+            sound.Play(SoundManager::SOUND::SE_SELECT);
+            stickFree = false;
+        }
+    }
+    else 
+    {
+        if (fabs(padDir.z) < 0.2f) stickFree = true;
+    }
+    ui->SetCurrentIndex(currentIndex);
+
+    // マウスによる選択更新
     Vector2 mousePos = input.GetMousePos();
     int menuStartY = Application::SCREEN_SIZE_Y / 2 + 80;
     int itemHeight = 80;
@@ -224,8 +248,12 @@ void SceneTitle::Update(void)
         ui->SetCurrentIndex(currentIndex);
     }
 
+    bool isPadDecide = input.IsPadBtnTrgDown(InputManager::JOYPAD_NO::PAD1, InputManager::JOYPAD_BTN::DOWN);
+    bool isKeyDecide = input.IsTrgDown(KEY_INPUT_SPACE) || input.IsTrgDown(KEY_INPUT_RETURN);
+    bool isMouseDecide = input.IsTrgMouseLeft();
+
     // 決定操作
-    if (input.IsTrgDown(KEY_INPUT_SPACE) || input.IsTrgMouseLeft())
+    if (isPadDecide || isKeyDecide || isMouseDecide)
     {
         Application::GetInstance().SetActiveUI(true);
         int selected = ui->GetCurrentIndex();
@@ -279,8 +307,6 @@ void SceneTitle::Draw(void)
             movieWidth / 2, movieHeight / 2, scale, scale, 0.0, movieHandle_, TRUE);
     }
 
-    // --- 修正ポイント：UI描画のガード ---
-    // ロード中（uiMain_がnullptr）なら、以降の描画処理を行わない
     if (!uiMain_) return;
 
 
@@ -301,8 +327,6 @@ void SceneTitle::Release(void)
     if (movieHandle_ != -1)
     {
         PauseMovieToGraph(movieHandle_);
-        // ResourceManagerで管理している場合でも、
-        // 明示的に消すかハンドルを無効化しないと再ロードで詰まることがあります
         movieHandle_ = -1;
     }
 

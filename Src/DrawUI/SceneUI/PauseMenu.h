@@ -60,6 +60,12 @@ public:
 	int GetSelectedIndex(void) const;
 
 private:
+
+	// 描画関連
+	const int KMENU_BOX_WIDTH = 400;    // メニュー枠の横幅
+	const int KMENU_ITEM_HEIGHT = 50;   // 1項目あたりの高さ
+	const int KMENU_PADDING_Y= 20;     // 上下の余白
+
 	// メニュー関連
 	std::vector<std::string> menuItems_; // メインメニュー項目名リスト
 	int currentIndex_;                   // 現在の選択インデックス
@@ -67,8 +73,11 @@ private:
 	bool decisionMade_;                  // 決定フラグ
 
 	// ページ管理
-	int howToPlayPage_;                  // 現在の遊び方ページ（1=目標 2=錬金 3=アトリエ 4=ギルド 5=ガーデン）
+	int howToPlayPage_;                  
+
+	// ステック判定
+	bool stickFree_;
 
 	// 表示モード
-	MODE_POUSE mode_;                    // 現在のポーズメニューモード
+	MODE_POUSE mode_;                    
 };

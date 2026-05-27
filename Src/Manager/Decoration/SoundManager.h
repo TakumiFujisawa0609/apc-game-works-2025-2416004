@@ -78,7 +78,7 @@ public:
 
 	/// @brief インスタンスの破棄
 	/// @param void 
-	void Destroy(void);
+	void  DestroyInstance(void);
 
 	/// @brief BGMのマスターボリューム設定
 	/// @param volume 音量（0-100）

@@ -213,7 +213,7 @@ int Font::GetDynamicFontHandle(const std::string& internalFontName, int fontSize
 	return fontHandle;
 }
 
-void Font::Destroy(void)
+void Font:: DestroyInstance(void)
 {
 	if (instance_ != nullptr)
 	{

@@ -110,7 +110,7 @@ bool SoundManager::IsPlaying(SOUND sound)
 	return CheckSoundMem(it->second.data) == 1;
 }
 
-void SoundManager::Destroy(void)
+void SoundManager:: DestroyInstance(void)
 {
 	// 全音声を削除してからインスタンスを破棄
 	Release();

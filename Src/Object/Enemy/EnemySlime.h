@@ -2,53 +2,54 @@
 
 #include "EnemyBase.h"
 
-//エネミースライムクラス
+/// @brief エネミー：スライムクラス
+/// @details EnemyBaseを継承し、スライム固有の挙動（追従など）を管理する
 class EnemySlime : public EnemyBase
 {
 public:
 
-	// コンストラクタ
+	/// @brief コンストラクタ
 	EnemySlime(void);
 
-	// デストラクタ
+	/// @brief デストラクタ
 	~EnemySlime(void) override = default;
 
-	// 読み込み
+	/// @brief モデルの読み込み
+	/// @param modelId 読み込むモデルのID
 	void Load(int modelId) override;
 
-	// 初期化
+	/// @brief 初期化処理
+	/// @param startPos 初期出現座標
 	void Initialize(const VECTOR& startPos) override;
 
-	// 追従対象を設定
+	/// @brief ターゲット（プレイヤー等）の座標を設定
+	/// @param pos 対象の座標
 	void SetTargetPos(const VECTOR& pos);
 
-	// 更新処理
+	/// @brief 更新処理
 	void Update(void) override;
 
-	// 描画処理
+	/// @brief 描画処理
 	void Draw(void) const override;
 
-	// 全パラメータを適用
+	/// @brief 外部データからパラメータを一括適用する
+	/// @param info 適用する敵データ情報
 	void ApplyData(const EnemyInfo& info) override;
 
 private:
-	// 最大視野
-	static constexpr float VIEW_RANGE = 600.0f;
 
-	// 視野の解除距離
-	static constexpr float LOST_RANGE = 30.0f;
+	// 視野・索敵関連の定数
+	static constexpr float VIEW_RANGE = 600.0f;               // 最大視野（発見できる距離）
+	static constexpr float LOST_RANGE = 30.0f;                // 視野の解除距離（見失う距離）
+	static constexpr float VIEW_ANGLE = 60.0f;                // 視野角（索敵範囲の角度）
 
-	// 視野角
-	static constexpr float VIEW_ANGLE = 60.0f;
+	// 物理・判定関連の定数
+	static constexpr float COLLISION_HEIGHT_OFFSET = 100.0f; // 当たり判定の高さオフセット
 
-	// 当たり判定の高さ
-	static constexpr float COLLISION_HEIGHT_OFFSET = 100.0f;
+	// 移動・目標関連の変数
+	VECTOR targetPos_;                                        // 追従対象の座標
 
-	// 移動速度
-	VECTOR targetPos_;
-
-	// コライダのオフセットを更新
+	/// @brief 形状の変化等に合わせてコライダのオフセット位置を更新する
 	void UpdateColliderOffset(void);
 
 };
-

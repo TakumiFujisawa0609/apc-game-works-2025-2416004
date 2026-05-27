@@ -1,4 +1,5 @@
-﻿#include "UnitBase.h"
+﻿#include "../Pch.h"
+#include "UnitBase.h"
 #include "../Utility/Utility.h"
 #include "../Common/Quaternion.h"
 #include "Common/AnimationController.h"
@@ -9,7 +10,6 @@
 #include "../Manager/System/CollisionController.h"
 #include "../Collider/ColliderCapsule.h"
 
-// コンストラクタ
 UnitBase::UnitBase(void)
 {
 	// 半径の初期化
@@ -46,7 +46,6 @@ UnitBase::UnitBase(void)
 	jumpPow_ = Utility::VECTOR_ZERO;
 }
 
-// デストラクタ
 UnitBase::~UnitBase(void)
 {
 }
@@ -60,7 +59,6 @@ void UnitBase::Initialize(void)
 
 }
 
-// 更新処理
 void UnitBase::Update(void)
 {
 	// 前座標の挿入
@@ -89,7 +87,6 @@ void UnitBase::Update(void)
 	trans_.Update();
 }
 
-// 描画処理
 void UnitBase::Draw(void) const
 {
 	// モデルの描画
@@ -116,91 +113,76 @@ void UnitBase::Release(void)
 	}
 }
 
-// モデル情報（非const版）
 Transform& UnitBase::GetTransform(void)
 {
 	return trans_;
 }
 
-// モデル情報（const版）
 const Transform& UnitBase::GetTransform(void) const
 {
 	return trans_;
 }
 
-// 座標の取得
 const VECTOR& UnitBase::GetPos(void) const
 {
 	return trans_.pos;
 }
 
-// 座標の設定
 void UnitBase::SetPos(const VECTOR& pos)
 {
 	trans_.pos = pos;
 }
 
-// 回転の取得
 const VECTOR& UnitBase::GetRot(void) const
 {
 	return trans_.rot;
 }
 
-// 回転の設定
 void UnitBase::SetRot(const VECTOR& rot)
 {
 	trans_.rot = rot;
 }
 
-// スケールの取得
 const VECTOR& UnitBase::GetScl(void) const
 {
 	return trans_.scl;
 }
 
-// スケールの設定
 void UnitBase::SetScl(const VECTOR& scl)
 {
 	trans_.scl = scl;
 }
 
-// 前座標の取得
 const VECTOR& UnitBase::GetPrePos(void) const
 {
 	return prePos_;
 }
 
-// 半径の取得
 float UnitBase::GetRadius(void) const
 {
 	return radius_;
 }
 
-// 半径の設定
 void UnitBase::SetRadius(float r)
 {
 	radius_ = r;
 }
 
-// 移動ベクトルの設定
 void UnitBase::SetMovePow(const VECTOR& pow)
 {
 	movePow_ = pow;
 }
 
-// 移動ベクトルの取得
 const VECTOR& UnitBase::GetMovePow(void) const
 {
 	return movePow_;
 }
 
-// 回転(クォータニオン)
 void UnitBase::Turn(float deg, const VECTOR& axis)
 {
 	trans_.quaRot = trans_.quaRot.Mult(trans_.quaRot, Quaternion::AngleAxis(Utility::Deg2RadF(deg), axis));
 }
 
-// アニメーションの制御
 void UnitBase::PlayAnim(ANIM aanimType, bool loop, float blendTime)
 {
 	// アニメーションコントローラがない場合停止
@@ -220,8 +202,6 @@ void UnitBase::PlayAnim(ANIM aanimType, bool loop, float blendTime)
 void UnitBase::InitAnimaiton(void)
 {
 }
-
-// コライダシステム
 
 const ColliderBase* UnitBase::GetOwnCollider(int key) const
 {
@@ -275,22 +255,22 @@ void UnitBase::AddHitCollidersInRange(const std::vector<const ColliderBase*>& co
 
 void UnitBase::Collision(void)
 {
-	// 1. 移動処理
+	// 移動処理
 	trans_.pos = VAdd(trans_.pos, movePow_);
 
-	// 2. ジャンプ量を加算
+	// ジャンプ量を加算
 	trans_.pos = VAdd(trans_.pos, jumpPow_);
 
-	// 3. 球体同士の押し出し（敵同士・プレイヤーとの押し合い）
+	// 球体同士の押し出し（敵同士・プレイヤーとの押し合い）
 	CollisionSphereVsSphere();
 
-	// 4. 敵との衝突（ダメージ判定など）
+	// 敵との衝突（ダメージ判定など）
 	CollisionWithEnemy();
 
-	// 5. カプセルとの衝突（剣の攻撃判定など）
+	// カプセルとの衝突（剣の攻撃判定など）
 	CollisionWithCapsule();
 
-	// 6. 地面との衝突
+	// 地面との衝突
 	CollisionGravity();
 }
 
@@ -325,8 +305,8 @@ void UnitBase::CollisionGravity(void)
 	ColliderLine* colliderLine = dynamic_cast<ColliderLine*>(ownColliders_.at(lineType));
 	if (!colliderLine) return;
 
-	VECTOR s = colliderLine->GetLocalStartPos();
-	VECTOR e = colliderLine->GetLocalEndPos();
+	VECTOR s = colliderLine->GetWorldStartPos();
+	VECTOR e = colliderLine->GetWorldEndPos();
 
 	bool isGrounded = false;
 	float maxY = -FLT_MAX;
@@ -360,8 +340,8 @@ void UnitBase::CollisionGravity(void)
 		// 落下中のみ着地判定
 		if (jumpPow_.y <= 0.1f)
 		{
-			trans_.pos.y = maxY; // 地面の高さに直接セット
-			jumpPow_ = VGet(0, 0, 0); // 重力をリセット
+			trans_.pos.y = maxY;
+			jumpPow_ = VGet(0, 0, 0);
 		}
 	}
 }
@@ -426,12 +406,12 @@ void UnitBase::CollisionSphereVsSphere(void)
 			info.penetration = penetration;
 			info.isValid = true;
 
-			// ★攻撃判定の場合：押し出し処理なし、OnCollisionEnterのみ
+			// 攻撃判定の場合
 			if (isAttackTag)
 			{
 				OnCollisionEnter(info);
 			}
-			// ★物理押し出し処理
+			// 物理押し出し処理
 			else
 			{
 				// 同じタグの場合
@@ -517,7 +497,8 @@ void UnitBase::CollisionWithEnemy(void)
 		else
 		{
 			// それ以外（プレイヤー・エネミー）の既存ロジック
-			if (hitCol->GetCollisionTag() != ColliderBase::TAG::ENEMY && hitCol->GetCollisionTag() != ColliderBase::TAG::PLAYER) { continue; }
+			if (hitCol->GetCollisionTag() != ColliderBase::TAG::ENEMY && 
+				hitCol->GetCollisionTag() != ColliderBase::TAG::PLAYER) { continue; }
 			if (hitCol->GetCollisionTag() == myCol->GetCollisionTag()) { continue; }
 		}
 
@@ -526,7 +507,8 @@ void UnitBase::CollisionWithEnemy(void)
 		bool isHit = false;
 
 		// カプセル同士の衝突判定
-		if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
+		if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE &&
+			hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
 			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
@@ -537,7 +519,8 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// カプセルと球体の衝突判定（自分がカプセル、相手が球体）
-		else if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE && hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE &&
+			hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderCapsule* myCapsule = dynamic_cast<const ColliderCapsule*>(myCol);
 			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
@@ -556,7 +539,8 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// 球体とカプセルの衝突判定（自分が球体、相手がカプセル）
-		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && 
+			hitCol->GetShapeType() == ColliderBase::SHAPE::CAPSULE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
 			const ColliderCapsule* hitCapsule = dynamic_cast<const ColliderCapsule*>(hitCol);
@@ -567,7 +551,8 @@ void UnitBase::CollisionWithEnemy(void)
 			}
 		}
 		// 球体同士の衝突判定
-		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
+		else if (myCol->GetShapeType() == ColliderBase::SHAPE::SPHERE && 
+			hitCol->GetShapeType() == ColliderBase::SHAPE::SPHERE)
 		{
 			const ColliderSphere* mySphere = dynamic_cast<const ColliderSphere*>(myCol);
 			const ColliderSphere* hitSphere = dynamic_cast<const ColliderSphere*>(hitCol);
@@ -604,19 +589,16 @@ void UnitBase::CollisionWithEnemy(void)
 
 			if (myCol->GetCollisionTag() == ColliderBase::TAG::ENEMY && hitCol->GetCollisionTag() == ColliderBase::TAG::PLAYER)
 			{
-				// info.hitNormal が「EnemyからPlayer」への向きになっている場合、
-				// Enemyを戻すには「PlayerからEnemy」への向き（逆向き）に動かす必要があります。
+
 
 				VECTOR pushVec = VGet(info.hitNormal.x, 0.0f, info.hitNormal.z);
 				float pushLen = VSize(pushVec);
 
 				if (pushLen > 0.0001f)
 				{
-					// VSub ではなく VAdd にするか、法線を反転させる
-					// ここでは VAdd を使い、めり込み分だけ「外側」へ戻るようにします
+
 					VECTOR finalPush = VScale(pushVec, info.penetration / pushLen);
 
-					// もし反対側に飛ぶなら、ここを VAdd と VSub で入れ替えて試してください
 					trans_.pos = VAdd(trans_.pos, finalPush);
 				}
 			}

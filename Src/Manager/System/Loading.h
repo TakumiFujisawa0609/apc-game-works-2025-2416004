@@ -18,7 +18,7 @@ public:
     static Loading* GetInstance(void);
 
     // インスタンスを破棄する
-    static void DestroyInstance(void);
+    static void  DestroyInstanceInstance(void);
 
     // 初期化する
     void Initialize(void);

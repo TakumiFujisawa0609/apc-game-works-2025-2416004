@@ -1,3 +1,4 @@
+#include "../../Pch.h"
 #include "SkyDome.h"
 #include "../../Manager/Generic/ResourceManager.h"
 #include "../../Utility/Utility.h"
@@ -6,25 +7,21 @@ void SkyDome::InitCollider(void)
 {
 }
 
-// コンストラクタ
 SkyDome::SkyDome(void)
 	: UnitBase()
 {
 
 }
 
-// デストラクタ
 SkyDome::~SkyDome(void)
 {
 }
 
-// リソースの読み込み
 void SkyDome::Load(void)
 {
 	trans_.modelId = ResourceManager::GetInstance().Load(ResourceManager::SRC::MODEL_SKY_DOME).handleId_;
 }
 
-// 初期化
 void SkyDome::Initialize(void)
 {
 	// スケール
@@ -45,23 +42,21 @@ void SkyDome::Initialize(void)
 	trans_.Update();
 }
 
-// 更新処理
 void SkyDome::Update(void)
 {
 	trans_.quaRot = Quaternion::Mult(trans_.quaRot, Quaternion::AngleAxis(Utility::Deg2RadF(-0.01f), Utility::AXIS_Y));
 
 	if (followTarget_)
 	{
-		trans_.pos = *followTarget_; // カメラの位置をコピー
+		trans_.pos = *followTarget_; 
 		trans_.Update();
 	}
 }
 
-// 描画処理
 void SkyDome::Draw(void) const
 {
-	SetUseBackCulling(FALSE);  // 両面描画
-	SetFogEnable(FALSE);        // フォグ無効
+	SetUseBackCulling(FALSE); 
+	SetFogEnable(FALSE);        
 
 	MV1DrawModel(trans_.modelId);
 

@@ -320,84 +320,137 @@ void Camera::SetBeforeDrawFreeMouse(void)
 
 void Camera::SetBeforeDrawTPSMouse(void)
 {
-    // ポーズメニュー表示中はマウス操作を無効化し、カーソルを表示
-    if (pauseMenu_)
-    {
-        if (pauseMenu_->IsVisible()) return;
-        SetMouseDispFlag(FALSE);
-    }
-    else
-    {
-        pauseMenu_ = Application::GetInstance().GetPauseMenu();
-    }
+    //// ポーズメニュー表示中はマウス操作を無効化し、カーソルを表示
+    //if (pauseMenu_)
+    //{
+    //    if (pauseMenu_->IsVisible()) return;
+    //    SetMouseDispFlag(FALSE);
+    //}
+    //else
+    //{
+    //    pauseMenu_ = Application::GetInstance().GetPauseMenu();
+    //}
 
+    //if (!followTarget_) return;
+
+    //auto& input = InputManager::GetInstance();
+    //Vector2 mousePos = input.GetMousePos();
+
+    //// マウスの移動量を取得
+    //mouseDeltaX_ = static_cast<int>(mousePos.x) - screenCenterX_;
+    //mouseDeltaY_ = static_cast<int>(mousePos.y) - screenCenterY_;
+
+    //// マウス感度と反転設定を考慮して角度（度数法）を更新
+    //float yawDelta = static_cast<float>(mouseDeltaX_) * sensitivity_;
+    //if (isYawInverted_) yawDelta *= -1.0f;
+    //yaw_ += yawDelta;
+
+    //float pitchDelta = static_cast<float>(mouseDeltaY_) * sensitivity_;
+    //if (!isPitchInverted_) pitchDelta *= -1.0f;
+    //pitch_ += pitchDelta;
+
+    //// 追従凍結（ポーズ中など）でもカメラの旋回だけは可能にする処理
+    //if (isFollowFrozen_)
+    //{
+    //    yaw_ += keyRotateSpeed_;
+    //}
+
+    //// 垂直角度を一定範囲内に制限（カメラが一周して反転するのを防ぐ）
+    //pitch_ = std::clamp(pitch_, PITCH_LIMIT_DOWN, PITCH_LIMIT_UP);
+
+    //const VECTOR& basePos = followTarget_->pos;
+
+    //// 球面座標系を用いて、角度から相対座標を算出
+    //float radPitch = Utility::Deg2RadF(pitch_);
+    //float radYaw = Utility::Deg2RadF(yaw_);
+
+    //cameraOffset_.x = distance_ * cosf(radPitch) * sinf(radYaw);
+    //cameraOffset_.y = distance_ * sinf(radPitch);
+    //cameraOffset_.z = distance_ * cosf(radPitch) * cosf(radYaw);
+
+    //// 追従対象の座標にオフセットを加算して理想的な位置を決定
+    //VECTOR idealPos = VAdd(basePos, cameraOffset_);
+
+    //// 地形へのめり込み防止処理
+    //float groundY = GetGroundHeight(idealPos);
+    //float minCameraHeight = groundY + COLLISION_RADIUS + MIN_CAMERA_WORLD_Y;
+
+    //if (idealPos.y < minCameraHeight)
+    //{
+    //    idealPos.y = minCameraHeight;
+    //}
+
+    //// 近距離時に地面を突き抜けて下から見上げるのを防ぐ補正
+    //constexpr float CLOSE_DIST_LIMIT = 100.0f;
+    //constexpr float MIN_VISUAL_HEIGHT = 50.0f;
+    //if (distance_ < CLOSE_DIST_LIMIT && idealPos.y < basePos.y + MIN_VISUAL_HEIGHT)
+    //{
+    //    idealPos.y = basePos.y + MIN_VISUAL_HEIGHT;
+    //}
+
+    //trans_.pos = idealPos;
+
+    //// プレイヤーの足元ではなく少し上（腰から頭付近）を注視するようにオフセットを設定
+    //constexpr float TARGET_Y_OFFSET = 100.0f;
+    //targetPos_ = VGet(basePos.x, basePos.y + TARGET_Y_OFFSET, basePos.z);
+
+    //// TPSモードでは基本的に上方向はワールド座標のY軸固定
+    //cameraUp_ = Utility::DIR_UP;
+
+    //// マウスカーソルの固定
+    //SetMousePoint(screenCenterX_, screenCenterY_);
+
+    // ポーズメニュー等のチェック
+    if (pauseMenu_ && pauseMenu_->IsVisible()) return;
+    if (!pauseMenu_) pauseMenu_ = Application::GetInstance().GetPauseMenu();
     if (!followTarget_) return;
 
+    SetMouseDispFlag(FALSE);
+
+    // --- 関数内定数 ---
+    const float kStickSens = 2.0f;          // スティック感度
+    const float kTargetY = 100.0f;          // 注視点の高さオフセット
+    const float kCloseLimit = 100.0f;       // 地面補正が働く距離
+    const float kMinVisualY = 50.0f;        // 距離が近い時の最低高度
+    const float kEpsilon = 0.0001f;         // ゼロ除算防止
+
     auto& input = InputManager::GetInstance();
+    float dt = SceneManager::GetInstance().GetDeltaTime();
+
+    // 1. 入力値の取得（マウス差分 + スティック倒し量）
     Vector2 mousePos = input.GetMousePos();
+    auto pad = input.GetJPadInputState(InputManager::JOYPAD_NO::PAD1);
 
-    // マウスの移動量を取得
-    mouseDeltaX_ = static_cast<int>(mousePos.x) - screenCenterX_;
-    mouseDeltaY_ = static_cast<int>(mousePos.y) - screenCenterY_;
+    // X軸（ヨー）：マウス差分 ＋ スティック入力（感度と時間を考慮）
+    float moveX = static_cast<float>(static_cast<int>(mousePos.x) - screenCenterX_) + (pad.AKeyRX / 1000.0f * kStickSens / dt);
+    float moveY = static_cast<float>(static_cast<int>(mousePos.y) - screenCenterY_) + (pad.AKeyRY / 1000.0f * kStickSens / dt);
 
-    // マウス感度と反転設定を考慮して角度（度数法）を更新
-    float yawDelta = static_cast<float>(mouseDeltaX_) * sensitivity_;
-    if (isYawInverted_) yawDelta *= -1.0f;
-    yaw_ += yawDelta;
+    // 2. 角度更新（反転設定の適用）
+    yaw_ += moveX * sensitivity_ * (isYawInverted_ ? -1.0f : 1.0f);
+    pitch_ += moveY * sensitivity_ * (isPitchInverted_ ? 1.0f : -1.0f);
 
-    float pitchDelta = static_cast<float>(mouseDeltaY_) * sensitivity_;
-    if (!isPitchInverted_) pitchDelta *= -1.0f;
-    pitch_ += pitchDelta;
-
-    // 追従凍結（ポーズ中など）でもカメラの旋回だけは可能にする処理
-    if (isFollowFrozen_)
-    {
-        yaw_ += keyRotateSpeed_;
-    }
-
-    // 垂直角度を一定範囲内に制限（カメラが一周して反転するのを防ぐ）
+    if (isFollowFrozen_) yaw_ += keyRotateSpeed_;
     pitch_ = std::clamp(pitch_, PITCH_LIMIT_DOWN, PITCH_LIMIT_UP);
 
+    // 3. 座標計算（球面座標）
+    float rp = Utility::Deg2RadF(pitch_), ry = Utility::Deg2RadF(yaw_);
+    cameraOffset_ = VGet(distance_ * cosf(rp) * sinf(ry), distance_ * sinf(rp), distance_ * cosf(rp) * cosf(ry));
+
     const VECTOR& basePos = followTarget_->pos;
-
-    // 球面座標系を用いて、角度から相対座標を算出
-    float radPitch = Utility::Deg2RadF(pitch_);
-    float radYaw = Utility::Deg2RadF(yaw_);
-
-    cameraOffset_.x = distance_ * cosf(radPitch) * sinf(radYaw);
-    cameraOffset_.y = distance_ * sinf(radPitch);
-    cameraOffset_.z = distance_ * cosf(radPitch) * cosf(radYaw);
-
-    // 追従対象の座標にオフセットを加算して理想的な位置を決定
     VECTOR idealPos = VAdd(basePos, cameraOffset_);
 
-    // 地形へのめり込み防止処理
-    float groundY = GetGroundHeight(idealPos);
-    float minCameraHeight = groundY + COLLISION_RADIUS + MIN_CAMERA_WORLD_Y;
+    // 4. 地面めり込み防止
+    float minH = GetGroundHeight(idealPos) + COLLISION_RADIUS + MIN_CAMERA_WORLD_Y;
+    if (idealPos.y < minH) idealPos.y = minH;
 
-    if (idealPos.y < minCameraHeight)
-    {
-        idealPos.y = minCameraHeight;
-    }
+    // 近距離時の高さ補正
+    if (distance_ < kCloseLimit && idealPos.y < basePos.y + kMinVisualY) idealPos.y = basePos.y + kMinVisualY;
 
-    // 近距離時に地面を突き抜けて下から見上げるのを防ぐ補正
-    constexpr float CLOSE_DIST_LIMIT = 100.0f;
-    constexpr float MIN_VISUAL_HEIGHT = 50.0f;
-    if (distance_ < CLOSE_DIST_LIMIT && idealPos.y < basePos.y + MIN_VISUAL_HEIGHT)
-    {
-        idealPos.y = basePos.y + MIN_VISUAL_HEIGHT;
-    }
-
+    // 最終座標と注視点の適用
     trans_.pos = idealPos;
-
-    // プレイヤーの足元ではなく少し上（腰から頭付近）を注視するようにオフセットを設定
-    constexpr float TARGET_Y_OFFSET = 100.0f;
-    targetPos_ = VGet(basePos.x, basePos.y + TARGET_Y_OFFSET, basePos.z);
-
-    // TPSモードでは基本的に上方向はワールド座標のY軸固定
+    targetPos_ = VGet(basePos.x, basePos.y + kTargetY, basePos.z);
     cameraUp_ = Utility::DIR_UP;
 
-    // マウスカーソルの固定
     SetMousePoint(screenCenterX_, screenCenterY_);
 }
 
@@ -408,16 +461,15 @@ void Camera::SetBeforeDrawLockon(void)
     const VECTOR& playerPos = followTarget_->pos;
     auto& input = InputManager::GetInstance();
 
-    // マウスが動かされたかどうかを判定（ロックオン解除のトリガー等に使用可能）
+    // マウスが動かされたかどうかを判定
     bool isMouseMoved = (static_cast<int>(input.GetMousePos().x) != screenCenterX_ ||
         static_cast<int>(input.GetMousePos().y) != screenCenterY_);
 
     if (isLockonEnabled_ && lockonTarget_)
     {
-        // --- ロックオン中：プレイヤーと敵の両方を画面に収めるロジック ---
         const VECTOR& enemyPos = lockonTarget_->pos;
 
-        // プレイヤーの現在の回転（ワールド＋ローカル）を取得
+        // プレイヤーの現在の回転を取得
         Quaternion playerRot = followTarget_->quaRot.Mult(followTarget_->quaRotLocal);
 
         // プレイヤーの背後方向にオフセットを計算
@@ -425,7 +477,7 @@ void Camera::SetBeforeDrawLockon(void)
         VECTOR rotatedOffset = playerRot.PosAxis(LOCKON_BACK_OFFSET);
         VECTOR desiredPos = VAdd(playerPos, rotatedOffset);
 
-        // プレイヤーとの相対位置に応じて、カメラ位置を左右に微調整（回り込み対応）
+        // プレイヤーとの相対位置に応じて、カメラ位置を左右に微調整
         float deltaX = trans_.pos.x - playerPos.x;
         if (deltaX > 50.0f)
         {
